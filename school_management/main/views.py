@@ -55,20 +55,37 @@ def custom_login(request):
         username_or_email = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         
+        if not username_or_email or not password:
+            messages.error(request, 'Please enter both username/email and password.')
+            return render(request, 'shared/login.html', {'form': CustomLoginForm()})
+        
         # Check if input is an email and convert to username
         username = username_or_email
+        user_obj = None
+        
         if '@' in username_or_email:
             try:
-                user_obj = User.objects.get(email=username_or_email)
+                user_obj = User.objects.get(email__iexact=username_or_email)
                 username = user_obj.username
             except User.DoesNotExist:
-                messages.error(request, 'Invalid username or password.')
+                messages.error(request, 'No account found with that email address.')
+                return render(request, 'shared/login.html', {'form': CustomLoginForm()})
+        else:
+            try:
+                user_obj = User.objects.get(username__iexact=username_or_email)
+                username = user_obj.username
+            except User.DoesNotExist:
+                messages.error(request, 'No account found with that username.')
                 return render(request, 'shared/login.html', {'form': CustomLoginForm()})
         
         # Authenticate with username
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
+            if not user.is_active:
+                messages.error(request, 'Your account is inactive. Please contact the administrator.')
+                return render(request, 'shared/login.html', {'form': CustomLoginForm()})
+            
             login(request, user)
             messages.success(request, f'Welcome back, {user.first_name}!')
             
@@ -78,7 +95,7 @@ def custom_login(request):
             else:
                 return redirect('main:home')
         else:
-            messages.error(request, 'Invalid username or password.')
+            messages.error(request, f'Incorrect password for {user_obj.email}. Please try again or contact admin.')
     
     form = CustomLoginForm()
     return render(request, 'shared/login.html', {'form': form})
