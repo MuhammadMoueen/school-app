@@ -4,77 +4,7 @@
 {% block title %}Delete Teacher - Confirmation{% endblock %}
 
 {% block extra_css %}
-<style>
-    .confirm-wrapper {
-        max-width: 600px;
-        margin: 40px auto;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
-    
-    .confirm-header {
-        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-        color: white;
-        padding: 30px;
-        text-align: center;
-    }
-    
-    .confirm-content {
-        padding: 40px;
-        text-align: center;
-    }
-    
-    .warning-icon {
-        font-size: 5rem;
-        color: #e74c3c;
-        margin-bottom: 20px;
-    }
-    
-    .teacher-info {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 20px 0;
-    }
-    
-    .btn-container {
-        display: flex;
-        gap: 15px;
-        margin-top: 30px;
-    }
-    
-    .btn {
-        flex: 1;
-        padding: 15px;
-        border: none;
-        border-radius: 8px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        text-align: center;
-    }
-    
-    .btn-danger {
-        background: #e74c3c;
-        color: white;
-    }
-    
-    .btn-danger:hover {
-        background: #c0392b;
-    }
-    
-    .btn-secondary {
-        background: #95a5a6;
-        color: white;
-    }
-    
-    .btn-secondary:hover {
-        background: #7f8c8d;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
 {% endblock %}
 
 {% block content %}
