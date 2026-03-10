@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture
+from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture, Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -115,4 +115,76 @@ class LectureAdmin(admin.ModelAdmin):
         if not obj.pk and not obj.uploaded_by_id:
             obj.uploaded_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = ['student', 'course', 'date', 'status', 'marked_by', 'created_at']
+    list_filter = ['status', 'course', 'date', 'created_at']
+    search_fields = ['student__username', 'course__name', 'remarks']
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['status']
+    date_hierarchy = 'date'
+
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ['title', 'course', 'question_count', 'total_marks', 'passing_marks', 'duration_minutes', 'is_published', 'created_at']
+    list_filter = ['is_published', 'course', 'created_at']
+    search_fields = ['title', 'description', 'course__name']
+    readonly_fields = ['created_at', 'updated_at', 'question_count']
+    list_editable = ['is_published']
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ['quiz', 'order', 'question_text_short', 'question_type', 'correct_answer', 'marks']
+    list_filter = ['question_type', 'quiz']
+    search_fields = ['question_text', 'quiz__title']
+    list_editable = ['order']
+    
+    def question_text_short(self, obj):
+        return obj.question_text[:50] + '...' if len(obj.question_text) > 50 else obj.question_text
+    question_text_short.short_description = 'Question'
+
+
+@admin.register(QuizAttempt)
+class QuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ['student', 'quiz', 'score', 'percentage', 'is_passed', 'is_completed', 'started_at', 'submitted_at']
+    list_filter = ['is_passed', 'is_completed', 'quiz', 'started_at']
+    search_fields = ['student__username', 'quiz__title']
+    readonly_fields = ['started_at', 'percentage']
+
+
+@admin.register(QuizAnswer)
+class QuizAnswerAdmin(admin.ModelAdmin):
+    list_display = ['attempt', 'question', 'selected_answer', 'is_correct']
+    list_filter = ['is_correct', 'attempt__quiz']
+    search_fields = ['attempt__student__username', 'question__question_text']
+
+
+@admin.register(LectureProgress)
+class LectureProgressAdmin(admin.ModelAdmin):
+    list_display = ['student', 'lecture', 'is_completed', 'completed_at', 'last_accessed']
+    list_filter = ['is_completed', 'lecture__course', 'completed_at']
+    search_fields = ['student__username', 'lecture__title']
+    readonly_fields = ['last_accessed']
+
+
+@admin.register(DiscussionThread)
+class DiscussionThreadAdmin(admin.ModelAdmin):
+    list_display = ['title', 'lecture', 'author', 'reply_count', 'is_resolved', 'created_at']
+    list_filter = ['is_resolved', 'lecture__course', 'created_at']
+    search_fields = ['title', 'content', 'author__username', 'lecture__title']
+    readonly_fields = ['created_at', 'updated_at', 'reply_count']
+    list_editable = ['is_resolved']
+
+
+@admin.register(DiscussionReply)
+class DiscussionReplyAdmin(admin.ModelAdmin):
+    list_display = ['thread', 'author', 'created_at']
+    list_filter = ['created_at', 'thread__lecture__course']
+    search_fields = ['content', 'author__username', 'thread__title']
+    readonly_fields = ['created_at', 'updated_at']
+
 

@@ -1,0 +1,70 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Student Performance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Student Performance: {{ course.name }}</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Lecture Progress</th>
+                                <th>Quiz Score</th>
+                                <th>Attendance</th>
+                                <th>Overall Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for perf in student_performance %}
+                            <tr>
+                                <td>{{ perf.student.get_full_name }}</td>
+                                <td>
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar" style="width: {{ perf.lecture_progress }}%">
+                                            {{ perf.completed_lectures }}/{{ perf.total_lectures }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ perf.avg_quiz_score|floatformat:2 }}</td>
+                                <td>{{ perf.attendance_rate|floatformat:2 }}%</td>
+                                <td>
+                                    <span class="badge bg-{% if perf.grade == 'A' %}success{% elif perf.grade == 'B' %}info{% elif perf.grade == 'C' %}warning{% else %}danger{% endif %}">
+                                        {{ perf.grade }} ({{ perf.percentage|floatformat:2 }}%)
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

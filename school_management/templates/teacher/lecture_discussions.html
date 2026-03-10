@@ -1,0 +1,77 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Lecture Discussions{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Discussions: {{ lecture.title }}</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card mb-4">
+                <div class="card-header"><h5>Start New Discussion</h5></div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            {{ form.title }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Question/Discussion</label>
+                            {{ form.content }}
+                        </div>
+                        <button type="submit" class="btn btn-gradient">Post Discussion</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header"><h5>All Discussions</h5></div>
+                <div class="card-body">
+                    {% for thread in threads %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6>
+                                    <a href="{% url 'main:discussion_detail' thread.id %}">{{ thread.title }}</a>
+                                    {% if thread.is_resolved %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% endif %}
+                                </h6>
+                                <small class="text-muted">
+                                    By {{ thread.author.get_full_name }} • {{ thread.created_at|date:"M d, Y H:i" }} • 
+                                    {{ thread.reply_count }} replies
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No discussions yet</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

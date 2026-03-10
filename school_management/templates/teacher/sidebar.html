@@ -1,0 +1,89 @@
+<aside class="teacher-sidebar" id="teacherSidebar">
+    <div class="sidebar-header">
+        <div class="logo-area">
+            <i class="fas fa-graduation-cap"></i>
+            <span class="sidebar-title">Teacher Panel</span>
+        </div>
+    </div>
+    
+    <nav class="teacher-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Main</div>
+            <a href="{% url 'main:teacher_dashboard' %}" class="nav-item">
+                <i class="fas fa-home nav-icon"></i>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{% url 'main:edit_profile' %}" class="nav-item">
+                <i class="fas fa-user nav-icon"></i>
+                <span class="nav-text">My Profile</span>
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Academic</div>
+            <a href="{% url 'main:manage_courses' %}" class="nav-item">
+                <i class="fas fa-book nav-icon"></i>
+                <span class="nav-text">My Courses</span>
+            </a>
+            <a href="{% url 'main:manage_lectures' %}" class="nav-item">
+                <i class="fas fa-file-video nav-icon"></i>
+                <span class="nav-text">Lectures</span>
+            </a>
+            <a href="{% url 'main:manage_attendance' %}" class="nav-item">
+                <i class="fas fa-calendar-check nav-icon"></i>
+                <span class="nav-text">Attendance</span>
+            </a>
+            <a href="{% url 'main:manage_quizzes' %}" class="nav-item">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-text">Quizzes</span>
+            </a>
+            <a href="{% url 'main:manage_enrollments' %}" class="nav-item">
+                <i class="fas fa-user-check nav-icon"></i>
+                <span class="nav-text">Enrollments</span>
+            </a>
+            <a href="{% url 'main:manage_transcripts' %}" class="nav-item">
+                <i class="fas fa-clipboard-list nav-icon"></i>
+                <span class="nav-text">Grades/Marks</span>
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Analytics</div>
+            <a href="{% url 'main:course_analytics' %}" class="nav-item">
+                <i class="fas fa-chart-bar nav-icon"></i>
+                <span class="nav-text">Course Analytics</span>
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Communication</div>
+            <a href="{% url 'main:view_reports' %}" class="nav-item">
+                <i class="fas fa-comments nav-icon"></i>
+                <span class="nav-text">Reports</span>
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Account</div>
+            <a href="{% url 'main:change_password' %}" class="nav-item">
+                <i class="fas fa-key nav-icon"></i>
+                <span class="nav-text">Change Password</span>
+            </a>
+            <a href="{% url 'main:logout' %}" class="nav-item">
+                <i class="fas fa-sign-out-alt nav-icon"></i>
+                <span class="nav-text">Logout</span>
+            </a>
+        </div>
+    </nav>
+</aside>
+
+<script>
+    const sidebar = document.getElementById('teacherSidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
+</script>

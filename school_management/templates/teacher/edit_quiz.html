@@ -1,0 +1,75 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Edit Quiz{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Edit Quiz</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Course</label>
+                            {{ form.course }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quiz Title</label>
+                            {{ form.title }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Duration (minutes)</label>
+                                {{ form.duration_minutes }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Total Marks</label>
+                                {{ form.total_marks }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Passing Marks</label>
+                                {{ form.passing_marks }}
+                            </div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_published }}
+                            <label class="form-check-label">Publish (students can take quiz)</label>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-gradient">Update Quiz</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

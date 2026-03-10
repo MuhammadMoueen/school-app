@@ -1,0 +1,110 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Mark Attendance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Mark Attendance</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <label class="form-label">Select Course</label>
+                                <select name="course" class="form-select" required onchange="this.form.submit()">
+                                    <option value="">Choose a course...</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}" {% if selected_course and selected_course.id == course.id %}selected{% endif %}>
+                                        {{ course.code }} - {{ course.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Select Date</label>
+                                <input type="date" name="date" class="form-control" value="{{ selected_date }}" required onchange="this.form.submit()">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">Load Students</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if students %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>Mark Attendance for {{ selected_course.name }} - {{ selected_date }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="course" value="{{ selected_course.id }}">
+                        <input type="hidden" name="date" value="{{ selected_date }}">
+                        
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Status</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in students %}
+                                <tr>
+                                    <td>{{ item.student.get_full_name }} ({{ item.student.username }})</td>
+                                    <td>
+                                        <select name="status_{{ item.student.id }}" class="form-select">
+                                            <option value="present" {% if item.attendance and item.attendance.status == 'present' %}selected{% endif %}>Present</option>
+                                            <option value="absent" {% if item.attendance and item.attendance.status == 'absent' %}selected{% endif %}>Absent</option>
+                                            <option value="late" {% if item.attendance and item.attendance.status == 'late' %}selected{% endif %}>Late</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="remarks_{{ item.student.id }}" class="form-control" 
+                                               value="{{ item.attendance.remarks|default:'' }}" placeholder="Optional remarks">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-gradient btn-lg">
+                                <i class="fas fa-save"></i> Save Attendance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Edit Question{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Edit Question</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Question Text</label>
+                            {{ form.question_text }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Question Type</label>
+                                {{ form.question_type }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Marks</label>
+                                {{ form.marks }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Order</label>
+                                {{ form.order }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option A</label>
+                                {{ form.option_a }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option B</label>
+                                {{ form.option_b }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option C (optional)</label>
+                                {{ form.option_c }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option D (optional)</label>
+                                {{ form.option_d }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Correct Answer</label>
+                            {{ form.correct_answer }}
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'main:add_questions' quiz.id %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-gradient">Update Question</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

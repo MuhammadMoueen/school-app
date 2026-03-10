@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, AuditLog, Lecture
+from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, AuditLog, Lecture, Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply
 from django.utils import timezone
 import csv
 import io
@@ -786,3 +786,167 @@ class SearchFilterForm(forms.Form):
         }),
         label='Department'
     )
+
+
+# ==================== ATTENDANCE FORMS ====================
+
+class AttendanceForm(forms.ModelForm):
+    """Form for marking student attendance"""
+    
+    class Meta:
+        model = Attendance
+        fields = ['status', 'remarks']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Optional remarks'
+            })
+        }
+
+
+class BulkAttendanceForm(forms.Form):
+    """Form for marking multiple students' attendance at once"""
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Attendance Date'
+    )
+    course = forms.ModelChoiceField(
+        queryset=Course.objects.none(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Select Course'
+    )
+    
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if teacher:
+            self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+
+
+# ==================== QUIZ FORMS ====================
+
+class QuizForm(forms.ModelForm):
+    """Form for creating/editing quizzes"""
+    
+    class Meta:
+        model = Quiz
+        fields = ['course', 'title', 'description', 'duration_minutes', 'total_marks', 'passing_marks', 'is_published']
+        widgets = {
+            'course': forms.Select(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Quiz Title (e.g., Midterm Exam, Chapter 1 Quiz)'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Description and instructions for the quiz'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'placeholder': 'Duration in minutes'
+            }),
+            'total_marks': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'Total marks'
+            }),
+            'passing_marks': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'Passing marks'
+            }),
+            'is_published': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+    
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if teacher:
+            self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+
+
+class QuestionForm(forms.ModelForm):
+    """Form for adding/editing quiz questions"""
+    
+    class Meta:
+        model = Question
+        fields = ['question_text', 'question_type', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'marks', 'order']
+        widgets = {
+            'question_text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Enter the question'
+            }),
+            'question_type': forms.Select(attrs={'class': 'form-control'}),
+            'option_a': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Option A'
+            }),
+            'option_b': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Option B'
+            }),
+            'option_c': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Option C (optional for True/False)'
+            }),
+            'option_d': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Option D (optional for True/False)'
+            }),
+            'correct_answer': forms.Select(attrs={'class': 'form-control'}),
+            'marks': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01'
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            })
+        }
+
+
+# ==================== DISCUSSION FORMS ====================
+
+class DiscussionThreadForm(forms.ModelForm):
+    """Form for creating discussion threads"""
+    
+    class Meta:
+        model = DiscussionThread
+        fields = ['title', 'content']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Discussion title'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Write your question or discussion...'
+            })
+        }
+
+
+class DiscussionReplyForm(forms.ModelForm):
+    """Form for replying to discussion threads"""
+    
+    class Meta:
+        model = DiscussionReply
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Write your reply...'
+            })
+        }
+

@@ -1,0 +1,111 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Add Questions{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Add Questions: {{ quiz.title }}</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card mb-4">
+                <div class="card-header"><h5>Add New Question</h5></div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Question Text</label>
+                            {{ form.question_text }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Question Type</label>
+                                {{ form.question_type }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Marks</label>
+                                {{ form.marks }}
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Order</label>
+                                {{ form.order }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option A</label>
+                                {{ form.option_a }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option B</label>
+                                {{ form.option_b }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option C (optional)</label>
+                                {{ form.option_c }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option D (optional)</label>
+                                {{ form.option_d }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Correct Answer</label>
+                            {{ form.correct_answer }}
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">Done</a>
+                            <button type="submit" class="btn btn-gradient">Add Question</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header"><h5>Existing Questions ({{ questions.count }})</h5></div>
+                <div class="card-body">
+                    {% for question in questions %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <strong>Q{{ question.order }}:</strong> {{ question.question_text }}<br>
+                        <small class="text-muted">
+                            A) {{ question.option_a }} | B) {{ question.option_b }}
+                            {% if question.option_c %}| C) {{ question.option_c }}{% endif %}
+                            {% if question.option_d %}| D) {{ question.option_d }}{% endif %}
+                            <br>Correct: <strong>{{ question.correct_answer }}</strong> | Marks: {{ question.marks }}
+                        </small>
+                        <div class="mt-2">
+                            <a href="{% url 'main:edit_question' question.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="{% url 'main:delete_question' question.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?');">Delete</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No questions added yet</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

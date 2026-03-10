@@ -2,15 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Avg
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 import json
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignEmailForm, CourseForm, EnrollmentForm, TranscriptForm,
                    MarksReportForm, ReportReplyForm, AdminCreateStudentForm, ProfileEditForm,
-                   LectureForm)
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture
+                   LectureForm, AttendanceForm, BulkAttendanceForm, QuizForm, QuestionForm,
+                   DiscussionThreadForm, DiscussionReplyForm)
+from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture,
+                    Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply)
 
 def home(request):
     """Home page view"""
@@ -540,6 +542,575 @@ def view_course_lectures(request, course_id):
     }
     
     return render(request, 'teacher/course_lectures.html', context)
+
+
+# ==================== ATTENDANCE VIEWS ====================
+
+@login_required
+def manage_attendance(request):
+    """View and manage attendance records"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    courses = Course.objects.filter(teacher=teacher)
+    
+    # Filter by course if specified
+    course_id = request.GET.get('course')
+    date_filter = request.GET.get('date')
+    
+    attendances = Attendance.objects.filter(course__teacher=teacher).select_related('student', 'course')
+    
+    if course_id:
+        attendances = attendances.filter(course_id=course_id)
+    if date_filter:
+        attendances = attendances.filter(date=date_filter)
+    
+    attendances = attendances.order_by('-date', 'student__username')
+    
+    context = {
+        'attendances': attendances,
+        'courses': courses,
+        'selected_course': course_id,
+        'selected_date': date_filter,
+    }
+    
+    return render(request, 'teacher/manage_attendance.html', context)
+
+
+@login_required
+def mark_attendance(request):
+    """Mark attendance for a course on a specific date"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    
+    if request.method == 'POST':
+        course_id = request.POST.get('course')
+        date = request.POST.get('date')
+        
+        course = get_object_or_404(Course, id=course_id, teacher=teacher)
+        
+        # Get all enrolled students
+        enrollments = Enrollment.objects.filter(course=course).select_related('student')
+        
+        for enrollment in enrollments:
+            student = enrollment.student
+            status = request.POST.get(f'status_{student.id}', 'present')
+            remarks = request.POST.get(f'remarks_{student.id}', '')
+            
+            # Create or update attendance record
+            Attendance.objects.update_or_create(
+                course=course,
+                student=student,
+                date=date,
+                defaults={
+                    'status': status,
+                    'remarks': remarks,
+                    'marked_by': teacher
+                }
+            )
+        
+        messages.success(request, f'Attendance marked successfully for {course.name} on {date}')
+        return redirect('main:manage_attendance')
+    
+    # GET request - show form
+    courses = Course.objects.filter(teacher=teacher)
+    
+    # Get selected course and date from GET params
+    course_id = request.GET.get('course')
+    date = request.GET.get('date')
+    
+    students = []
+    selected_course = None
+    
+    if course_id:
+        selected_course = get_object_or_404(Course, id=course_id, teacher=teacher)
+        enrollments = Enrollment.objects.filter(course=selected_course).select_related('student')
+        
+        # Get existing attendance records for this date if any
+        existing_attendance = {}
+        if date:
+            existing_records = Attendance.objects.filter(course=selected_course, date=date)
+            existing_attendance = {a.student_id: a for a in existing_records}
+        
+        students = [{'student': e.student, 'attendance': existing_attendance.get(e.student_id)} for e in enrollments]
+    
+    context = {
+        'courses': courses,
+        'selected_course': selected_course,
+        'selected_date': date,
+        'students': students,
+    }
+    
+    return render(request, 'teacher/mark_attendance.html', context)
+
+
+@login_required
+def attendance_report(request, course_id):
+    """View attendance report for a course"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    course = get_object_or_404(Course, id=course_id, teacher=teacher)
+    
+    # Get all students enrolled in this course
+    enrollments = Enrollment.objects.filter(course=course).select_related('student')
+    
+    # Calculate attendance statistics for each student
+    student_stats = []
+    for enrollment in enrollments:
+        student = enrollment.student
+        attendances = Attendance.objects.filter(course=course, student=student)
+        
+        total = attendances.count()
+        present = attendances.filter(status='present').count()
+        absent = attendances.filter(status='absent').count()
+        late = attendances.filter(status='late').count()
+        
+        percentage = (present / total * 100) if total > 0 else 0
+        
+        student_stats.append({
+            'student': student,
+            'total': total,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'percentage': round(percentage, 2)
+        })
+    
+    context = {
+        'course': course,
+        'student_stats': student_stats,
+    }
+    
+    return render(request, 'teacher/attendance_report.html', context)
+
+
+# ==================== QUIZ VIEWS ====================
+
+@login_required
+def manage_quizzes(request):
+    """View and manage all quizzes"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    quizzes = Quiz.objects.filter(created_by=teacher).select_related('course').order_by('-created_at')
+    
+    context = {
+        'quizzes': quizzes,
+    }
+    
+    return render(request, 'teacher/manage_quizzes.html', context)
+
+
+@login_required
+def create_quiz(request):
+    """Create a new quiz"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    
+    if request.method == 'POST':
+        form = QuizForm(request.POST, teacher=teacher)
+        if form.is_valid():
+            quiz = form.save(commit=False)
+            quiz.created_by = teacher
+            quiz.save()
+            messages.success(request, f'Quiz "{quiz.title}" created successfully! Now add questions.')
+            return redirect('main:add_questions', quiz_id=quiz.id)
+    else:
+        form = QuizForm(teacher=teacher)
+    
+    context = {
+        'form': form,
+    }
+    
+    return render(request, 'teacher/create_quiz.html', context)
+
+
+@login_required
+def edit_quiz(request, quiz_id):
+    """Edit an existing quiz"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
+    
+    if request.method == 'POST':
+        form = QuizForm(request.POST, instance=quiz, teacher=teacher)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Quiz "{quiz.title}" updated successfully!')
+            return redirect('main:manage_quizzes')
+    else:
+        form = QuizForm(instance=quiz, teacher=teacher)
+    
+    context = {
+        'form': form,
+        'quiz': quiz,
+    }
+    
+    return render(request, 'teacher/edit_quiz.html', context)
+
+
+@login_required
+def delete_quiz(request, quiz_id):
+    """Delete a quiz"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
+    
+    quiz_title = quiz.title
+    quiz.delete()
+    
+    messages.success(request, f'Quiz "{quiz_title}" deleted successfully!')
+    return redirect('main:manage_quizzes')
+
+
+@login_required
+def add_questions(request, quiz_id):
+    """Add questions to a quiz"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
+    
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.quiz = quiz
+            question.save()
+            messages.success(request, 'Question added successfully!')
+            return redirect('main:add_questions', quiz_id=quiz.id)
+    else:
+        # Set default order to next number
+        next_order = quiz.questions.count() + 1
+        form = QuestionForm(initial={'order': next_order})
+    
+    questions = quiz.questions.all().order_by('order')
+    
+    context = {
+        'quiz': quiz,
+        'form': form,
+        'questions': questions,
+    }
+    
+    return render(request, 'teacher/add_questions.html', context)
+
+
+@login_required
+def edit_question(request, question_id):
+    """Edit a quiz question"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    question = get_object_or_404(Question, id=question_id, quiz__created_by=teacher)
+    
+    if request.method == 'POST':
+        form = QuestionForm(request.POST, instance=question)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Question updated successfully!')
+            return redirect('main:add_questions', quiz_id=question.quiz.id)
+    else:
+        form = QuestionForm(instance=question)
+    
+    context = {
+        'form': form,
+        'question': question,
+        'quiz': question.quiz,
+    }
+    
+    return render(request, 'teacher/edit_question.html', context)
+
+
+@login_required
+def delete_question(request, question_id):
+    """Delete a quiz question"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    question = get_object_or_404(Question, id=question_id, quiz__created_by=teacher)
+    
+    quiz_id = question.quiz.id
+    question.delete()
+    
+    messages.success(request, 'Question deleted successfully!')
+    return redirect('main:add_questions', quiz_id=quiz_id)
+
+
+@login_required
+def quiz_results(request, quiz_id):
+    """View quiz results for all students"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
+    
+    attempts = QuizAttempt.objects.filter(quiz=quiz, is_completed=True).select_related('student').order_by('-score')
+    
+    context = {
+        'quiz': quiz,
+        'attempts': attempts,
+    }
+    
+    return render(request, 'teacher/quiz_results.html', context)
+
+
+# ==================== STUDENT PROGRESS VIEWS ====================
+
+@login_required
+def course_analytics(request):
+    """View analytics for all courses"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    courses = Course.objects.filter(teacher=teacher)
+    
+    course_stats = []
+    for course in courses:
+        # Get enrolled students
+        total_students = Enrollment.objects.filter(course=course).count()
+        
+        # Get lecture stats
+        total_lectures = Lecture.objects.filter(course=course, is_published=True).count()
+        
+        # Get average progress
+        if total_students > 0 and total_lectures > 0:
+            completed_progress = LectureProgress.objects.filter(
+                lecture__course=course,
+                is_completed=True
+            ).count()
+            avg_progress = (completed_progress / (total_students * total_lectures) * 100) if total_students * total_lectures > 0 else 0
+        else:
+            avg_progress = 0
+        
+        # Get quiz stats
+        total_quizzes = Quiz.objects.filter(course=course, is_published=True).count()
+        completed_attempts = QuizAttempt.objects.filter(quiz__course=course, is_completed=True).count()
+        
+        # Get attendance stats
+        attendance_records = Attendance.objects.filter(course=course)
+        total_attendance = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        attendance_rate = (present_count / total_attendance * 100) if total_attendance > 0 else 0
+        
+        course_stats.append({
+            'course': course,
+            'total_students': total_students,
+            'total_lectures': total_lectures,
+            'avg_progress': round(avg_progress, 2),
+            'total_quizzes': total_quizzes,
+            'completed_attempts': completed_attempts,
+            'attendance_rate': round(attendance_rate, 2),
+        })
+    
+    context = {
+        'course_stats': course_stats,
+    }
+    
+    return render(request, 'teacher/course_analytics.html', context)
+
+
+@login_required
+def student_performance(request, course_id):
+    """View detailed performance of students in a course"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    course = get_object_or_404(Course, id=course_id, teacher=teacher)
+    
+    enrollments = Enrollment.objects.filter(course=course).select_related('student')
+    
+    student_performance = []
+    for enrollment in enrollments:
+        student = enrollment.student
+        
+        # Lecture progress
+        total_lectures = Lecture.objects.filter(course=course, is_published=True).count()
+        completed_lectures = LectureProgress.objects.filter(
+            lecture__course=course,
+            student=student,
+            is_completed=True
+        ).count()
+        lecture_progress = (completed_lectures / total_lectures * 100) if total_lectures > 0 else 0
+        
+        # Quiz performance
+        quiz_attempts = QuizAttempt.objects.filter(
+            quiz__course=course,
+            student=student,
+            is_completed=True
+        )
+        avg_quiz_score = quiz_attempts.aggregate(Avg('score'))['score__avg'] or 0
+        
+        # Attendance
+        attendance_records = Attendance.objects.filter(course=course, student=student)
+        total_attendance = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        attendance_rate = (present_count / total_attendance * 100) if total_attendance > 0 else 0
+        
+        # Overall grade
+        try:
+            transcript = Transcript.objects.get(enrollment=enrollment)
+            grade = transcript.grade
+            percentage = transcript.percentage
+        except Transcript.DoesNotExist:
+            grade = 'N/A'
+            percentage = 0
+        
+        student_performance.append({
+            'student': student,
+            'lecture_progress': round(lecture_progress, 2),
+            'completed_lectures': completed_lectures,
+            'total_lectures': total_lectures,
+            'avg_quiz_score': round(avg_quiz_score, 2),
+            'attendance_rate': round(attendance_rate, 2),
+            'grade': grade,
+            'percentage': round(percentage, 2),
+        })
+    
+    # Sort by percentage descending
+    student_performance = sorted(student_performance, key=lambda x: x['percentage'], reverse=True)
+    
+    context = {
+        'course': course,
+        'student_performance': student_performance,
+    }
+    
+    return render(request, 'teacher/student_performance.html', context)
+
+
+# ==================== DISCUSSION FORUM VIEWS ====================
+
+@login_required
+def lecture_discussions(request, lecture_id):
+    """View discussions for a specific lecture"""
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    
+    # Check access: teacher of the course or enrolled student
+    if request.user.role == 'teacher':
+        if lecture.course.teacher != request.user:
+            messages.error(request, 'Access denied.')
+            return redirect('main:home')
+    elif request.user.role == 'student':
+        if not Enrollment.objects.filter(course=lecture.course, student=request.user).exists():
+            messages.error(request, 'Access denied. You must be enrolled in this course.')
+            return redirect('main:home')
+    else:
+        messages.error(request, 'Access denied.')
+        return redirect('main:home')
+    
+    threads = DiscussionThread.objects.filter(lecture=lecture).select_related('author').order_by('-created_at')
+    
+    if request.method == 'POST':
+        form = DiscussionThreadForm(request.POST)
+        if form.is_valid():
+            thread = form.save(commit=False)
+            thread.lecture = lecture
+            thread.author = request.user
+            thread.save()
+            messages.success(request, 'Discussion thread created successfully!')
+            return redirect('main:lecture_discussions', lecture_id=lecture.id)
+    else:
+        form = DiscussionThreadForm()
+    
+    context = {
+        'lecture': lecture,
+        'threads': threads,
+        'form': form,
+    }
+    
+    return render(request, 'teacher/lecture_discussions.html', context)
+
+
+@login_required
+def discussion_detail(request, thread_id):
+    """View a specific discussion thread with replies"""
+    thread = get_object_or_404(DiscussionThread, id=thread_id)
+    lecture = thread.lecture
+    
+    # Check access
+    if request.user.role == 'teacher':
+        if lecture.course.teacher != request.user:
+            messages.error(request, 'Access denied.')
+            return redirect('main:home')
+    elif request.user.role == 'student':
+        if not Enrollment.objects.filter(course=lecture.course, student=request.user).exists():
+            messages.error(request, 'Access denied.')
+            return redirect('main:home')
+    
+    replies = thread.replies.select_related('author').order_by('created_at')
+    
+    if request.method == 'POST':
+        form = DiscussionReplyForm(request.POST)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.thread = thread
+            reply.author = request.user
+            reply.save()
+            messages.success(request, 'Reply posted successfully!')
+            return redirect('main:discussion_detail', thread_id=thread.id)
+    else:
+        form = DiscussionReplyForm()
+    
+    context = {
+        'thread': thread,
+        'lecture': lecture,
+        'replies': replies,
+        'form': form,
+    }
+    
+    return render(request, 'teacher/discussion_detail.html', context)
+
+
+@login_required
+def mark_discussion_resolved(request, thread_id):
+    """Mark a discussion thread as resolved (teacher only)"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    thread = get_object_or_404(DiscussionThread, id=thread_id)
+    
+    if thread.lecture.course.teacher != request.user:
+        messages.error(request, 'Access denied.')
+        return redirect('main:home')
+    
+    thread.is_resolved = not thread.is_resolved
+    thread.save()
+    
+    status = "resolved" if thread.is_resolved else "reopened"
+    messages.success(request, f'Discussion thread marked as {status}!')
+    
+    return redirect('main:discussion_detail', thread_id=thread.id)
 
 
 @login_required

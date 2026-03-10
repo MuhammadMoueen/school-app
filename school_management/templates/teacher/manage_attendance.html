@@ -1,0 +1,102 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Manage Attendance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="teacher-layout">
+    {% include 'teacher/sidebar.html' %}
+    
+    <div class="teacher-content">
+        <header class="teacher-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <div class="topbar-left"><h1 class="page-title">Attendance Management</h1></div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <span>{{ request.user.get_full_name }}</span>
+                    {% if request.user.profile_picture %}
+                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <main class="page-content">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <form method="get">
+                                <label class="form-label">Filter by Course</label>
+                                <select name="course" class="form-select" onchange="this.form.submit()">
+                                    <option value="">All Courses</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ course.code }} - {{ course.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </div>
+                        <div class="col-md-4">
+                            <form method="get">
+                                <input type="hidden" name="course" value="{{ selected_course }}">
+                                <label class="form-label">Filter by Date</label>
+                                <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+                            </form>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'main:mark_attendance' %}" class="btn btn-gradient"><i class="fas fa-plus"></i> Mark Attendance</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if attendances %}
+            <div class="card">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Course</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in attendances %}
+                            <tr>
+                                <td>{{ attendance.date }}</td>
+                                <td>{{ attendance.course.code }}</td>
+                                <td>{{ attendance.student.get_full_name }}</td>
+                                <td>
+                                    <span class="badge badge-{% if attendance.status == 'present' %}success{% elif attendance.status == 'late' %}warning{% else %}danger{% endif %}">
+                                        {{ attendance.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ attendance.remarks|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-check fa-4x text-muted mb-3"></i>
+                <p>No attendance records found</p>
+                <a href="{% url 'main:mark_attendance' %}" class="btn btn-primary">Mark Attendance</a>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

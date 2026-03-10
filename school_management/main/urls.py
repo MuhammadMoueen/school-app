@@ -53,6 +53,30 @@ urlpatterns = [
     path('teacher/lectures/<int:lecture_id>/delete/', views.delete_lecture, name='delete_lecture'),
     path('teacher/courses/<int:course_id>/lectures/', views.view_course_lectures, name='view_course_lectures'),
     
+    # Attendance Management URLs
+    path('teacher/attendance/', views.manage_attendance, name='manage_attendance'),
+    path('teacher/attendance/mark/', views.mark_attendance, name='mark_attendance'),
+    path('teacher/attendance/report/<int:course_id>/', views.attendance_report, name='attendance_report'),
+    
+    # Quiz Management URLs
+    path('teacher/quizzes/', views.manage_quizzes, name='manage_quizzes'),
+    path('teacher/quizzes/create/', views.create_quiz, name='create_quiz'),
+    path('teacher/quizzes/<int:quiz_id>/edit/', views.edit_quiz, name='edit_quiz'),
+    path('teacher/quizzes/<int:quiz_id>/delete/', views.delete_quiz, name='delete_quiz'),
+    path('teacher/quizzes/<int:quiz_id>/questions/', views.add_questions, name='add_questions'),
+    path('teacher/questions/<int:question_id>/edit/', views.edit_question, name='edit_question'),
+    path('teacher/questions/<int:question_id>/delete/', views.delete_question, name='delete_question'),
+    path('teacher/quizzes/<int:quiz_id>/results/', views.quiz_results, name='quiz_results'),
+    
+    # Analytics & Performance URLs
+    path('teacher/analytics/', views.course_analytics, name='course_analytics'),
+    path('teacher/performance/<int:course_id>/', views.student_performance, name='student_performance'),
+    
+    # Discussion Forum URLs
+    path('lectures/<int:lecture_id>/discussions/', views.lecture_discussions, name='lecture_discussions'),
+    path('discussions/<int:thread_id>/', views.discussion_detail, name='discussion_detail'),
+    path('discussions/<int:thread_id>/resolve/', views.mark_discussion_resolved, name='mark_discussion_resolved'),
+    
     path('teacher/enrollments/', views.manage_enrollments, name='manage_enrollments'),
     path('teacher/enrollments/<int:enrollment_id>/delete/', views.delete_enrollment, name='delete_enrollment'),
     path('teacher/transcripts/', views.manage_transcripts, name='manage_transcripts'),
