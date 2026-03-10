@@ -23,7 +23,7 @@
             </p>
             <ol style="margin: 10px 0 0 20px; color: #1976d2;">
                 <li>Enter student's full name (e.g., M Moueen)</li>
-                <li>System auto-generates email: <strong>mmoueen123@school.edu.pk</strong></li>
+                <li>System auto-generates email with random code: <strong>mmoueen1234@school.edu.pk</strong></li>
                 <li>System auto-generates username from email</li>
                 <li>Account is created with password: <strong>Student@123</strong></li>
                 <li>Share the credentials with the student</li>
@@ -37,6 +37,10 @@
             <div class="form-group">
                 <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
                 {{ form.full_name }}
+                <div id="email-preview" style="margin-top: 10px; padding: 10px; background: #f0f4ff; border-left: 3px solid #667eea; border-radius: 4px; display: none;">
+                    <span style="color: #555; font-size: 0.9rem;">Generated Email: </span>
+                    <strong id="preview-email" style="color: #667eea; font-size: 1rem;"></strong>
+                </div>
                 {% if form.full_name.errors %}
                     <span class="error-text">{{ form.full_name.errors.0 }}</span>
                 {% endif %}
@@ -56,4 +60,38 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('{{ form.full_name.id_for_label }}');
+    const emailPreview = document.getElementById('email-preview');
+    const previewEmail = document.getElementById('preview-email');
+    
+    nameInput.addEventListener('input', function() {
+        const fullName = this.value.trim();
+        
+        if (fullName.length > 0) {
+            const nameParts = fullName.split(' ');
+            let firstLetter = '';
+            let lastName = '';
+            
+            if (nameParts.length < 2) {
+                firstLetter = nameParts[0][0].toLowerCase();
+                lastName = nameParts[0].toLowerCase();
+            } else {
+                firstLetter = nameParts[0][0].toLowerCase();
+                lastName = nameParts[nameParts.length - 1].toLowerCase();
+            }
+            
+            const randomCode = Math.floor(1000 + Math.random() * 9000);
+            const email = `${firstLetter}${lastName}${randomCode}@school.edu.pk`;
+            
+            previewEmail.textContent = email;
+            emailPreview.style.display = 'block';
+        } else {
+            emailPreview.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}

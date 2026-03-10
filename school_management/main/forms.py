@@ -6,6 +6,7 @@ from .models import User, PreassignedEmail, Course, Enrollment, Transcript, Mark
 from django.utils import timezone
 import csv
 import io
+import random
 
 
 class TeacherSignupForm(UserCreationForm):
@@ -346,15 +347,15 @@ class AdminCreateStudentForm(forms.ModelForm):
             first_letter = name_parts[0][0].lower()
             last_name = name_parts[-1].lower()  # Use last part as last name
         
-        # Generate base email: {first_letter}{last_name}123@school.edu.pk
-        base_email = f"{first_letter}{last_name}123@school.edu.pk"
+        # Generate base email with random 4-digit code
+        random_code = random.randint(1000, 9999)
+        base_email = f"{first_letter}{last_name}{random_code}@school.edu.pk"
         email = base_email
-        counter = 1
         
-        # Ensure email is unique
+        # Ensure email is unique - if exists, generate new random code
         while User.objects.filter(email=email).exists():
-            email = f"{first_letter}{last_name}{123 + counter}@school.edu.pk"
-            counter += 1
+            random_code = random.randint(1000, 9999)
+            email = f"{first_letter}{last_name}{random_code}@school.edu.pk"
         
         # Generate username from email
         base_username = email.split('@')[0].lower()
@@ -502,15 +503,15 @@ class AdminCreateTeacherForm(forms.ModelForm):
             first_letter = name_parts[0][0].lower()
             last_name = name_parts[-1].lower()  # Use last part as last name
         
-        # Generate base email: {first_letter}{last_name}123@teacher.edu.pk
-        base_email = f"{first_letter}{last_name}123@teacher.edu.pk"
+        # Generate base email with random 4-digit code
+        random_code = random.randint(1000, 9999)
+        base_email = f"{first_letter}{last_name}{random_code}@teacher.edu.pk"
         email = base_email
-        counter = 1
         
-        # Ensure email is unique
+        # Ensure email is unique - if exists, generate new random code
         while User.objects.filter(email=email).exists():
-            email = f"{first_letter}{last_name}{123 + counter}@teacher.edu.pk"
-            counter += 1
+            random_code = random.randint(1000, 9999)
+            email = f"{first_letter}{last_name}{random_code}@teacher.edu.pk"
         
         # Generate username from email
         base_username = email.split('@')[0].lower()
