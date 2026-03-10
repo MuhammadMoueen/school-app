@@ -204,7 +204,12 @@ footer {
 
 /* Logo Styles */
 .site-logo {
-    height: 40px;
+    height: 50px;
+    object-fit: contain;
+}
+
+.navbar-logo {
+    height: 60px;
     object-fit: contain;
 }
 
@@ -226,6 +231,10 @@ footer {
     }
     
     .site-logo {
-        height: 30px;
+        height: 40px;
+    }
+    
+    .navbar-logo {
+        height: 50px;
     }
 }
