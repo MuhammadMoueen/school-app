@@ -1,0 +1,249 @@
+{% extends 'shared/base.html' %}
+
+{% block title %}Marks Reports{% endblock %}
+
+{% block content %}
+<style>
+    .reports-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .reports-header h2 {
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .filter-tabs {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .filter-tab {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: #ecf0f1;
+        color: #7f8c8d;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    
+    .filter-tab.active,
+    .filter-tab:hover {
+        background: #3498db;
+        color: white;
+    }
+    
+    .reports-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+    
+    .report-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 4px solid #3498db;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .report-card.pending {
+        border-left-color: #e74c3c;
+    }
+    
+    .report-card.replied {
+        border-left-color: #f39c12;
+    }
+    
+    .report-card.resolved {
+        border-left-color: #27ae60;
+    }
+    
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .student-details h4 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.1rem;
+    }
+    
+    .student-details p {
+        margin: 0.25rem 0 0 0;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-badge.pending {
+        background: #fee;
+        color: #e74c3c;
+    }
+    
+    .status-badge.replied {
+        background: #fef5e7;
+        color: #f39c12;
+    }
+    
+    .status-badge.resolved {
+        background: #e8f8f5;
+        color: #27ae60;
+    }
+    
+    .report-content {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    .report-content p {
+        margin: 0;
+        color: #34495e;
+        line-height: 1.6;
+    }
+    
+    .report-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ecf0f1;
+    }
+    
+    .transcript-info {
+        display: flex;
+        gap: 1.5rem;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    
+    .transcript-info span {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .view-btn {
+        padding: 0.5rem 1.5rem;
+        background: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background 0.3s;
+        font-weight: 500;
+    }
+    
+    .view-btn:hover {
+        background: #2980b9;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .empty-state h3 {
+        color: #7f8c8d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #95a5a6;
+    }
+</style>
+
+<div class="reports-header">
+    <h2>Marks Reports</h2>
+    <div class="filter-tabs">
+        <a href="?status=all" class="filter-tab {% if not status_filter or status_filter == 'all' %}active{% endif %}">All Reports</a>
+        <a href="?status=pending" class="filter-tab {% if status_filter == 'pending' %}active{% endif %}">Pending</a>
+        <a href="?status=replied" class="filter-tab {% if status_filter == 'replied' %}active{% endif %}">Replied</a>
+        <a href="?status=resolved" class="filter-tab {% if status_filter == 'resolved' %}active{% endif %}">Resolved</a>
+    </div>
+</div>
+
+{% if reports %}
+<div class="reports-grid">
+    {% for report in reports %}
+    <div class="report-card {{ report.status }}">
+        <div class="report-header">
+            <div class="student-info">
+                <div class="student-avatar">
+                    {{ report.student.first_name.0 }}{{ report.student.last_name.0 }}
+                </div>
+                <div class="student-details">
+                    <h4>{{ report.student.get_full_name }}</h4>
+                    <p>{{ report.transcript.enrollment.course.name }}</p>
+                </div>
+            </div>
+            <span class="status-badge {{ report.status }}">{{ report.get_status_display }}</span>
+        </div>
+        
+        <div class="report-content">
+            <p>{{ report.message }}</p>
+        </div>
+        
+        <div class="report-meta">
+            <div class="transcript-info">
+                <span>📊 Marks: {{ report.transcript.marks_obtained }}/{{ report.transcript.total_marks }}</span>
+                <span>🎯 Grade: {{ report.transcript.grade }}</span>
+                <span>📅 {{ report.created_at|date:"M d, Y" }}</span>
+            </div>
+            <a href="{% url 'main:report_detail' report.id %}" class="view-btn">View & Reply</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No Reports Found</h3>
+    <p>{% if status_filter and status_filter != 'all' %}No {{ status_filter }} reports at the moment.{% else %}No marks reports have been submitted yet.{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}

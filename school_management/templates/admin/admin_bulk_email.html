@@ -1,0 +1,188 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Bulk Email Generation - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .email-gen-wrapper {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+
+    .page-header h1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+
+    .email-card {
+        background: white;
+        border-radius: 12px;
+        padding: 35px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .info-banner {
+        background: linear-gradient(135deg, #e3f2fd 0%, #e1f5fe 100%);
+        border-left: 4px solid #2196f3;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .info-banner i {
+        font-size: 1.5rem;
+        color: #1976d2;
+    }
+
+    .info-banner strong {
+        color: #0d47a1;
+        font-size: 1.1rem;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-top: 6px;
+        display: block;
+    }
+
+    .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 14px 25px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #7f8c8d;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="email-gen-wrapper">
+    <div class="page-header">
+        <h1><i class="fas fa-envelope-open-text"></i> Bulk Email Generation</h1>
+    </div>
+
+    <div class="email-card">
+        <div class="info-banner">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>{{ students_without_email }}</strong> student(s) currently don't have email addresses assigned.
+            </div>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.email_domain.id_for_label }}">
+                    <i class="fas fa-at"></i> Email Domain:
+                </label>
+                {{ form.email_domain }}
+                {% if form.email_domain.help_text %}
+                    <small class="help-text">{{ form.email_domain.help_text }}</small>
+                {% endif %}
+                {% if form.email_domain.errors %}
+                    <div class="text-danger mt-2">{{ form.email_domain.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.email_pattern.id_for_label }}">
+                    <i class="fas fa-envelope"></i> Email Pattern:
+                </label>
+                {{ form.email_pattern }}
+                {% if form.email_pattern.help_text %}
+                    <small class="help-text">{{ form.email_pattern.help_text }}</small>
+                {% endif %}
+                {% if form.email_pattern.errors %}
+                    <div class="text-danger mt-2">{{ form.email_pattern.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="btn-container">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-magic"></i> Generate Emails
+                </button>
+                <a href="{% url 'main:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

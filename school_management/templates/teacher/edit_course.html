@@ -1,0 +1,33 @@
+{% extends 'shared/base.html' %}
+
+{% block title %}Edit Subject{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-box">
+        <h2>Edit Subject</h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-field">
+                <label>Subject Name</label>
+                {{ form.name }}
+            </div>
+            
+            <div class="form-field">
+                <label>Subject Code</label>
+                {{ form.code }}
+            </div>
+            
+            <div class="form-field">
+                <label>Description</label>
+                {{ form.description }}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Update Subject</button>
+            <a href="{% url 'main:manage_courses' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

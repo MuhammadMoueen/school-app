@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}THE CITY SCHOOL OF BAHAWALPUR{% endblock %}</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Professional Navbar */
+        .top-navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .school-brand {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 30px;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .school-brand h1 {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .school-brand p {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.75rem;
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        .navbar-nav .nav-link {
+            color: white !important;
+            font-weight: 500;
+            padding: 10px 20px !important;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .navbar-nav .nav-link i {
+            margin-right: 8px;
+        }
+        
+        .user-info {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* Profile Icon Styles */
+        .profile-section {
+            position: relative;
+            margin-left: 20px;
+        }
+        
+        .profile-icon-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all 0.3s;
+            object-fit: cover;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .profile-icon-circle:hover {
+            border-color: white;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        .profile-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .profile-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .profile-dropdown-item {
+            display: block;
+            padding: 12px 20px;
+            color: #2c3e50;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .profile-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .profile-dropdown-item:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .profile-dropdown-item i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        
+        /* Notification Icon Styles */
+        .notification-icon {
+            position: relative;
+            cursor: pointer;
+            padding: 10px 15px;
+            transition: all 0.3s;
+        }
+        
+        .notification-icon:hover {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            min-width: 350px;
+            max-width: 400px;
+            max-height: 500px;
+            overflow: hidden;
+            z-index: 1050;
+            display: none;
+            margin-top: 10px;
+        }
+        
+        .notification-dropdown.show {
+            display: block;
+            animation: slideDownNotif 0.3s ease;
+        }
+        
+        @keyframes slideDownNotif {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .notification-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .notification-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .notification-item.unread {
+            background: #e3f2fd;
+        }
+        
+        .notification-item.unread:hover {
+            background: #bbdefb;
+        }
+        
+        .notification-sender {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .notification-message {
+            color: #2c3e50;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .notification-time {
+            color: #7f8c8d;
+            font-size: 0.75rem;
+        }
+        
+        .notification-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: #7f8c8d;
+        }
+        
+        .notification-empty i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        /* Main Content */
+        main {
+            padding: 30px 0;
+            min-height: calc(100vh - 180px);
+        }
+        
+        /* Alert Messages */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: auto;
+        }
+        
+        footer p {
+            margin: 0;
+            font-weight: 500;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Professional Navbar -->
+    <nav class="navbar navbar-expand-lg top-navbar">
+        <div class="container-fluid">
+            <div class="school-brand">
+                <h1><i class="fas fa-graduation-cap me-2"></i>THE CITY SCHOOL</h1>
+                <p>OF BAHAWALPUR</p>
+            </div>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if not user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'main:home' %}">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user.role != 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'main:home' %}">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'main:dashboard' %}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                        
+                        <!-- Notification Icon for Teacher and Student -->
+                        {% if user.role in 'teacher,student' %}
+                            <li class="nav-item" style="position: relative;">
+                                <div class="notification-icon" id="notificationIcon">
+                                    <i class="fas fa-bell" style="font-size: 1.3rem; color: white;"></i>
+                                    {% if unread_notification_count > 0 %}
+                                        <span class="notification-badge">{{ unread_notification_count }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Notification Dropdown -->
+                                <div class="notification-dropdown" id="notificationDropdown">
+                                    <div class="notification-header">
+                                        <span><i class="fas fa-bell"></i> Notifications</span>
+                                        <span style="font-size: 0.9rem;">{{ unread_notification_count }} unread</span>
+                                    </div>
+                                    <div class="notification-list" id="notificationList">
+                                        <div class="notification-empty">
+                                            <i class="fas fa-inbox"></i>
+                                            <p>Loading notifications...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Profile Icon with Dropdown for All Users -->
+                        <li class="nav-item">
+                            <div class="profile-section">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
+                                {% else %}
+                                    <div class="profile-icon-circle" id="profileIcon">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="profile-dropdown" id="profileDropdown">
+                                    <div style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">{{ user.username }}</div>
+                                        <div style="font-size: 0.8rem; opacity: 0.9;">{{ user.get_role_display }}</div>
+                                    </div>
+                                    <a href="{% url 'main:home' %}" class="profile-dropdown-item">
+                                        <i class="fas fa-home"></i> Home
+                                    </a>
+                                    <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                    <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
+                                        <i class="fas fa-user-edit"></i> Edit Profile
+                                    </a>
+                                    <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </a>
+                                </div>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'main:login' %}">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn-logout" href="{% url 'main:login' %}">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_staff %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin:index' %}">
+                                <i class="fas fa-cog"></i> Admin
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p><i class="fas fa-graduation-cap me-2"></i>© 2025 THE CITY SCHOOL OF BAHAWALPUR - All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Profile Dropdown Script - For All Authenticated Users -->
+    {% if user.is_authenticated %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileIcon = document.getElementById('profileIcon');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            // Toggle profile dropdown
+            if (profileIcon && profileDropdown) {
+                profileIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('show');
+                    
+                    // Close notification dropdown if it exists
+                    const notificationDropdown = document.getElementById('notificationDropdown');
+                    if (notificationDropdown) {
+                        notificationDropdown.classList.remove('show');
+                    }
+                });
+                
+                // Close profile dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!profileDropdown.contains(e.target) && !profileIcon.contains(e.target)) {
+                        profileDropdown.classList.remove('show');
+                    }
+                });
+            }
+        });
+    </script>
+    {% endif %}
+    
+    <!-- Notification Dropdown Script - For Teachers and Students Only -->
+    {% if user.is_authenticated and user.role in 'teacher,student' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            // Toggle notification dropdown
+            if (notificationIcon) {
+                notificationIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('show');
+                    
+                    // Close profile dropdown if open
+                    if (profileDropdown) {
+                        profileDropdown.classList.remove('show');
+                    }
+                    
+                    // Load notifications when dropdown opens
+                    if (notificationDropdown.classList.contains('show')) {
+                        loadNotifications();
+                    }
+                });
+                
+                // Close notification dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (notificationDropdown && !notificationDropdown.contains(e.target) && notificationIcon && !notificationIcon.contains(e.target)) {
+                        notificationDropdown.classList.remove('show');
+                    }
+                });
+            }
+            
+            // Load notifications via AJAX
+            function loadNotifications() {
+                fetch('{% url "main:get_notifications" %}')
+                    .then(response => response.json())
+                    .then(data => {
+                        const notificationList = document.getElementById('notificationList');
+                        
+                        if (data.notifications && data.notifications.length > 0) {
+                            let html = '';
+                            data.notifications.forEach(notif => {
+                                const unreadClass = notif.is_read ? '' : 'unread';
+                                html += `
+                                    <a href="${notif.url}" class="notification-item ${unreadClass}" onclick="markAsRead(${notif.id}, '${notif.type}')">
+                                        <div class="notification-sender">
+                                            <i class="fas ${notif.icon}"></i> ${notif.sender}
+                                        </div>
+                                        <div class="notification-message">${notif.message}</div>
+                                        <div class="notification-time">
+                                            <i class="far fa-clock"></i> ${notif.time}
+                                        </div>
+                                    </a>
+                                `;
+                            });
+                            notificationList.innerHTML = html;
+                        } else {
+                            notificationList.innerHTML = `
+                                <div class="notification-empty">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>No notifications</p>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading notifications:', error);
+                        document.getElementById('notificationList').innerHTML = `
+                            <div class="notification-empty">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Error loading notifications</p>
+                            </div>
+                        `;
+                    });
+            }
+            
+            // Mark notification as read
+            window.markAsRead = function(id, type) {
+                fetch('{% url "main:mark_notification_read" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        id: id,
+                        type: type
+                    })
+                });
+            };
+        });
+    </script>
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

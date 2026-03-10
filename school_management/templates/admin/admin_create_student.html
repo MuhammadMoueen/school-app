@@ -1,0 +1,201 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Create Student Account - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-wrapper {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 30px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .form-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .form-header p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    .form-content {
+        padding: 40px;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-size: 1rem;
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .help-text {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-top: 5px;
+    }
+    
+    .error-text {
+        color: #e74c3c;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 15px 35px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        flex: 1;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #e0e0e0;
+        color: #2c3e50;
+    }
+    
+    .btn-secondary:hover {
+        background: #d0d0d0;
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .form-wrapper {
+            margin: 0 15px 30px;
+        }
+        
+        .form-content {
+            padding: 25px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <!-- Header -->
+    <div class="form-header">
+        <h1><i class="fas fa-user-plus"></i> Create Student Account</h1>
+        <p>Create a new student account at THE CITY SCHOOL OF BAHAWALPUR</p>
+    </div>
+    
+    <!-- Form Content -->
+    <div class="form-content">
+        <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin-bottom: 25px; border-radius: 5px;">
+            <p style="margin: 0; color: #1565c0; font-weight: 600;">
+                <i class="fas fa-info-circle"></i> How it works:
+            </p>
+            <ol style="margin: 10px 0 0 20px; color: #1976d2;">
+                <li>You enter student's full name and assign an email address</li>
+                <li>System auto-generates username from email (e.g., john.doe@gmail.com → john.doe)</li>
+                <li>Account is created immediately with password: <strong>Student@123</strong></li>
+                <li>Share the credentials with the student</li>
+                <li>Student can login and change password in profile settings</li>
+            </ol>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <span class="error-text">{{ form.full_name.errors.0 }}</span>
+                {% endif %}
+                {% if form.full_name.help_text %}
+                    <span class="help-text">{{ form.full_name.help_text }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <span class="error-text">{{ form.email.errors.0 }}</span>
+                {% endif %}
+                {% if form.email.help_text %}
+                    <span class="help-text">{{ form.email.help_text }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Assign Email
+                </button>
+                <a href="{% url 'main:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

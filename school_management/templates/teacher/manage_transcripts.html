@@ -1,0 +1,319 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Manage Transcripts - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transcripts-wrapper {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .btn-back {
+        background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .btn-back:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateX(-5px);
+        color: white;
+    }
+    
+    .transcripts-section {
+        padding: 30px;
+    }
+    
+    .transcripts-section h2 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .transcripts-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    th {
+        padding: 18px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s;
+    }
+    
+    tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    td {
+        padding: 18px 20px;
+        color: #2c3e50;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #2c3e50;
+    }
+    
+    .subject-name {
+        color: #667eea;
+        font-weight: 500;
+    }
+    
+    .grade-display {
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    
+    .marks-info {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    .status-badge {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .status-badge.success {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-action {
+        padding: 8px 18px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+    
+    .btn-create {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        color: white;
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-delete {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+    }
+    
+    .btn-action:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 30px;
+        color: #95a5a6;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    .empty-state p {
+        font-size: 1.1rem;
+        margin: 10px 0;
+    }
+    
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .transcripts-table {
+            overflow-x: auto;
+        }
+        
+        table {
+            min-width: 800px;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="transcripts-wrapper">
+    <!-- Header -->
+    <div class="page-header">
+        <h1><i class="fas fa-clipboard-list"></i> Manage Student Transcripts</h1>
+        <a href="{% url 'main:dashboard' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <!-- Transcripts List -->
+    <div class="transcripts-section">
+        <h2><i class="fas fa-graduation-cap"></i> Student Enrollments & Transcripts</h2>
+        
+        {% if enrollments %}
+            <div class="transcripts-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Student</th>
+                            <th><i class="fas fa-book"></i> Subject</th>
+                            <th><i class="fas fa-check-circle"></i> Status</th>
+                            <th><i class="fas fa-trophy"></i> Grade & Marks</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in enrollments %}
+                            <tr>
+                                <td class="student-name">
+                                    <i class="fas fa-user-circle"></i> {{ enrollment.student.get_full_name }}
+                                </td>
+                                <td class="subject-name">{{ enrollment.course.name }}</td>
+                                <td>
+                                    {% if enrollment.transcript %}
+                                        <span class="status-badge success">
+                                            <i class="fas fa-check-circle"></i> Graded
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge pending">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if enrollment.transcript %}
+                                        <div class="grade-display">{{ enrollment.transcript.grade }}</div>
+                                        <div class="marks-info">
+                                            {{ enrollment.transcript.marks_obtained }}/{{ enrollment.transcript.total_marks }} 
+                                            ({{ enrollment.transcript.percentage|floatformat:1 }}%)
+                                        </div>
+                                    {% else %}
+                                        <span style="color: #95a5a6;">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        {% if enrollment.transcript %}
+                                            <a href="{% url 'main:edit_transcript' enrollment.transcript.id %}" class="btn-action btn-edit">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <a href="{% url 'main:delete_transcript' enrollment.transcript.id %}" 
+                                               class="btn-action btn-delete" 
+                                               onclick="return confirm('Are you sure you want to delete this transcript? This action cannot be undone.')">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'main:create_transcript' enrollment.id %}" class="btn-action btn-create">
+                                                <i class="fas fa-plus-circle"></i> Add Marks
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard"></i>
+                <p>No enrollments to grade</p>
+                <p style="font-size: 0.95rem;">Students need to be enrolled in subjects before you can add marks</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

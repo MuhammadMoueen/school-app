@@ -1,0 +1,119 @@
+{% extends 'shared/base.html' %}
+
+{% block title %}Assign Username - The city School{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-box">
+        <h2>Assign Username to Student</h2>
+        <p>Create a unique username that will be used by the student for signup and login.</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Student Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="error">{{ form.username.errors.0 }}</div>
+                {% endif %}
+                <small>This username must be unique and will be used by the student to create their account.</small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Assign Username</button>
+            <a href="{% url 'main:dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+    
+    .form-box {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .form-box h2 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+    
+    .form-box > p {
+        color: #7f8c8d;
+        margin-bottom: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #3498db;
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 0.5rem;
+        color: #7f8c8d;
+        font-size: 0.875rem;
+    }
+    
+    .error {
+        color: #e74c3c;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 1rem;
+    }
+    
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #2980b9;
+    }
+    
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+</style>
+{% endblock %}

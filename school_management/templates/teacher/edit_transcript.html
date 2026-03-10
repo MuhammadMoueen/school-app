@@ -1,0 +1,393 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Edit Transcript - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transcript-form-wrapper {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 30px;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .form-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 15px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .student-info {
+        background: rgba(255,255,255,0.2);
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-top: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .student-info p {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .form-content {
+        padding: 40px;
+    }
+    
+    .form-group {
+        margin-bottom: 30px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #2c3e50;
+        font-size: 1.05rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        font-family: inherit;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .error-text {
+        color: #e74c3c;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+    
+    .current-info {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 20%);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+    }
+    
+    .current-info h3 {
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .info-item {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .info-label {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-bottom: 5px;
+    }
+    
+    .info-value {
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: #2c3e50;
+    }
+    
+    .info-item.grade {
+        border-left-color: #27ae60;
+    }
+    
+    .info-item.grade .info-value {
+        color: #27ae60;
+        font-size: 2rem;
+    }
+    
+    .grade-info {
+        background: #fff3cd;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        border-left: 4px solid #f2c94c;
+    }
+    
+    .grade-info p {
+        margin: 0;
+        color: #856404;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 15px 35px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        flex: 1;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #e0e0e0;
+        color: #2c3e50;
+    }
+    
+    .btn-secondary:hover {
+        background: #d0d0d0;
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .transcript-form-wrapper {
+            margin: 0 15px 30px;
+        }
+        
+        .form-content {
+            padding: 25px;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="transcript-form-wrapper">
+    <!-- Header -->
+    <div class="form-header">
+        <h1><i class="fas fa-edit"></i> Edit Transcript</h1>
+        <div class="student-info">
+            <i class="fas fa-user-graduate"></i>
+            <p>{{ transcript.enrollment.student.get_full_name }} - {{ transcript.enrollment.course.name }}</p>
+        </div>
+    </div>
+    
+    <!-- Form Content -->
+    <div class="form-content">
+        <!-- Current Information -->
+        <div class="current-info">
+            <h3><i class="fas fa-info-circle"></i> Current Transcript</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Marks Obtained</div>
+                    <div class="info-value">{{ transcript.marks_obtained }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Total Marks</div>
+                    <div class="info-value">{{ transcript.total_marks }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Percentage</div>
+                    <div class="info-value">{{ transcript.percentage|floatformat:1 }}%</div>
+                </div>
+                <div class="info-item grade">
+                    <div class="info-label">Grade</div>
+                    <div class="info-value">{{ transcript.grade }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Grade Info -->
+        <div class="grade-info">
+            <p><i class="fas fa-lightbulb"></i> <strong>Note:</strong> Grade will be auto-calculated based on the percentage (85-100=A, 70-84=B, 55-69=C, 40-54=D, <40=F).</p>
+        </div>
+        
+        <!-- Form -->
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.marks_obtained.id_for_label }}">
+                        <i class="fas fa-check-circle"></i> Marks Obtained
+                    </label>
+                    {{ form.marks_obtained }}
+                    {% if form.marks_obtained.errors %}
+                        <span class="error-text">{{ form.marks_obtained.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.total_marks.id_for_label }}">
+                        <i class="fas fa-list-ol"></i> Total Marks
+                    </label>
+                    {{ form.total_marks }}
+                    {% if form.total_marks.errors %}
+                        <span class="error-text">{{ form.total_marks.errors.0 }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.grade.id_for_label }}">
+                    <i class="fas fa-trophy"></i> Grade (Read-only - Auto-calculated)
+                </label>
+                {{ form.grade }}
+                {% if form.grade.errors %}
+                    <span class="error-text">{{ form.grade.errors.0 }}</span>
+                {% endif %}
+                <small style="display: block; margin-top: 5px; color: #7f8c8d;">
+                    <i class="fas fa-info-circle"></i> This field is automatically calculated as you enter marks
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.remarks.id_for_label }}">
+                    <i class="fas fa-comment-dots"></i> Remarks (Optional)
+                </label>
+                {{ form.remarks }}
+                {% if form.remarks.errors %}
+                    <span class="error-text">{{ form.remarks.errors.0 }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Transcript
+                </button>
+                <a href="{% url 'main:manage_transcripts' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Auto-calculate grade when marks are entered
+    function calculateGrade() {
+        const marksObtained = parseFloat(document.getElementById('id_marks_obtained').value) || 0;
+        const totalMarks = parseFloat(document.getElementById('id_total_marks').value) || 100;
+        const gradeField = document.getElementById('id_grade');
+        
+        if (totalMarks <= 0) {
+            gradeField.value = 'F';
+            return;
+        }
+        
+        const percentage = (marksObtained / totalMarks) * 100;
+        
+        // Grade calculation: 85-100=A, 70-84=B, 55-69=C, 40-54=D, <40=F
+        let grade;
+        if (percentage >= 85) {
+            grade = 'A';
+        } else if (percentage >= 70) {
+            grade = 'B';
+        } else if (percentage >= 55) {
+            grade = 'C';
+        } else if (percentage >= 40) {
+            grade = 'D';
+        } else {
+            grade = 'F';
+        }
+        
+        gradeField.value = grade;
+    }
+    
+    // Add event listeners to marks fields
+    document.addEventListener('DOMContentLoaded', function() {
+        const marksObtainedField = document.getElementById('id_marks_obtained');
+        const totalMarksField = document.getElementById('id_total_marks');
+        
+        if (marksObtainedField) {
+            marksObtainedField.addEventListener('input', calculateGrade);
+            marksObtainedField.addEventListener('change', calculateGrade);
+        }
+        
+        if (totalMarksField) {
+            totalMarksField.addEventListener('input', calculateGrade);
+            totalMarksField.addEventListener('change', calculateGrade);
+        }
+        
+        // Calculate grade on page load if values exist
+        calculateGrade();
+    });
+</script>
+{% endblock %}

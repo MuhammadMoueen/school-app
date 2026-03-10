@@ -1,0 +1,293 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Manage Courses - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .courses-wrapper {
+        max-width: 1600px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .row {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .col-md-5 {
+        flex: 0 0 38%;
+    }
+    
+    .col-md-7 {
+        flex: 0 0 58%;
+    }
+    
+    @media (max-width: 992px) {
+        .col-md-5, .col-md-7 {
+            flex: 0 0 100%;
+        }
+    }
+    
+    .create-form {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .create-form h3 {
+        margin-bottom: 20px;
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+    
+    .courses-list {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .courses-list h3 {
+        margin-bottom: 20px;
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 18px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .btn-block {
+        width: 100%;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    th {
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    td {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+    
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .btn-outline-primary {
+        background: white;
+        border: 2px solid #667eea;
+        color: #667eea;
+    }
+    
+    .btn-outline-primary:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-outline-danger {
+        background: white;
+        border: 2px solid #e74c3c;
+        color: #e74c3c;
+    }
+    
+    .btn-outline-danger:hover {
+        background: #e74c3c;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="courses-wrapper">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1><i class="fas fa-book-open"></i> Manage Courses</h1>
+        <a href="{% url 'main:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Create Course Form -->
+        <div class="col-md-5">
+            <div class="create-form">
+                <h3><i class="fas fa-plus-circle"></i> Create New Course</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <small class="text-danger">{{ form.name.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.code.label_tag }}
+                        {{ form.code }}
+                        {% if form.code.errors %}
+                            <small class="text-danger">{{ form.code.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.teacher.label_tag }}
+                        {{ form.teacher }}
+                        {% if form.teacher.errors %}
+                            <small class="text-danger">{{ form.teacher.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <small class="text-danger">{{ form.description.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-check"></i> Create Course
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Courses List -->
+        <div class="col-md-7">
+            <div class="courses-list">
+                <h3><i class="fas fa-list"></i> All Courses ({{ courses|length }})</h3>
+                
+                {% if courses %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Teacher</th>
+                                    <th>Students</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                    <tr>
+                                        <td><strong>{{ course.code }}</strong></td>
+                                        <td>{{ course.name }}</td>
+                                        <td>{{ course.teacher.get_full_name }}</td>
+                                        <td>{{ course.enrollment_count }}</td>
+                                        <td>
+                                            <a href="{% url 'main:admin_edit_course' course.id %}" class="btn btn-sm btn-outline-primary" title="Edit Course">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'main:admin_delete_course' course.id %}" class="btn btn-sm btn-outline-danger" 
+                                               onclick="return confirm('Are you sure you want to delete {{ course.name }}? This will remove all enrollments and transcripts.');" 
+                                               title="Delete Course">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted mt-4 mb-4" style="padding: 40px;">
+                        <i class="fas fa-book-open" style="font-size: 3rem; opacity: 0.3; margin-bottom: 15px; display: block;"></i>
+                        <p>No courses created yet. Use the form on the left to create your first course!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

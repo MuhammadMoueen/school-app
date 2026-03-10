@@ -1,0 +1,177 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Create Teacher Account - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-wrapper {
+        max-width: 800px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .form-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .form-content {
+        padding: 40px;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #7f8c8d;
+        margin-top: 5px;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-size: 0.875rem;
+        margin-top: 5px;
+    }
+    
+    .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        text-align: center;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-header">
+        <h1><i class="fas fa-chalkboard-teacher"></i> Create Teacher Account</h1>
+        <p>Add a new teacher to THE CITY SCHOOL OF BAHAWALPUR</p>
+    </div>
+    
+    <div class="form-content">
+        <!-- Info Box -->
+        <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin-bottom: 25px; border-radius: 5px;">
+            <p style="margin: 0; color: #1565c0; font-weight: 600;">
+                <i class="fas fa-info-circle"></i> How it works:
+            </p>
+            <ol style="margin: 10px 0 0 20px; color: #1976d2;">
+                <li>Enter teacher's full name and assign an email address</li>
+                <li>System auto-generates username from email (e.g., john.doe@gmail.com → john.doe)</li>
+                <li>Temporary password is set to: <strong>Teacher@123</strong></li>
+                <li>Share the credentials with the teacher</li>
+                <li>Teacher can edit profile and change password after first login</li>
+            </ol>
+        </div>
+        
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <div class="error-message">{{ form.full_name.errors }}</div>
+                {% endif %}
+                {% if form.full_name.help_text %}
+                    <div class="help-text">{{ form.full_name.help_text }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="error-message">{{ form.email.errors }}</div>
+                {% endif %}
+                {% if form.email.help_text %}
+                    <div class="help-text">{{ form.email.help_text }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="btn-container">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Create Teacher Account
+                </button>
+                <a href="{% url 'main:coordinator_view_teachers' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

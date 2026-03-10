@@ -1,0 +1,175 @@
+{% extends 'shared/base.html' %}
+
+{% block title %}Sign Up - The city School{% endblock %}
+
+{% block content %}
+<div class="signup-selection-container">
+    <div class="signup-selection-box">
+        <h2>Create Your Account</h2>
+        <p>Select your role to continue with registration</p>
+        
+        <form method="post" action="{% url 'main:signup_selection' %}">
+            {% csrf_token %}
+            
+            <div class="role-selection">
+                <label class="role-option">
+                    <input type="radio" name="role" value="student" required>
+                    <div class="role-card">
+                        <div class="role-icon">🎓</div>
+                        <h3>Student</h3>
+                        <p>Complete your registration with the email assigned by your admin</p>
+                        <small style="color: #667eea;">You must have a pre-assigned email. Password will be auto-set to: Student@123</small>
+                    </div>
+                </label>
+                
+                <label class="role-option">
+                    <input type="radio" name="role" value="teacher" required checked>
+                    <div class="role-card">
+                        <div class="role-icon">👨‍🏫</div>
+                        <h3>Teacher</h3>
+                        <p>Register as a teacher to manage classes and students</p>
+                    </div>
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Continue</button>
+        </form>
+        
+        <p class="login-link">Already have an account? <a href="{% url 'main:login' %}">Login here</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signup-selection-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    .signup-selection-box {
+        background: white;
+        padding: 3rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 700px;
+        width: 100%;
+    }
+    
+    .signup-selection-box h2 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    
+    .signup-selection-box > p {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 2rem;
+    }
+    
+    .role-selection {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .role-option {
+        cursor: pointer;
+    }
+    
+    .role-option.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .role-option.disabled .role-card {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+    
+    .role-option.disabled:hover .role-card {
+        transform: none;
+        border-color: #ddd;
+    }
+    
+    .role-option input[type="radio"] {
+        display: none;
+    }
+    
+    .role-card {
+        border: 3px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
+        background: #f8f9fa;
+    }
+    
+    .role-option input[type="radio"]:checked + .role-card {
+        border-color: #3498db;
+        background: #e3f2fd;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(52, 152, 219, 0.2);
+    }
+    
+    .role-card:hover {
+        border-color: #3498db;
+        transform: translateY(-3px);
+    }
+    
+    .role-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    
+    .role-card h3 {
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    
+    .role-card p {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        line-height: 1.5;
+    }
+    
+    .btn-primary {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #7f8c8d;
+    }
+    
+    .login-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 768px) {
+        .role-selection {
+            grid-template-columns: 1fr;
+        }
+        
+        .signup-selection-box {
+            padding: 2rem;
+        }
+    }
+</style>
+{% endblock %}

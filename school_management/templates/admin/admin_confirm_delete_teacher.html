@@ -1,0 +1,118 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Delete Teacher - Confirmation{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-wrapper {
+        max-width: 600px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .confirm-header {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .confirm-content {
+        padding: 40px;
+        text-align: center;
+    }
+    
+    .warning-icon {
+        font-size: 5rem;
+        color: #e74c3c;
+        margin-bottom: 20px;
+    }
+    
+    .teacher-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+    
+    .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        text-align: center;
+    }
+    
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c0392b;
+    }
+    
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-wrapper">
+    <div class="confirm-header">
+        <h1><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h1>
+    </div>
+    
+    <div class="confirm-content">
+        <div class="warning-icon">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        
+        <h3>Are you sure you want to delete this teacher account?</h3>
+        
+        <div class="teacher-info">
+            <p><strong>Username:</strong> {{ teacher.username }}</p>
+            <p><strong>Full Name:</strong> {{ teacher.get_full_name }}</p>
+            <p><strong>Email:</strong> {{ teacher.email|default:"N/A" }}</p>
+            <p><strong>Department:</strong> {{ teacher.department|default:"N/A" }}</p>
+        </div>
+        
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i> 
+            <strong>Warning:</strong> This action cannot be undone. All courses, enrollments, and transcripts associated with this teacher will be affected.
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="btn-container">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Yes, Delete Teacher
+                </button>
+                <a href="{% url 'main:coordinator_view_teachers' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

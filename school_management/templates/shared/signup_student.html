@@ -1,0 +1,197 @@
+{% extends 'shared/base.html' %}
+
+{% block title %}Student Sign Up - The city School{% endblock %}
+
+{% block content %}
+<div class="signup-container">
+    <div class="signup-box">
+        <div class="back-home">
+            <a href="{% url 'main:home' %}"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        </div>
+        
+        <h2>Student Registration</h2>
+        <p>Create your student account using your assigned email</p>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="margin-bottom: 20px;">{{ message|safe }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="info-box">
+            <strong>⚠️ Important:</strong> You must use an email address that has been assigned to you by the admin. 
+            If you don't have an assigned email, please contact your admin.
+        </div>
+        
+        <div class="info-box" style="background: #e8f5e9; border-left-color: #4caf50; margin-top: 15px;">
+            <strong>🔐 Default Password:</strong> Your account will be created with password: <strong>Student@123</strong><br>
+            <em>You can change this password after logging in by editing your profile.</em>
+        </div>
+        
+        <form method="post" action="{% url 'main:signup_student' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Assigned Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="error-message">{{ form.email.errors.0 }}</div>
+                {% endif %}
+                {% if form.email.help_text %}
+                    <small class="form-text text-muted">{{ form.email.help_text }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <div class="error-message">{{ form.full_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+        
+        <p class="login-link">Already have an account? <a href="{% url 'main:login' %}">Login here</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-home {
+        margin-bottom: 1.5rem;
+    }
+    
+    .back-home a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: color 0.3s;
+    }
+    
+    .back-home a:hover {
+        color: #2980b9;
+    }
+    
+    .signup-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    .signup-box {
+        background: white;
+        padding: 3rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+    }
+    
+    .signup-box h2 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    
+    .signup-box > p {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        color: #856404;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #3498db;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .btn-primary {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #7f8c8d;
+    }
+    
+    .login-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 768px) {
+        .signup-box {
+            padding: 2rem;
+        }
+    }
+</style>
+{% endblock %}
