@@ -27,49 +27,47 @@
         
         /* Professional Navbar */
         .top-navbar {
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
         .school-brand {
-            background: transparent;
-            padding: 12px 20px;
-            border-right: none;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 15px;
+            border-right: 1px solid rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 5px;
         }
         
         .school-brand h1 {
-            color: #2c3e50;
-            font-size: 1.4rem;
+            color: white;
+            font-size: 1.5rem;
             font-weight: 700;
             margin: 0;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
         }
         
         .school-brand p {
-            color: #555;
-            font-size: 0.8rem;
+            color: rgba(255,255,255,0.95);
+            font-size: 0.85rem;
             margin: 0;
             font-weight: 400;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
         }
         
         .navbar-nav .nav-link {
-            color: #2c3e50 !important;
+            color: white !important;
             font-weight: 500;
             padding: 10px 20px !important;
             transition: all 0.3s;
             position: relative;
-            font-size: 1rem;
         }
         
         .navbar-nav .nav-link:hover {
-            color: #667eea !important;
-            background: transparent;
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
         }
         
         .navbar-nav .nav-link i {
@@ -77,16 +75,16 @@
         }
         
         .user-info {
-            background: #f5f5f5;
+            background: rgba(255,255,255,0.15);
             padding: 8px 20px;
             border-radius: 25px;
-            color: #2c3e50;
+            color: white;
             font-weight: 500;
         }
         
         .btn-logout {
-            background: #667eea;
-            border: 1px solid #667eea;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
             color: white !important;
             padding: 8px 20px;
             border-radius: 25px;
@@ -95,8 +93,8 @@
         }
         
         .btn-logout:hover {
-            background: #5568d3;
-            border-color: #5568d3;
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
         }
         
         /* Profile Icon Styles */
@@ -109,31 +107,23 @@
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            border: 2px solid #e0e0e0;
+            border: 2px solid rgba(255,255,255,0.6);
             cursor: pointer;
             transition: all 0.3s;
             object-fit: cover;
-            background: #f5f5f5;
+            background: rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #667eea;
+            color: white;
             font-size: 1.5rem;
         }
         
         .profile-icon-circle:hover {
-            border-color: #667eea;
+            border-color: white;
             transform: scale(1.05);
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
         }
-        
-        /* Navbar Toggler for Mobile */
-        .navbar-toggler {
-            border: 1px solid #2c3e50;
-        }
-        
-        .navbar-toggler-icon {
-            background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(44, 62, 80, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e\");\n        }
         
         .profile-dropdown {
             position: absolute;
@@ -189,12 +179,8 @@
         }
         
         .notification-icon:hover {
-            background: #f5f5f5;
+            background: rgba(255,255,255,0.1);
             border-radius: 8px;
-        }
-        
-        .notification-icon i {
-            color: #2c3e50;
         }
         
         .notification-badge {
@@ -393,7 +379,7 @@
 <body>
     <!-- Professional Navbar -->
     <nav class="navbar navbar-expand-lg top-navbar">
-        <div class="container-fluid">
+        <div class="container">
             <div class="school-brand">
                 <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="navbar-logo me-2">
                 <div>
