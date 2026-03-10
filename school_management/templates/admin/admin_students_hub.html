@@ -81,7 +81,7 @@
                 </h4>
                 {% if recently_added %}
                     <ul class="timeline">
-                        {% for student in recently_added %}
+                        {% for student in recently_added|slice:":3" %}
                         <li>
                             <div class="timeline-name">{{ student.get_full_name|default:student.username }}</div>
                             <div class="timeline-meta">
@@ -106,7 +106,7 @@
                 </h4>
                 {% if recently_deleted %}
                     <ul class="timeline timeline-deleted">
-                        {% for log in recently_deleted %}
+                        {% for log in recently_deleted|slice:":3" %}
                         <li>
                             <div class="timeline-name">{{ log.description }}</div>
                             <div class="timeline-meta">
