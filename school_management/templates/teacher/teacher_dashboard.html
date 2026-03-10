@@ -4,10 +4,276 @@
 {% block title %}Teacher Dashboard - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
 
 {% block extra_css %}
-<style>
-    body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Teacher Layout -->
+<div class="teacher-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="teacher-sidebar" id="teacherSidebar">
+        <div class="sidebar-header">
+            <img src="{% static 'images/favicon.png' %}" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">
+                <h3>Teacher Panel</h3>
+                <p>{{ teacher.get_full_name }}</p>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <nav class="teacher-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="{% url 'main:dashboard' %}" class="nav-item active">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="{% url 'main:edit_profile' %}" class="nav-item">
+                    <i class="fas fa-user nav-icon"></i>
+                    <span class="nav-text">My Profile</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Academic</div>
+                <a href="{% url 'main:manage_courses' %}" class="nav-item">
+                    <i class="fas fa-book nav-icon"></i>
+                    <span class="nav-text">My Courses</span>
+                </a>
+                <a href="{% url 'main:manage_enrollments' %}" class="nav-item">
+                    <i class="fas fa-user-check nav-icon"></i>
+                    <span class="nav-text">Enrollments</span>
+                </a>
+                <a href="{% url 'main:manage_transcripts' %}" class="nav-item">
+                    <i class="fas fa-clipboard-list nav-icon"></i>
+                    <span class="nav-text">Grades/Marks</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Communication</div>
+                <a href="{% url 'main:view_reports' %}" class="nav-item">
+                    <i class="fas fa-comments nav-icon"></i>
+                    <span class="nav-text">Reports</span>
+                    {% if unread_reports > 0 %}
+                        <span class="nav-badge">{{ unread_reports }}</span>
+                    {% endif %}
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Account</div>
+                <a href="{% url 'main:change_password' %}" class="nav-item">
+                    <i class="fas fa-key nav-icon"></i>
+                    <span class="nav-text">Change Password</span>
+                </a>
+                <a href="{% url 'main:logout' %}" class="nav-item">
+                    <i class="fas fa-sign-out-alt nav-icon"></i>
+                    <span class="nav-text">Logout</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="teacher-main">
+        <!-- Top Navbar -->
+        <div class="teacher-topbar">
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-left">
+                <h1>Dashboard</h1>
+                <p>Welcome back, {{ teacher.first_name }}! Here's your overview.</p>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-profile">
+                    {% if teacher.profile_picture %}
+                        <img src="{{ teacher.profile_picture.url }}" alt="{{ teacher.get_full_name }}" class="topbar-avatar">
+                    {% else %}
+                        <div class="topbar-avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Dashboard Cards -->
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon primary">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <h2 class="card-value">{{ total_courses }}</h2>
+                    <p class="card-label">Total Courses</p>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon success">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <h2 class="card-value">{{ total_students }}</h2>
+                    <p class="card-label">Total Students</p>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon warning">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                    </div>
+                    <h2 class="card-value">{{ total_enrollments }}</h2>
+                    <p class="card-label">Total Enrollments</p>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon danger">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                    </div>
+                    <h2 class="card-value">{{ unread_reports }}</h2>
+                    <p class="card-label">Pending Reports</p>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h2>
+            </div>
+            <div class="quick-actions-grid">
+                <a href="{% url 'main:manage_courses' %}" class="action-card">
+                    <i class="fas fa-book-open"></i>
+                    <span>Manage Courses</span>
+                </a>
+                <a href="{% url 'main:manage_enrollments' %}" class="action-card">
+                    <i class="fas fa-user-check"></i>
+                    <span>Enroll Students</span>
+                </a>
+                <a href="{% url 'main:manage_transcripts' %}" class="action-card">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Manage Grades</span>
+                </a>
+                <a href="{% url 'main:view_reports' %}" class="action-card">
+                    <i class="fas fa-comments"></i>
+                    <span>View Reports</span>
+                </a>
+            </div>
+            
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- My Courses -->
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">
+                            <i class="fas fa-book"></i> My Courses
+                        </h3>
+                        <a href="{% url 'main:manage_courses' %}" class="view-all-link">
+                            View All <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% if courses %}
+                        <div class="list-items">
+                            {% for course in courses|slice:":3" %}
+                                <div class="list-item">
+                                    <div class="item-details">
+                                        <h4>{{ course.name }}</h4>
+                                        <p>{{ course.code }}</p>
+                                    </div>
+                                    <a href="{% url 'main:edit_course' course.id %}" class="btn-action">Edit</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-book-open"></i>
+                            <p>No courses yet. Create your first course!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Recent Reports -->
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">
+                            <i class="fas fa-comments"></i> Recent Reports
+                        </h3>
+                        <a href="{% url 'main:view_reports' %}" class="view-all-link">
+                            View All <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% if recent_reports %}
+                        <div class="list-items">
+                            {% for report in recent_reports|slice:":3" %}
+                                <div class="list-item {% if report.status == 'pending' %}pending{% endif %}">
+                                    <div class="item-details">
+                                        <h4>{{ report.student.get_full_name }}</h4>
+                                        <p>{{ report.transcript.enrollment.course.name }}</p>
+                                        <p class="small">{{ report.message|truncatewords:10 }}</p>
+                                    </div>
+                                    <a href="{% url 'main:report_detail' report.id %}" class="btn-action">Reply</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-comments"></i>
+                            <p>No reports yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Sidebar Toggle Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('teacherSidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    
+    // Desktop sidebar toggle
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+        });
     }
+    
+    // Mobile sidebar toggle
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', function() {
+            sidebar.classList.add('mobile-open');
+            sidebarOverlay.classList.add('active');
+        });
+    }
+    
+    // Close sidebar when clicking overlay
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('active');
+        });
+    }
+});
+</script>
+{% endblock %}
     
     .dashboard-wrapper {
         background: white;
