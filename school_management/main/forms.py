@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, AuditLog
+from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, AuditLog, Lecture
 from django.utils import timezone
 import csv
 import io
@@ -645,6 +645,110 @@ class AdminCourseForm(forms.ModelForm):
         label='Assign Teacher',
         required=True
     )
+    
+    class Meta:
+        model = Course
+        fields = ['name', 'code', 'description', 'teacher']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'placeholder': 'Course Name',
+                'class': 'form-control'
+            }),
+            'code': forms.TextInput(attrs={
+                'placeholder': 'Course Code (e.g., CS101)',
+                'class': 'form-control'
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Course Description',
+                'class': 'form-control',
+                'rows': 3
+            })
+        }
+
+
+# ==================== LECTURE/MATERIAL UPLOAD FORMS ====================
+
+class LectureForm(forms.ModelForm):
+    """Form for teachers to upload course materials/lectures"""
+    
+    class Meta:
+        model = Lecture
+        fields = ['course', 'title', 'description', 'file', 'order', 'is_published']
+        widgets = {
+            'course': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'title': forms.TextInput(attrs={
+                'placeholder': 'Lecture Title (e.g., Introduction to Python)',
+                'class': 'form-control'
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Describe the lecture content (optional)',
+                'class': 'form-control',
+                'rows': 4
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'video/*,audio/*,image/*,.pdf,.doc,.docx'
+            }),
+            'order': forms.NumberInput(attrs={
+                'placeholder': 'Display Order (e.g., 1, 2, 3...)',
+                'class': 'form-control',
+                'min': 0
+            }),
+            'is_published': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+    
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter courses to only show courses taught by this teacher
+        if teacher:
+            self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+        # Set order field default value
+        self.fields['order'].initial = 0
+        # is_published default to True
+        self.fields['is_published'].initial = True
+    
+    def clean_file(self):
+        """Validate uploaded file size and type"""
+        file = self.cleaned_data.get('file')
+        
+        if file:
+            # Check file size (50MB max for videos, 10MB for others)
+            max_size = 50 * 1024 * 1024  # 50MB in bytes
+            
+            # Get file extension
+            file_extension = file.name.lower().split('.')[-1]
+            
+            # Allowed extensions
+            video_exts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm']
+            audio_exts = ['mp3', 'wav', 'ogg', 'm4a', 'flac']
+            doc_exts = ['pdf', 'doc', 'docx', 'txt', 'rtf']
+            image_exts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']
+            
+            all_allowed = video_exts + audio_exts + doc_exts + image_exts
+            
+            if file_extension not in all_allowed:
+                raise forms.ValidationError(
+                    f'File type .{file_extension} is not supported. '
+                    f'Allowed types: video, audio, document (PDF, DOC), and image files.'
+                )
+            
+            # Set size limit based on file type
+            if file_extension in video_exts:
+                max_size = 50 * 1024 * 1024  # 50MB for videos
+            else:
+                max_size = 10 * 1024 * 1024  # 10MB for others
+            
+            if file.size > max_size:
+                max_size_mb = max_size / (1024 * 1024)
+                raise forms.ValidationError(
+                    f'File size must be less than {max_size_mb:.0f}MB.'
+                )
+        
+        return file
     
     class Meta:
         model = Course

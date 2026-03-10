@@ -62,6 +62,80 @@ class Course(models.Model):
         return f"{self.code} - {self.name}"
 
 
+# Lecture/Material model - for course materials
+class Lecture(models.Model):
+    FILE_TYPE_CHOICES = (
+        ('video', 'Video'),
+        ('pdf', 'PDF Document'),
+        ('doc', 'Word Document'),
+        ('image', 'Image'),
+        ('audio', 'Audio'),
+        ('other', 'Other'),
+    )
+    
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lectures')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='lectures/%Y/%m/')
+    file_type = models.CharField(max_length=20, choices=FILE_TYPE_CHOICES, default='other')
+    order = models.PositiveIntegerField(default=0, help_text='Display order of the lecture')
+    is_published = models.BooleanField(default=True, help_text='Whether students can view this lecture')
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_lectures')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['course', 'order', '-created_at']
+    
+    def __str__(self):
+        return f"{self.course.code} - {self.title}"
+    
+    def get_file_extension(self):
+        """Get file extension from filename"""
+        import os
+        return os.path.splitext(self.file.name)[1].lower()
+    
+    def detect_file_type(self):
+        """Auto-detect file type based on extension"""
+        ext = self.get_file_extension()
+        
+        video_exts = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm']
+        pdf_exts = ['.pdf']
+        doc_exts = ['.doc', '.docx', '.txt', '.rtf']
+        image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp']
+        audio_exts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac']
+        
+        if ext in video_exts:
+            return 'video'
+        elif ext in pdf_exts:
+            return 'pdf'
+        elif ext in doc_exts:
+            return 'doc'
+        elif ext in image_exts:
+            return 'image'
+        elif ext in audio_exts:
+            return 'audio'
+        else:
+            return 'other'
+    
+    def save(self, *args, **kwargs):
+        """Auto-detect file type on save if not set"""
+        if not self.file_type or self.file_type == 'other':
+            self.file_type = self.detect_file_type()
+        super().save(*args, **kwargs)
+    
+    @property
+    def file_size(self):
+        """Get file size in human-readable format"""
+        if self.file:
+            size = self.file.size
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+        return "0 B"
+
+
 # Enrollment model - links students to courses
 class Enrollment(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrollments', limit_choices_to={'role': 'student'})

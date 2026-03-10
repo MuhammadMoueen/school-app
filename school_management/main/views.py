@@ -8,8 +8,9 @@ from django.http import JsonResponse
 import json
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignEmailForm, CourseForm, EnrollmentForm, TranscriptForm,
-                   MarksReportForm, ReportReplyForm, AdminCreateStudentForm, ProfileEditForm)
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply
+                   MarksReportForm, ReportReplyForm, AdminCreateStudentForm, ProfileEditForm,
+                   LectureForm)
+from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture
 
 def home(request):
     """Home page view"""
@@ -394,6 +395,151 @@ def delete_course(request, course_id):
     course.delete()
     messages.success(request, f'Subject "{course_name}" deleted successfully!')
     return redirect('main:manage_courses')
+
+
+# ==================== LECTURE MANAGEMENT VIEWS ====================
+
+@login_required
+def manage_lectures(request):
+    """View and manage all lectures/materials"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    course_filter = request.GET.get('course', '')
+    
+    # Get all lectures for this teacher's courses
+    lectures = Lecture.objects.filter(
+        course__teacher=teacher
+    ).select_related('course').order_by('course', 'order', '-created_at')
+    
+    # Filter by course if specified
+    if course_filter:
+        lectures = lectures.filter(course_id=course_filter)
+    
+    # Get teacher's courses for filter dropdown
+    courses = Course.objects.filter(teacher=teacher)
+    
+    context = {
+        'lectures': lectures,
+        'courses': courses,
+        'selected_course': course_filter,
+    }
+    
+    return render(request, 'teacher/manage_lectures.html', context)
+
+
+@login_required
+def create_lecture(request):
+    """Upload new lecture/material"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    
+    if request.method == 'POST':
+        form = LectureForm(request.POST, request.FILES, teacher=teacher)
+        if form.is_valid():
+            lecture = form.save(commit=False)
+            lecture.uploaded_by = teacher
+            lecture.save()
+            messages.success(
+                request, 
+                f'Lecture "{lecture.title}" uploaded successfully for {lecture.course.name}!'
+            )
+            return redirect('main:manage_lectures')
+    else:
+        form = LectureForm(teacher=teacher)
+    
+    context = {
+        'form': form,
+    }
+    
+    return render(request, 'teacher/create_lecture.html', context)
+
+
+@login_required
+def edit_lecture(request, lecture_id):
+    """Edit an existing lecture"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    lecture = get_object_or_404(
+        Lecture, 
+        id=lecture_id, 
+        course__teacher=teacher
+    )
+    
+    if request.method == 'POST':
+        form = LectureForm(request.POST, request.FILES, instance=lecture, teacher=teacher)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Lecture "{lecture.title}" updated successfully!')
+            return redirect('main:manage_lectures')
+    else:
+        form = LectureForm(instance=lecture, teacher=teacher)
+    
+    context = {
+        'form': form,
+        'lecture': lecture,
+    }
+    
+    return render(request, 'teacher/edit_lecture.html', context)
+
+
+@login_required
+def delete_lecture(request, lecture_id):
+    """Delete a lecture"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    lecture = get_object_or_404(
+        Lecture,
+        id=lecture_id,
+        course__teacher=teacher
+    )
+    
+    lecture_title = lecture.title
+    course_name = lecture.course.name
+    
+    # Delete the file from storage
+    if lecture.file:
+        lecture.file.delete()
+    
+    lecture.delete()
+    
+    messages.success(
+        request,
+        f'Lecture "{lecture_title}" from {course_name} deleted successfully!'
+    )
+    
+    return redirect('main:manage_lectures')
+
+
+@login_required
+def view_course_lectures(request, course_id):
+    """View all lectures for a specific course"""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+    
+    teacher = request.user
+    course = get_object_or_404(Course, id=course_id, teacher=teacher)
+    
+    lectures = Lecture.objects.filter(course=course).order_by('order', '-created_at')
+    
+    context = {
+        'course': course,
+        'lectures': lectures,
+    }
+    
+    return render(request, 'teacher/course_lectures.html', context)
 
 
 @login_required

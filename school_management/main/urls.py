@@ -45,6 +45,14 @@ urlpatterns = [
     path('teacher/courses/', views.manage_courses, name='manage_courses'),
     path('teacher/courses/<int:course_id>/edit/', views.edit_course, name='edit_course'),
     path('teacher/courses/<int:course_id>/delete/', views.delete_course, name='delete_course'),
+    
+    # Lecture/Material Management URLs
+    path('teacher/lectures/', views.manage_lectures, name='manage_lectures'),
+    path('teacher/lectures/create/', views.create_lecture, name='create_lecture'),
+    path('teacher/lectures/<int:lecture_id>/edit/', views.edit_lecture, name='edit_lecture'),
+    path('teacher/lectures/<int:lecture_id>/delete/', views.delete_lecture, name='delete_lecture'),
+    path('teacher/courses/<int:course_id>/lectures/', views.view_course_lectures, name='view_course_lectures'),
+    
     path('teacher/enrollments/', views.manage_enrollments, name='manage_enrollments'),
     path('teacher/enrollments/<int:enrollment_id>/delete/', views.delete_enrollment, name='delete_enrollment'),
     path('teacher/transcripts/', views.manage_transcripts, name='manage_transcripts'),

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply
+from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -84,3 +84,35 @@ class ReportReplyAdmin(admin.ModelAdmin):
     list_filter = ['created_at']
     search_fields = ['sender__username', 'message']
     readonly_fields = ['created_at']
+
+
+@admin.register(Lecture)
+class LectureAdmin(admin.ModelAdmin):
+    list_display = ['title', 'course', 'file_type', 'is_published', 'order', 'uploaded_by', 'created_at']
+    list_filter = ['file_type', 'is_published', 'course', 'created_at']
+    search_fields = ['title', 'description', 'course__name', 'course__code']
+    readonly_fields = ['created_at', 'updated_at', 'file_size']
+    list_editable = ['is_published', 'order']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('course', 'title', 'description')
+        }),
+        ('File Details', {
+            'fields': ('file', 'file_type', 'file_size')
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_published')
+        }),
+        ('Metadata', {
+            'fields': ('uploaded_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        # Automatically set uploaded_by to current user if not set
+        if not obj.pk and not obj.uploaded_by_id:
+            obj.uploaded_by = request.user
+        super().save_model(request, obj, form, change)
+
