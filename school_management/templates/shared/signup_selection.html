@@ -1,10 +1,14 @@
 {% extends 'shared/base.html' %}
+{% load static %}
 
 {% block title %}Sign Up - The city School{% endblock %}
 
 {% block content %}
 <div class="signup-selection-container">
     <div class="signup-selection-box">
+        <div class="logo-center">
+            <img src="{% static 'images/logo.png' %}" alt="School Logo" class="site-logo">
+        </div>
         <h2>Create Your Account</h2>
         <p>Select your role to continue with registration</p>
         

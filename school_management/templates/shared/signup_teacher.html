@@ -1,10 +1,14 @@
 {% extends 'shared/base.html' %}
+{% load static %}
 
 {% block title %}Teacher Sign Up - The city School{% endblock %}
 
 {% block content %}
 <div class="signup-container">
     <div class="signup-box">
+        <div class="logo-center">
+            <img src="{% static 'images/logo.png' %}" alt="School Logo" class="site-logo">
+        </div>
         <div class="back-home">
             <a href="{% url 'main:home' %}"><i class="fas fa-arrow-left"></i> Back to Home</a>
         </div>
