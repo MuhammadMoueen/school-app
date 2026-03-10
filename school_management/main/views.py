@@ -52,36 +52,35 @@ def custom_login(request):
         return redirect('main:dashboard')
     
     if request.method == 'POST':
-        form = CustomLoginForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            
-            # Check if username is actually an email
-            if '@' in username:
-                try:
-                    # Try to find user by email
-                    user_obj = User.objects.get(email=username)
-                    username = user_obj.username
-                except User.DoesNotExist:
-                    pass  # Will fail authentication below
-            
-            user = authenticate(username=username, password=password)
-            
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {user.first_name}!')
-                
-                # Role-based redirect
-                if user.role in ['admin', 'teacher', 'student']:
-                    return redirect('main:dashboard')
-                else:
-                    return redirect('main:home')
-            else:
+        username_or_email = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        # Check if input is an email and convert to username
+        username = username_or_email
+        if '@' in username_or_email:
+            try:
+                user_obj = User.objects.get(email=username_or_email)
+                username = user_obj.username
+            except User.DoesNotExist:
                 messages.error(request, 'Invalid username or password.')
-    else:
-        form = CustomLoginForm()
+                return render(request, 'shared/login.html', {'form': CustomLoginForm()})
+        
+        # Authenticate with username
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Welcome back, {user.first_name}!')
+            
+            # Role-based redirect
+            if user.role in ['admin', 'teacher', 'student']:
+                return redirect('main:dashboard')
+            else:
+                return redirect('main:home')
+        else:
+            messages.error(request, 'Invalid username or password.')
     
+    form = CustomLoginForm()
     return render(request, 'shared/login.html', {'form': form})
 
 
