@@ -586,28 +586,6 @@ class AdminEditUserForm(forms.ModelForm):
         return user
 
 
-class BulkEmailGenerationForm(forms.Form):
-    """Form for bulk email generation for students"""
-    email_domain = forms.CharField(
-        max_length=100,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'e.g., school.edu',
-            'class': 'form-control'
-        }),
-        label='Email Domain',
-        help_text='Enter the domain for student emails (e.g., school.edu)'
-    )
-    email_pattern = forms.ChoiceField(
-        choices=[
-            ('username', 'username@domain'),
-            ('firstname.lastname', 'firstname.lastname@domain'),
-            ('rollnumber', 'rollnumber@domain'),
-        ],
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Email Pattern'
-    )
-
 
 class BulkStudentImportForm(forms.Form):
     """Form for bulk importing students via CSV"""

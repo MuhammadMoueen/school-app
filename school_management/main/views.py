@@ -880,62 +880,6 @@ def admin_search_users(request):
 
 
 @login_required
-def admin_bulk_email_generation(request):
-    """Admin view for bulk email generation for students"""
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied. Admin only.')
-        return redirect('main:home')
-    
-    from .forms import BulkEmailGenerationForm
-    from .models import AuditLog
-    
-    if request.method == 'POST':
-        form = BulkEmailGenerationForm(request.POST)
-        if form.is_valid():
-            domain = form.cleaned_data['email_domain']
-            pattern = form.cleaned_data['email_pattern']
-            
-            # Get students without email
-            students = User.objects.filter(role='student', email='')
-            updated_count = 0
-            
-            for student in students:
-                if pattern == 'username':
-                    email = f"{student.username}@{domain}"
-                elif pattern == 'firstname.lastname':
-                    email = f"{student.first_name.lower()}.{student.last_name.lower()}@{domain}"
-                elif pattern == 'rollnumber' and student.roll_number:
-                    email = f"{student.roll_number}@{domain}"
-                else:
-                    continue
-                
-                student.email = email
-                student.save()
-                updated_count += 1
-            
-            # Create audit log
-            AuditLog.objects.create(
-                admin=request.user,
-                action='bulk_email',
-                description=f'Generated emails for {updated_count} students using pattern: {pattern}@{domain}',
-                ip_address=request.META.get('REMOTE_ADDR')
-            )
-            
-            messages.success(request, f'Successfully generated emails for {updated_count} students.')
-            return redirect('main:coordinator_manage_students')
-    else:
-        form = BulkEmailGenerationForm()
-    
-    students_without_email = User.objects.filter(role='student', email='').count()
-    
-    context = {
-        'form': form,
-        'students_without_email': students_without_email,
-    }
-    return render(request, 'admin/admin_bulk_email.html', context)
-
-
-@login_required
 def admin_bulk_import_students(request):
     """Admin view for bulk importing students via CSV"""
     if request.user.role != 'admin':
@@ -1105,23 +1049,6 @@ def admin_export_data(request):
     )
     
     return response
-
-
-@login_required
-def admin_audit_logs(request):
-    """Admin view to view audit logs"""
-    if request.user.role != 'admin':
-        messages.error(request, 'Access denied. Admin only.')
-        return redirect('main:home')
-    
-    from .models import AuditLog
-    
-    logs = AuditLog.objects.select_related('admin', 'target_user').order_by('-created_at')[:100]
-    
-    context = {
-        'logs': logs,
-    }
-    return render(request, 'admin/admin_audit_logs.html', context)
 
 
 @login_required
