@@ -1,0 +1,8 @@
+# Git Configuration Test File
+# This file verifies that commits show properly on GitHub
+
+This commit should appear on your GitHub profile after:
+1. Email is verified in GitHub settings
+2. Global git config is set correctly
+
+Test commit created on: 2026-03-10
