@@ -91,14 +91,16 @@ def admin_dashboard(request):
         messages.error(request, 'Access denied. Admin/Coordinator only.')
         return redirect('main:home')
     
+    from .models import AuditLog
+    
     # Get statistics
     total_students = User.objects.filter(role='student').count()
     total_teachers = User.objects.filter(role='teacher').count()
     total_courses = Course.objects.all().count()
     total_enrollments = Enrollment.objects.all().count()
     
-    # Get recent students
-    recent_students = User.objects.filter(role='student').order_by('-date_joined')[:10]
+    # Get recent actions from audit log (last 5)
+    recent_actions = AuditLog.objects.select_related('admin', 'target_user').order_by('-created_at')[:5]
     
     # Get all teachers
     teachers = User.objects.filter(role='teacher').order_by('first_name')
@@ -109,7 +111,7 @@ def admin_dashboard(request):
         'total_teachers': total_teachers,
         'total_courses': total_courses,
         'total_enrollments': total_enrollments,
-        'recent_students': recent_students,
+        'recent_actions': recent_actions,
         'teachers': teachers,
     }
     return render(request, 'admin/admin_dashboard.html', context)

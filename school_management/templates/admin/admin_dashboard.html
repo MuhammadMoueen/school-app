@@ -114,31 +114,39 @@
 
     <div class="section-divider"><hr></div>
 
-    <!-- Recent Students -->
+    <!-- Recent Actions -->
     <div class="content-section">
         <h2>
-            <span><i class="fas fa-user-graduate"></i> Recent Students</span>
-            <a href="{% url 'main:coordinator_manage_students' %}" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+            <span><i class="fas fa-history"></i> Recent Actions</span>
+            <a href="{% url 'main:admin_audit_logs' %}" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
         </h2>
 
-        {% if recent_students %}
+        {% if recent_actions %}
             <div class="data-table">
                 <table>
                     <thead>
                         <tr>
-                            <th><i class="fas fa-user"></i> Student Name</th>
-                            <th><i class="fas fa-id-card"></i> Username</th>
-                            <th><i class="fas fa-envelope"></i> Email</th>
-                            <th><i class="fas fa-calendar"></i> Date Joined</th>
+                            <th><i class="fas fa-bolt"></i> Action</th>
+                            <th><i class="fas fa-info-circle"></i> Description</th>
+                            <th><i class="fas fa-user"></i> Admin</th>
+                            <th><i class="fas fa-calendar"></i> Date & Time</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for student in recent_students %}
+                        {% for log in recent_actions %}
                             <tr>
-                                <td><strong>{{ student.get_full_name }}</strong></td>
-                                <td>{{ student.username }}</td>
-                                <td>{{ student.email|default:"N/A" }}</td>
-                                <td>{{ student.date_joined|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if 'create' in log.action %}badge-success
+                                        {% elif 'delete' in log.action %}badge-danger
+                                        {% elif 'edit' in log.action %}badge-warning
+                                        {% else %}badge-info{% endif %}">
+                                        {{ log.get_action_display }}
+                                    </span>
+                                </td>
+                                <td>{{ log.description }}</td>
+                                <td><strong>{{ log.admin.get_full_name }}</strong></td>
+                                <td>{{ log.created_at|date:"M d, Y - H:i" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -146,8 +154,8 @@
             </div>
         {% else %}
             <div class="empty-state">
-                <i class="fas fa-user-graduate"></i>
-                <p>No students registered yet</p>
+                <i class="fas fa-history"></i>
+                <p>No recent actions logged yet</p>
             </div>
         {% endif %}
     </div>
