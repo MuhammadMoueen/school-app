@@ -237,6 +237,31 @@ def edit_profile(request):
     return render(request, 'shared/edit_profile.html', context)
 
 
+@login_required
+def change_password(request):
+    """Change password for authenticated users"""
+    from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import update_session_auth_hash
+    
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Keep user logged in after password change
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('main:dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    context = {
+        'form': form,
+    }
+    return render(request, 'shared/change_password.html', context)
+
+
 # ==================== Teacher Dashboard Views ====================
 
 @login_required

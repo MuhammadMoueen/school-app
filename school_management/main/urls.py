@@ -14,6 +14,7 @@ urlpatterns = [
     
     # Profile Management
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/change-password/', views.change_password, name='change_password'),
     
     # Coordinator/Admin Panel URLs (Custom - separate from Django admin)
     path('coordinator/students/create/', views.admin_create_student, name='coordinator_create_student'),
