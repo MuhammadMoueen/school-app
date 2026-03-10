@@ -56,6 +56,16 @@ def custom_login(request):
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
+            
+            # Check if username is actually an email
+            if '@' in username:
+                try:
+                    # Try to find user by email
+                    user_obj = User.objects.get(email=username)
+                    username = user_obj.username
+                except User.DoesNotExist:
+                    pass  # Will fail authentication below
+            
             user = authenticate(username=username, password=password)
             
             if user is not None:

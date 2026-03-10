@@ -7,7 +7,7 @@
 <div class="login-container">
     <div class="login-box">
         <div class="logo-center">
-            <img src="{% static 'images/logo.png' %}" alt="School Logo" class="site-logo">
+            <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="site-logo">
         </div>
         
         <div class="back-home">
@@ -27,7 +27,7 @@
             {% csrf_token %}
             
             <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">Username</label>
+                <label for="{{ form.username.id_for_label }}">Username or Email</label>
                 {{ form.username }}
                 {% if form.username.errors %}
                     <div class="error-message">{{ form.username.errors.0 }}</div>

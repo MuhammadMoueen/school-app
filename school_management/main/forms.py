@@ -175,8 +175,9 @@ class StudentSignupForm(forms.ModelForm):
 class CustomLoginForm(AuthenticationForm):
     """Custom login form with styled widgets"""
     username = forms.CharField(
+        label='Username or Email',
         widget=forms.TextInput(attrs={
-            'placeholder': 'Username',
+            'placeholder': 'Username or Email',
             'class': 'form-control'
         })
     )
