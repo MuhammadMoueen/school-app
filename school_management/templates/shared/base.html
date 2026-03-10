@@ -30,43 +30,53 @@
         /* Professional Navbar - Compact Design */
         .top-navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 10px 0;
+            padding: 8px 0;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         
-        .navbar-container {
+        .top-navbar .container {
+            max-width: 1200px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
         }
         
-        .navbar-left {
+        .school-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            padding: 0;
         }
         
-        .navbar-logo {
-            height: 35px;
+        .school-brand .navbar-logo {
+            height: 50px;
             width: auto;
             object-fit: contain;
         }
         
-        .site-title {
-            color: white;
+        .school-brand h1 {
+            color: white !important;
             font-size: 1.3rem;
             font-weight: 700;
             margin: 0;
+            margin-bottom: 2px;
             letter-spacing: 0.3px;
-            white-space: nowrap;
         }
         
-        .navbar-right {
-            display: flex;
-            align-items: center;
+        .school-brand p {
+            color: white !important;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0;
+            opacity: 0.95;
+        }
+        
+        .school-brand div {
+            line-height: 1.2;
+        }
+        
+        .navbar-collapse {
+            flex-grow: 0;
         }
         
         .navbar-nav .nav-link {
@@ -112,14 +122,14 @@
         /* Profile Icon Styles */
         .profile-section {
             position: relative;
-            margin-left: 20px;
+            margin-left: 15px;
         }
         
         .profile-icon-circle {
-            width: 45px;
-            height: 45px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.6);
+            border: 2px solid white;
             cursor: pointer;
             transition: all 0.3s;
             object-fit: cover;
@@ -128,7 +138,7 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
         }
         
         .profile-icon-circle:hover {
