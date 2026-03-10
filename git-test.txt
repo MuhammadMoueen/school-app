@@ -1,8 +1,10 @@
-# Git Configuration Test File
+# Git Configuration Test File - FIXED
 # This file verifies that commits show properly on GitHub
 
-This commit should appear on your GitHub profile after:
-1. Email is verified in GitHub settings
-2. Global git config is set correctly
+✅ Commit now uses: s23bdocs1m01131@iub.edu.pk
+✅ This should appear on your GitHub contribution graph!
 
 Test commit created on: 2026-03-10
+Updated with correct email
+
+Commits will now show on your GitHub profile!
