@@ -140,11 +140,11 @@ def admin_create_student(request):
             
             messages.success(
                 request,
-                f'Student account created successfully!<br>'
-                f'<strong>Email:</strong> {student.email}<br>'
-                f'<strong>Username:</strong> {student.username}<br>'
-                f'<strong>Password:</strong> Student@123<br>'
-                f'<em>Please share these credentials with the student. They can change password after first login.</em>'
+                f'Student account created successfully! '
+                f'Email: {student.email} | '
+                f'Username: {student.username} | '
+                f'Password: Student@123 '
+                f'(Please share these credentials with the student. They can change password after first login.)'
             )
             return redirect('main:coordinator_manage_students')
     else:
@@ -781,13 +781,13 @@ def admin_create_teacher(request):
             
             messages.success(
                 request, 
-                f'Teacher account created successfully!<br>'
-                f'<strong>Email:</strong> {teacher.email}<br>'
-                f'<strong>Username:</strong> {teacher.username}<br>'
-                f'<strong>Temporary Password:</strong> Teacher@123<br>'
-                f'<em>Please share these credentials with the teacher. They can update their profile and change password after first login.</em>'
+                f'Teacher account created successfully! '
+                f'Email: {teacher.email} | '
+                f'Username: {teacher.username} | '
+                f'Password: Teacher@123 '
+                f'(Please share these credentials with the teacher. They can update their profile and change password after first login.)'
             )
-            return redirect('main:teachers-hub')
+            return redirect('main:admin_teachers_hub')
     else:
         form = AdminCreateTeacherForm()
     

@@ -322,38 +322,41 @@ class AdminCreateStudentForm(forms.ModelForm):
         max_length=100,
         required=True,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Enter student full name',
+            'placeholder': 'Enter student full name (e.g., M Moueen)',
             'class': 'form-control'
         }),
         label='Student Full Name',
-        help_text='Enter the full name of the student'
-    )
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'placeholder': 'Assign a Gmail/Email address',
-            'class': 'form-control'
-        }),
-        label='Email Address',
-        help_text='This email will be used by the student to login. Account will be created immediately.'
+        help_text='Email will be auto-generated from name (e.g., M Moueen → mmoueen123@school.edu.pk)'
     )
     
     class Meta:
         model = User
-        fields = ['email']
-    
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        # Check if email already exists in User model
-        if User.objects.filter(email=email).exists():
-            raise ValidationError('This email is already registered. Please choose a different email.')
-        return email
+        fields = []
     
     def save(self, commit=True):
-        email = self.cleaned_data.get('email')
-        full_name = self.cleaned_data.get('full_name')
+        full_name = self.cleaned_data.get('full_name').strip()
         
-        # Generate username from email (like teachers)
+        # Parse name: first letter + last name
+        name_parts = full_name.split()
+        if len(name_parts) < 2:
+            # If only one name, use it as both first and last
+            first_letter = name_parts[0][0].lower()
+            last_name = name_parts[0].lower()
+        else:
+            first_letter = name_parts[0][0].lower()
+            last_name = name_parts[-1].lower()  # Use last part as last name
+        
+        # Generate base email: {first_letter}{last_name}123@school.edu.pk
+        base_email = f"{first_letter}{last_name}123@school.edu.pk"
+        email = base_email
+        counter = 1
+        
+        # Ensure email is unique
+        while User.objects.filter(email=email).exists():
+            email = f"{first_letter}{last_name}{123 + counter}@school.edu.pk"
+            counter += 1
+        
+        # Generate username from email
         base_username = email.split('@')[0].lower()
         username = base_username
         counter = 1
@@ -363,7 +366,7 @@ class AdminCreateStudentForm(forms.ModelForm):
             username = f"{base_username}{counter}"
             counter += 1
         
-        # Create user instance directly (no PreassignedEmail needed)
+        # Create user instance directly
         user = User()
         user.username = username
         user.email = email
@@ -475,37 +478,41 @@ class AdminCreateTeacherForm(forms.ModelForm):
         max_length=100,
         required=True,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Enter teacher full name',
+            'placeholder': 'Enter teacher full name (e.g., M Nouman)',
             'class': 'form-control'
         }),
         label='Teacher Full Name',
-        help_text='Enter the full name of the teacher'
-    )
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'placeholder': 'Assign an email address',
-            'class': 'form-control'
-        }),
-        label='Email Address',
-        help_text='This email will be used by the teacher to login. A temporary password will be generated.'
+        help_text='Email will be auto-generated from name (e.g., M Nouman → mnouman123@teacher.edu.pk)'
     )
     
     class Meta:
         model = User
-        fields = ['email']
-    
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise ValidationError('This email is already registered. Please choose a different email.')
-        return email
+        fields = []
     
     def save(self, commit=True):
-        email = self.cleaned_data.get('email')
-        full_name = self.cleaned_data.get('full_name', '')
+        full_name = self.cleaned_data.get('full_name', '').strip()
         
-        # Generate username from email (like students)
+        # Parse name: first letter + last name
+        name_parts = full_name.split()
+        if len(name_parts) < 2:
+            # If only one name, use it as both first and last
+            first_letter = name_parts[0][0].lower()
+            last_name = name_parts[0].lower()
+        else:
+            first_letter = name_parts[0][0].lower()
+            last_name = name_parts[-1].lower()  # Use last part as last name
+        
+        # Generate base email: {first_letter}{last_name}123@teacher.edu.pk
+        base_email = f"{first_letter}{last_name}123@teacher.edu.pk"
+        email = base_email
+        counter = 1
+        
+        # Ensure email is unique
+        while User.objects.filter(email=email).exists():
+            email = f"{first_letter}{last_name}{123 + counter}@teacher.edu.pk"
+            counter += 1
+        
+        # Generate username from email
         base_username = email.split('@')[0].lower()
         username = base_username
         counter = 1
@@ -516,9 +523,11 @@ class AdminCreateTeacherForm(forms.ModelForm):
             counter += 1
         
         # Create user instance
-        user = super().save(commit=False)
+        user = User()
         user.username = username
+        user.email = email
         user.role = 'teacher'
+        user.is_active = True
         
         # Set default password: Teacher@123
         user.set_password('Teacher@123')
