@@ -209,7 +209,7 @@ footer {
 }
 
 .navbar-logo {
-    height: 80px;
+    height: 100px;
     object-fit: contain;
 }
 
@@ -235,6 +235,6 @@ footer {
     }
     
     .navbar-logo {
-        height: 60px;
+        height: 70px;
     }
 }
