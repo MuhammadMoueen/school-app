@@ -428,15 +428,15 @@ td {
     border: none;
     height: 2px;
     background: linear-gradient(90deg, transparent, #667eea, transparent);
-    margin: 20px 0;
+    margin: 0;
 }
 
 /* Global Search & Actions Bar */
 .search-actions-bar {
-    padding: 30px;
+    padding: 25px 30px;
     display: flex;
     gap: 20px;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
 }
 
@@ -584,6 +584,7 @@ td {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .import-btn {
@@ -633,7 +634,7 @@ td {
 
 /* Quick Actions */
 .quick-actions {
-    padding: 30px;
+    padding: 25px 30px 30px 30px;
 }
 
 .quick-actions h2 {
@@ -763,8 +764,164 @@ td {
     text-decoration: underline;
 }
 
+.hub-header .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 8px 20px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 10px;
+    transition: all 0.3s;
+    margin-top: 15px;
+}
+
+.hub-header .back-link:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: white;
+    color: white;
+}
+
+.hub-body {
+    padding: 35px;
+}
+
 .hub-actions {
-    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.hub-action-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 40px 30px;
+    text-align: center;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.hub-action-card:hover {
+    border-color: #667eea;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+    color: #667eea;
+}
+
+.hub-action-card i {
+    font-size: 3.5rem;
+    color: #667eea;
+}
+
+.hub-action-card span {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.hub-action-card small {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    font-weight: 400;
+    margin-top: -8px;
+}
+
+.hub-action-card:hover small {
+    color: #667eea;
+}
+
+/* Activity Feed Styles */
+.activity-feed {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.feed-section {
+    margin-bottom: 25px;
+}
+
+.feed-section:last-child {
+    margin-bottom: 0;
+}
+
+.feed-section h4 {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.badge-count {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.timeline li {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s;
+}
+
+.timeline li:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateX(5px);
+}
+
+.timeline-name {
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 1.05rem;
+}
+
+.timeline-meta {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.timeline-meta i {
+    color: #95a5a6;
+}
+
+.empty-feed {
+    text-align: center;
+    padding: 30px;
+    color: #95a5a6;
+}
+
+.empty-feed i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    opacity: 0.5;
 }
 
 .hub-grid {
@@ -1116,6 +1273,10 @@ td {
         grid-template-columns: repeat(2, 1fr);
     }
     
+    .hub-actions {
+        grid-template-columns: 1fr;
+    }
+    
     .hub-grid {
         grid-template-columns: 1fr;
     }
@@ -1168,5 +1329,19 @@ td {
     .form-actions,
     .btn-container {
         flex-direction: column;
+    }
+    
+    .hub-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .hub-body {
+        padding: 20px;
+    }
+    
+    .import-btn,
+    .export-btn {
+        justify-content: center;
+        width: 100%;
     }
 }
