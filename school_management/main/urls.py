@@ -29,6 +29,7 @@ urlpatterns = [
     path('panel/users/search/', views.admin_search_users, name='admin_search_users'),
     path('panel/bulk/import/', views.admin_bulk_import_students, name='admin_bulk_import'),
     path('panel/export/', views.admin_export_data, name='admin_export_data'),
+    path('panel/courses/create/', views.admin_create_course, name='admin_create_course'),
     path('panel/courses/', views.admin_manage_courses, name='admin_manage_courses'),
     path('panel/courses/<int:course_id>/edit/', views.admin_edit_course, name='admin_edit_course'),
     path('panel/courses/<int:course_id>/delete/', views.admin_delete_course, name='admin_delete_course'),

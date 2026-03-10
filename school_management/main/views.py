@@ -1052,8 +1052,8 @@ def admin_export_data(request):
 
 
 @login_required
-def admin_manage_courses(request):
-    """Admin view to manage all courses"""
+def admin_create_course(request):
+    """Admin view to create a new course"""
     if request.user.role != 'admin':
         messages.error(request, 'Access denied. Admin only.')
         return redirect('main:home')
@@ -1075,16 +1075,32 @@ def admin_manage_courses(request):
             )
             
             messages.success(request, f'Course "{course.name}" has been created successfully.')
-            return redirect('main:admin_manage_courses')
+            return redirect('main:admin_create_course')
     else:
         form = AdminCourseForm()
+    
+    # Get recent 5 courses
+    recent_courses = Course.objects.select_related('teacher').order_by('-id')[:5]
+    
+    context = {
+        'form': form,
+        'recent_courses': recent_courses,
+    }
+    return render(request, 'admin/admin_create_course.html', context)
+
+
+@login_required
+def admin_manage_courses(request):
+    """Admin view to view and manage all courses"""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('main:home')
     
     courses = Course.objects.select_related('teacher').annotate(
         enrollment_count=Count('enrollments')
     ).order_by('name')
     
     context = {
-        'form': form,
         'courses': courses,
     }
     return render(request, 'admin/admin_manage_courses.html', context)

@@ -1,0 +1,105 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Add New Course - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="courses-wrapper">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1><i class="fas fa-plus-circle"></i> Add New Course</h1>
+        <a href="{% url 'main:admin_courses_hub' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Courses Hub
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Create Course Form -->
+        <div class="col-md-6">
+            <div class="create-form">
+                <h3><i class="fas fa-plus-circle"></i> Create New Course</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <small class="text-danger">{{ form.name.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.code.label_tag }}
+                        {{ form.code }}
+                        {% if form.code.errors %}
+                            <small class="text-danger">{{ form.code.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.teacher.label_tag }}
+                        {{ form.teacher }}
+                        {% if form.teacher.errors %}
+                            <small class="text-danger">{{ form.teacher.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <small class="text-danger">{{ form.description.errors.0 }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-check"></i> Create Course
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Recent Courses -->
+        <div class="col-md-6">
+            <div class="courses-list">
+                <h3><i class="fas fa-clock"></i> Recently Added Courses</h3>
+                
+                {% if recent_courses %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Teacher</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in recent_courses %}
+                                    <tr>
+                                        <td><strong>{{ course.code }}</strong></td>
+                                        <td>{{ course.name }}</td>
+                                        <td>{{ course.teacher.get_full_name }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'main:admin_manage_courses' %}" class="btn btn-outline-primary btn-block" style="margin-top: 15px;">
+                        <i class="fas fa-list"></i> View All Courses
+                    </a>
+                {% else %}
+                    <div class="text-center text-muted mt-4 mb-4" style="padding: 40px;">
+                        <i class="fas fa-book-open" style="font-size: 3rem; opacity: 0.3; margin-bottom: 15px; display: block;"></i>
+                        <p>No courses created yet. Create your first course using the form!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
