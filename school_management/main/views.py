@@ -787,7 +787,7 @@ def admin_create_teacher(request):
                 f'<strong>Temporary Password:</strong> Teacher@123<br>'
                 f'<em>Please share these credentials with the teacher. They can update their profile and change password after first login.</em>'
             )
-            return redirect('main:coordinator_view_teachers')
+            return redirect('main:teachers-hub')
     else:
         form = AdminCreateTeacherForm()
     
@@ -822,7 +822,7 @@ def admin_edit_user(request, user_id):
             )
             
             messages.success(request, f'{user.get_role_display()} details updated successfully.')
-            return redirect('main:coordinator_manage_students' if user.role == 'student' else 'main:admin_view_teachers')
+            return redirect('main:coordinator_manage_students' if user.role == 'student' else 'main:teachers-hub')
     else:
         form = AdminEditUserForm(instance=user)
     
