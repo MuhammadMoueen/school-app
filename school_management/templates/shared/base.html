@@ -27,36 +27,46 @@
             min-height: 100vh;
         }
         
-        /* Professional Navbar */
+        /* Professional Navbar - Compact Design */
         .top-navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 10px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         
-        .school-brand {
-            background: transparent;
-            padding: 8px 0;
-            border-right: none;
+        .navbar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .navbar-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         
-        .school-brand h1 {
+        .navbar-logo {
+            height: 35px;
+            width: auto;
+            object-fit: contain;
+        }
+        
+        .site-title {
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
             margin: 0;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
         }
         
-        .school-brand p {
-            color: rgba(255,255,255,0.95);
-            font-size: 0.85rem;
-            margin: 0;
-            font-weight: 400;
-            letter-spacing: 0.3px;
+        .navbar-right {
+            display: flex;
+            align-items: center;
         }
         
         .navbar-nav .nav-link {
