@@ -1079,12 +1079,8 @@ def admin_create_course(request):
     else:
         form = AdminCourseForm()
     
-    # Get recent 5 courses
-    recent_courses = Course.objects.select_related('teacher').order_by('-id')[:5]
-    
     context = {
         'form': form,
-        'recent_courses': recent_courses,
     }
     return render(request, 'admin/admin_create_course.html', context)
 
