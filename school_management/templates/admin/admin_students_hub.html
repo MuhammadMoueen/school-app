@@ -31,6 +31,46 @@
             </a>
         </div>
 
+        <!-- Recent 5 Actions -->
+        <h3 class="section-title"><i class="fas fa-bolt"></i> Recent 5 Actions</h3>
+        {% if recent_activity %}
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-bolt"></i> Action</th>
+                            <th><i class="fas fa-info-circle"></i> Description</th>
+                            <th><i class="fas fa-user"></i> Admin</th>
+                            <th><i class="fas fa-calendar"></i> Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in recent_activity %}
+                            <tr>
+                                <td>
+                                    <span class="badge 
+                                        {% if 'create' in log.action %}badge-success
+                                        {% elif 'delete' in log.action %}badge-danger
+                                        {% elif 'edit' in log.action %}badge-warning
+                                        {% else %}badge-info{% endif %}">
+                                        {{ log.get_action_display }}
+                                    </span>
+                                </td>
+                                <td>{{ log.description }}</td>
+                                <td><strong>{{ log.admin.get_full_name }}</strong></td>
+                                <td>{{ log.created_at|date:"M d, Y - H:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-feed">
+                <i class="fas fa-history"></i>
+                <p>No recent actions logged yet</p>
+            </div>
+        {% endif %}
+
         <!-- Recent Activity Feed -->
         <h3 class="section-title"><i class="fas fa-history"></i> Recent Activity</h3>
         <div class="activity-feed">

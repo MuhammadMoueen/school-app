@@ -1294,10 +1294,14 @@ def admin_students_hub(request):
 
     recently_added = User.objects.filter(role='student').order_by('-date_joined')[:10]
     recently_deleted = AuditLog.objects.filter(action='delete_student').order_by('-created_at')[:10]
+    recent_activity = AuditLog.objects.filter(
+        action__in=['create_student', 'edit_student', 'delete_student']
+    ).order_by('-created_at')[:5]
 
     context = {
         'recently_added': recently_added,
         'recently_deleted': recently_deleted,
+        'recent_activity': recent_activity,
     }
     return render(request, 'admin/admin_students_hub.html', context)
 
@@ -1313,10 +1317,14 @@ def admin_teachers_hub(request):
 
     recently_added = User.objects.filter(role='teacher').order_by('-date_joined')[:10]
     recently_deleted = AuditLog.objects.filter(action='delete_teacher').order_by('-created_at')[:10]
+    recent_activity = AuditLog.objects.filter(
+        action__in=['create_teacher', 'edit_teacher', 'delete_teacher']
+    ).order_by('-created_at')[:5]
 
     context = {
         'recently_added': recently_added,
         'recently_deleted': recently_deleted,
+        'recent_activity': recent_activity,
     }
     return render(request, 'admin/admin_teachers_hub.html', context)
 
