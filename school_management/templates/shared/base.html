@@ -33,12 +33,12 @@
         }
         
         .school-brand {
-            background: rgba(255,255,255,0.1);
-            padding: 4px 15px;
-            border-right: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            padding: 8px 0;
+            border-right: none;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 10px;
         }
         
         .school-brand h1 {
@@ -479,18 +479,6 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'main:login' %}">
                                 <i class="fas fa-sign-in-alt"></i> Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link btn-logout" href="{% url 'main:login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if user.is_staff %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin:index' %}">
-                                <i class="fas fa-cog"></i> Admin
                             </a>
                         </li>
                     {% endif %}
