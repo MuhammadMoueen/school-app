@@ -93,13 +93,10 @@
                                 </td>
                                 <td>{{ student.date_joined|date:"M d, Y" }}</td>
                                 <td>
-                                    <a href="{% url 'main:admin_edit_user' student.id %}" 
-                                       class="btn-delete" 
-                                       style="background: #3498db; margin-right: 5px;">
+                                    <a href="{% url 'main:admin_edit_user' student.id %}" class="btn-edit" style="margin-right: 8px;">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
-                                    <a href="{% url 'main:coordinator_delete_student' student.id %}" 
-                                       class="btn-delete"
+                                    <a href="{% url 'main:coordinator_delete_student' student.id %}" class="btn-delete"
                                        onclick="return confirm('Are you sure you want to delete {{ student.get_full_name }}? This action cannot be undone.')">
                                         <i class="fas fa-trash-alt"></i> Delete
                                     </a>
