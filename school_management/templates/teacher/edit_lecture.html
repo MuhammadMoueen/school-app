@@ -5,88 +5,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-<style>
-    .upload-form {
-        background: white;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    
-    .form-header {
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f0f0f0;
-    }
-    
-    .form-header h2 {
-        color: #667eea;
-        margin-bottom: 0.5rem;
-    }
-    
-    .form-icon {
-        font-size: 3rem;
-        color: #667eea;
-        margin-bottom: 1rem;
-    }
-    
-    .current-file {
-        padding: 1rem;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-        margin-bottom: 1rem;
-    }
-    
-    .current-file h6 {
-        margin-bottom: 0.5rem;
-        color: #667eea;
-    }
-    
-    .file-preview {
-        padding: 1rem;
-        background: #e8f5e9;
-        border-radius: 8px;
-        margin-top: 1rem;
-        display: none;
-        border-left: 4px solid #4caf50;
-    }
-    
-    .file-preview.show {
-        display: block;
-    }
-    
-    .file-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .file-info i {
-        font-size: 2rem;
-        color: #667eea;
-    }
-    
-    .btn-submit {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        padding: 0.75rem 2rem;
-        font-size: 1.1rem;
-    }
-    
-    .btn-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .help-text {
-        font-size: 0.85rem;
-        color: #6c757d;
-        margin-top: 0.25rem;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -308,48 +226,8 @@
         </main>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    // Sidebar Toggle
-    const sidebar = document.getElementById('teacherSidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    
-    sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-    });
-    
-    // File Preview
-    const fileInput = document.getElementById('{{ form.file.id_for_label }}');
-    const filePreview = document.getElementById('filePreview');
-    const fileName = document.getElementById('fileName');
-    const fileSize = document.getElementById('fileSize');
-    const fileIcon = document.getElementById('fileIcon');
-    
-    fileInput.addEventListener('change', function(e) {
-        if (this.files && this.files[0]) {
-            const file = this.files[0];
-            const size = (file.size / 1024 / 1024).toFixed(2); // Size in MB
-            
-            fileName.textContent = file.name;
-            fileSize.textContent = `Size: ${size} MB`;
-            filePreview.classList.add('show');
-            
-            // Update icon based on file type
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'].includes(ext)) {
-                fileIcon.className = 'fas fa-file-video';
-            } else if (['pdf'].includes(ext)) {
-                fileIcon.className = 'fas fa-file-pdf';
-            } else if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) {
-                fileIcon.className = 'fas fa-file-word';
-            } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext)) {
-                fileIcon.className = 'fas fa-file-image';
-            } else if (['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(ext)) {
-                fileIcon.className = 'fas fa-file-audio';
-            } else {
-                fileIcon.className = 'fas fa-file';
-            }
-        }
-    });
-</script>
+{% block extra_js %}
+<script src="{% static 'js/teacher.js' %}"></script>
 {% endblock %}

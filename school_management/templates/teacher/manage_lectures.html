@@ -5,62 +5,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-<style>
-    .lecture-card {
-        border-left: 4px solid #667eea;
-        transition: all 0.3s ease;
-    }
-    
-    .lecture-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .file-icon {
-        font-size: 2.5rem;
-        margin-right: 1rem;
-    }
-    
-    .file-video { color: #e74c3c; }
-    .file-pdf { color: #e74c3c; }
-    .file-doc { color: #3498db; }
-    .file-image { color: #27ae60; }
-    .file-audio { color: #9b59b6; }
-    .file-other { color: #95a5a6; }
-    
-    .lecture-meta {
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
-    
-    .badge-published {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .badge-draft {
-        background: #6c757d;
-    }
-    
-    .filter-section {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
-    }
-    
-    .no-lectures {
-        text-align: center;
-        padding: 3rem;
-        color: #6c757d;
-    }
-    
-    .no-lectures i {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        color: #dee2e6;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -264,23 +208,8 @@
         </main>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    // Sidebar Toggle
-    const sidebar = document.getElementById('teacherSidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    
-    sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-    });
-    
-    // Close sidebar on mobile when clicking outside
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 992) {
-            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                sidebar.classList.remove('show');
-            }
-        }
-    });
-</script>
+{% block extra_js %}
+<script src="{% static 'js/teacher.js' %}"></script>
 {% endblock %}
