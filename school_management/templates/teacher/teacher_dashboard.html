@@ -21,28 +21,10 @@
 <div class="teacher-layout">
     <!-- Sidebar Navigation -->
     <aside class="teacher-sidebar" id="teacherSidebar">
-        <!-- School Branding Header -->
-        <div class="sidebar-school-header">
-            <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="sidebar-school-logo">
-            <div class="sidebar-school-info">
-                <h2>The City School</h2>
-                <p>of Bahawalpur</p>
-            </div>
-        </div>
-        
-        <!-- Teacher Info -->
-        <div class="sidebar-teacher-info">
-            <div class="teacher-avatar">
-                {% if teacher.profile_picture %}
-                    <img src="{{ teacher.profile_picture.url }}" alt="{{ teacher.get_full_name }}">
-                {% else %}
-                    <i class="fas fa-user-circle"></i>
-                {% endif %}
-            </div>
-            <div class="teacher-details">
-                <h4>Teacher Panel</h4>
-                <p>{{ teacher.get_full_name }}</p>
-            </div>
+        <!-- Simple Header -->
+        <div class="sidebar-header">
+            <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="sidebar-logo">
+            <h3 class="sidebar-title">Teacher Panel</h3>
         </div>
         
         <!-- Navigation Menu -->
@@ -91,11 +73,15 @@
     
     <!-- Main Content Area -->
     <main class="teacher-main">
-        <!-- Minimal Top Navbar -->
+        <!-- Top Navbar -->
         <div class="teacher-topbar">
             <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
                 <i class="fas fa-bars"></i>
             </button>
+            <div class="topbar-left">
+                <h1>The City School</h1>
+                <p>of Bahawalpur</p>
+            </div>
             <div class="topbar-spacer"></div>
             <div class="topbar-actions">
                 <!-- Notification Icon -->

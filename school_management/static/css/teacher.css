@@ -22,97 +22,29 @@
     top: 0;
 }
 
-/* School Branding Header */
-.sidebar-school-header {
-    padding: 20px;
+/* Simple Sidebar Header */
+.sidebar-header {
+    padding: 25px 20px;
     text-align: center;
     border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
-.sidebar-school-logo {
-    width: 60px;
-    height: 60px;
+.sidebar-logo {
+    width: 50px;
+    height: 50px;
     margin: 0 auto 15px;
     display: block;
-    border-radius: 12px;
+    border-radius: 10px;
     object-fit: cover;
 }
 
-.sidebar-school-info h2 {
+.sidebar-title {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    color: white;
-}
-
-.sidebar-school-info p {
-    margin: 3px 0 0 0;
-    font-size: 0.9rem;
-    opacity: 0.95;
-    color: white;
-}
-
-/* Teacher Info Section */
-.sidebar-teacher-info {
-    padding: 20px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-.teacher-avatar {
-    width: 70px;
-    height: 70px;
-    margin: 0 auto 12px;
-    border-radius: 50%;
-    border: 3px solid rgba(255,255,255,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: rgba(255,255,255,0.1);
-}
-
-.teacher-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.teacher-avatar i {
-    font-size: 2.5rem;
-    color: white;
-}
-
-.teacher-details h4 {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 600;
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.teacher-details p {
-    margin: 5px 0 0 0;
-    font-size: 0.9rem;
-    opacity: 0.9;
-    color: white;
-}
-
-.sidebar-toggle {
-    background: rgba(255,255,255,0.2);
-    border: none;
-    color: white;
-    width: 35px;
-    height: 35px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: none;
-}
-
-.sidebar-toggle:hover {
-    background: rgba(255,255,255,0.3);
 }
 
 /* Navigation Menu */
@@ -182,14 +114,11 @@
 /* Top Navbar */
 .teacher-topbar {
     background: white;
-    padding: 15px 30px;
+    padding: 20px 30px;
     display: flex;
     align-items: center;
     gap: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    position: sticky;
-    top: 0;
-    z-index: 999;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -211,6 +140,20 @@
 .sidebar-toggle-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.topbar-left h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #2c3e50;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.topbar-left p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #7f8c8d;
 }
 
 .topbar-spacer {
