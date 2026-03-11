@@ -6,10 +6,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('teacherSidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     
-    // Desktop sidebar toggle
+    // Desktop sidebar toggle (in topbar)
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
+    
+    // Desktop sidebar toggle (in sidebar)
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('collapsed');

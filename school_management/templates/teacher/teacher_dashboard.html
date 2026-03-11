@@ -14,7 +14,7 @@
 <!-- Teacher Layout -->
 <div class="teacher-layout">
     <!-- Sidebar Navigation -->
-    <aside class="teacher-sidebar" id="teacherSidebar">
+    <aside class="teacher-sidebar collapsed" id="teacherSidebar">
         <div class="sidebar-header">
             <img src="{% static 'images/favicon.png' %}" alt="Logo" class="sidebar-logo">
             <div class="sidebar-title">
@@ -88,23 +88,12 @@
     <main class="teacher-main">
         <!-- Top Navbar -->
         <div class="teacher-topbar">
-            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="topbar-left">
                 <h1>Dashboard</h1>
                 <p>Welcome back, {{ teacher.first_name }}! Here's your overview.</p>
-            </div>
-            <div class="topbar-right">
-                <div class="topbar-profile">
-                    {% if teacher.profile_picture %}
-                        <img src="{{ teacher.profile_picture.url }}" alt="{{ teacher.get_full_name }}" class="topbar-avatar">
-                    {% else %}
-                        <div class="topbar-avatar-placeholder">
-                            <i class="fas fa-user"></i>
-                        </div>
-                    {% endif %}
-                </div>
             </div>
         </div>
         
