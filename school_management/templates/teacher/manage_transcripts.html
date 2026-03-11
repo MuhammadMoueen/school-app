@@ -1,81 +1,92 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Manage Transcripts - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+{% block page_title %}Manage Transcripts{% endblock %}
+{% block topbar_title %}The City School – Manage Transcripts{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
-
-{% block content %}
-<div class="transcripts-wrapper">
-    <!-- Header -->
-    <div class="page-header">
-        <h1><i class="fas fa-clipboard-list"></i> Manage Student Transcripts</h1>
-        <a href="{% url 'main:dashboard' %}" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-clipboard-list"></i> Manage Student Transcripts
+        </h2>
+        <p class="page-subtitle">Add and manage student grades</p>
     </div>
-    
-    <!-- Transcripts List -->
-    <div class="transcripts-section">
-        <h2><i class="fas fa-graduation-cap"></i> Student Enrollments & Transcripts</h2>
-        
+</div>
+
+<!-- Transcripts List Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-graduation-cap"></i> Student Enrollments & Transcripts
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ enrollments|length }} Total</span>
+        </div>
+    </div>
+    <div class="card-body">
         {% if enrollments %}
-            <div class="transcripts-table">
-                <table>
+            <div class="table-responsive">
+                <table class="data-table">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-user"></i> Student</th>
-                            <th><i class="fas fa-book"></i> Subject</th>
-                            <th><i class="fas fa-check-circle"></i> Status</th>
-                            <th><i class="fas fa-trophy"></i> Grade & Marks</th>
-                            <th><i class="fas fa-cog"></i> Actions</th>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Subject Code</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Grade & Marks</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for enrollment in enrollments %}
                             <tr>
-                                <td class="student-name">
+                                <td class="font-weight-bold">
                                     <i class="fas fa-user-circle"></i> {{ enrollment.student.get_full_name }}
                                 </td>
-                                <td class="subject-name">{{ enrollment.course.name }}</td>
-                                <td>
+                                <td>{{ enrollment.course.name }}</td>
+                                <td><span class="badge badge-primary">{{ enrollment.course.code }}</span></td>
+                                <td class="text-center">
                                     {% if enrollment.transcript %}
-                                        <span class="status-badge success">
+                                        <span class="badge badge-success">
                                             <i class="fas fa-check-circle"></i> Graded
                                         </span>
                                     {% else %}
-                                        <span class="status-badge pending">
+                                        <span class="badge badge-warning">
                                             <i class="fas fa-clock"></i> Pending
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     {% if enrollment.transcript %}
-                                        <div class="grade-display">{{ enrollment.transcript.grade }}</div>
-                                        <div class="marks-info">
+                                        <div class="font-weight-bold">{{ enrollment.transcript.grade }}</div>
+                                        <small class="text-muted">
                                             {{ enrollment.transcript.marks_obtained }}/{{ enrollment.transcript.total_marks }} 
                                             ({{ enrollment.transcript.percentage|floatformat:1 }}%)
-                                        </div>
+                                        </small>
                                     {% else %}
-                                        <span class="empty-value">-</span>
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     <div class="action-buttons">
                                         {% if enrollment.transcript %}
-                                            <a href="{% url 'main:edit_transcript' enrollment.transcript.id %}" class="btn-action btn-edit">
-                                                <i class="fas fa-edit"></i> Edit
+                                            <a href="{% url 'main:edit_transcript' enrollment.transcript.id %}" 
+                                               class="btn btn-sm btn-edit" 
+                                               title="Edit Transcript">
+                                                <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="{% url 'main:delete_transcript' enrollment.transcript.id %}" 
-                                               class="btn-action btn-delete" 
-                                               onclick="return confirm('Are you sure you want to delete this transcript? This action cannot be undone.')">
-                                                <i class="fas fa-trash-alt"></i> Delete
+                                               class="btn btn-sm btn-delete" 
+                                               onclick="return confirm('Are you sure you want to delete this transcript? This action cannot be undone.')"
+                                               title="Delete Transcript">
+                                                <i class="fas fa-trash-alt"></i>
                                             </a>
                                         {% else %}
-                                            <a href="{% url 'main:create_transcript' enrollment.id %}" class="btn-action btn-create">
-                                                <i class="fas fa-plus-circle"></i> Add Marks
+                                            <a href="{% url 'main:create_transcript' enrollment.id %}" 
+                                               class="btn btn-sm btn-success" 
+                                               title="Add Marks">
+                                                <i class="fas fa-plus-circle"></i>
                                             </a>
                                         {% endif %}
                                     </div>
@@ -89,7 +100,7 @@
             <div class="empty-state">
                 <i class="fas fa-clipboard"></i>
                 <p>No enrollments to grade</p>
-                <p class="empty-subtitle">Students need to be enrolled in subjects before you can add marks</p>
+                <small>Students need to be enrolled in subjects before you can add marks</small>
             </div>
         {% endif %}
     </div>
