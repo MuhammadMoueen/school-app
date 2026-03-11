@@ -1,59 +1,113 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Marks Reports{% endblock %}
+{% block page_title %}Marks Reports{% endblock %}
+{% block topbar_title %}The City School – Marks Reports{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
-
-{% block content %}
-<div class="reports-header">
-    <h2>Marks Reports</h2>
-    <div class="filter-tabs">
-        <a href="?status=all" class="filter-tab {% if not status_filter or status_filter == 'all' %}active{% endif %}">All Reports</a>
-        <a href="?status=pending" class="filter-tab {% if status_filter == 'pending' %}active{% endif %}">Pending</a>
-        <a href="?status=replied" class="filter-tab {% if status_filter == 'replied' %}active{% endif %}">Replied</a>
-        <a href="?status=resolved" class="filter-tab {% if status_filter == 'resolved' %}active{% endif %}">Resolved</a>
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-comment-dots"></i> Marks Reports
+        </h2>
+        <p class="page-subtitle">View and reply to student marks reports</p>
     </div>
 </div>
 
-{% if reports %}
-<div class="reports-grid">
-    {% for report in reports %}
-    <div class="report-card {{ report.status }}">
-        <div class="report-header">
-            <div class="student-info">
-                <div class="student-avatar">
-                    {{ report.student.first_name.0 }}{{ report.student.last_name.0 }}
-                </div>
-                <div class="student-details">
-                    <h4>{{ report.student.get_full_name }}</h4>
-                    <p>{{ report.transcript.enrollment.course.name }}</p>
-                </div>
-            </div>
-            <span class="status-badge {{ report.status }}">{{ report.get_status_display }}</span>
-        </div>
-        
-        <div class="report-content">
-            <p>{{ report.message }}</p>
-        </div>
-        
-        <div class="report-meta">
-            <div class="transcript-info">
-                <span>📊 Marks: {{ report.transcript.marks_obtained }}/{{ report.transcript.total_marks }}</span>
-                <span>🎯 Grade: {{ report.transcript.grade }}</span>
-                <span>📅 {{ report.created_at|date:"M d, Y" }}</span>
-            </div>
-            <a href="{% url 'main:report_detail' report.id %}" class="view-btn">View & Reply</a>
+<!-- Filter Tabs Card -->
+<div class="content-card">
+    <div class="card-body" style="padding: 20px;">
+        <div class="filter-tabs-modern">
+            <a href="?status=all" class="filter-tab-btn {% if not status_filter or status_filter == 'all' %}active{% endif %}">
+                <i class="fas fa-list"></i> All Reports
+            </a>
+            <a href="?status=pending" class="filter-tab-btn {% if status_filter == 'pending' %}active{% endif %}">
+                <i class="fas fa-clock"></i> Pending
+            </a>
+            <a href="?status=replied" class="filter-tab-btn {% if status_filter == 'replied' %}active{% endif %}">
+                <i class="fas fa-reply"></i> Replied
+            </a>
+            <a href="?status=resolved" class="filter-tab-btn {% if status_filter == 'resolved' %}active{% endif %}">
+                <i class="fas fa-check-circle"></i> Resolved
+            </a>
         </div>
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="empty-state">
-    <h3>No Reports Found</h3>
-    <p>{% if status_filter and status_filter != 'all' %}No {{ status_filter }} reports at the moment.{% else %}No marks reports have been submitted yet.{% endif %}</p>
+
+<!-- Reports List Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-inbox"></i> Student Reports
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ reports|length }} Reports</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if reports %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Grade</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                            <tr>
+                                <td class="font-weight-bold">
+                                    <i class="fas fa-user-circle"></i> {{ report.student.get_full_name }}
+                                </td>
+                                <td>{{ report.transcript.enrollment.course.name }}</td>
+                                <td>
+                                    <span class="badge badge-primary">{{ report.transcript.grade }}</span>
+                                    <small class="text-muted d-block">
+                                        {{ report.transcript.marks_obtained }}/{{ report.transcript.total_marks }}
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    {% if report.status == 'pending' %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
+                                    {% elif report.status == 'replied' %}
+                                        <span class="badge badge-info">
+                                            <i class="fas fa-reply"></i> Replied
+                                        </span>
+                                    {% elif report.status == 'resolved' %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> Resolved
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center text-muted">{{ report.created_at|date:"M d, Y" }}</td>
+                                <td class="text-center">
+                                    <div class="action-buttons">
+                                        <a href="{% url 'main:report_detail' report.id %}" 
+                                           class="btn btn-sm btn-primary" 
+                                           title="View & Reply">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No Reports Found</p>
+                <small>{% if status_filter and status_filter != 'all' %}No {{ status_filter }} reports at the moment.{% else %}No marks reports have been submitted yet.{% endif %}</small>
+            </div>
+        {% endif %}
+    </div>
 </div>
-{% endif %}
 {% endblock %}
