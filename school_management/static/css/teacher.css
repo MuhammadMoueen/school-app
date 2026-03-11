@@ -954,6 +954,58 @@ main .container .alert {
     color: white;
 }
 
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+    color: white;
+}
+
+/* Analytics Stat Boxes */
+.stat-box-analytics {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.stat-box-analytics:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .dashboard-cards {

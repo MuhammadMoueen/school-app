@@ -1,92 +1,106 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Manage Attendance{% endblock %}
+{% block page_title %}Manage Attendance{% endblock %}
+{% block topbar_title %}The City School – Manage Attendance{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-calendar-check"></i> Attendance Management
+        </h2>
+        <p class="page-subtitle">Track and manage student attendance</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Attendance Management</h1></div>
-        </header>
-        
-        <main class="page-content">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row align-items-end">
-                        <div class="col-md-4">
-                            <form method="get">
-                                <label class="form-label">Filter by Course</label>
-                                <select name="course" class="form-select" onchange="this.form.submit()">
-                                    <option value="">All Courses</option>
-                                    {% for course in courses %}
-                                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ course.code }} - {{ course.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </form>
-                        </div>
-                        <div class="col-md-4">
-                            <form method="get">
-                                <input type="hidden" name="course" value="{{ selected_course }}">
-                                <label class="form-label">Filter by Date</label>
-                                <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
-                            </form>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <a href="{% url 'main:mark_attendance' %}" class="btn btn-gradient"><i class="fas fa-plus"></i> Mark Attendance</a>
-                        </div>
-                    </div>
-                </div>
+<!-- Filter Card -->
+<div class="content-card">
+    <div class="card-body" style="padding: 20px;">
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <form method="get">
+                    <label class="form-label">
+                        <i class="fas fa-book"></i> Filter by Course
+                    </label>
+                    <select name="course" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Courses</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+                            {{ course.code }} - {{ course.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
             </div>
-            
-            {% if attendances %}
-            <div class="card">
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Course</th>
-                                <th>Student</th>
-                                <th>Status</th>
-                                <th>Remarks</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for attendance in attendances %}
-                            <tr>
-                                <td>{{ attendance.date }}</td>
-                                <td>{{ attendance.course.code }}</td>
-                                <td>{{ attendance.student.get_full_name }}</td>
-                                <td>
-                                    <span class="badge badge-{% if attendance.status == 'present' %}success{% elif attendance.status == 'late' %}warning{% else %}danger{% endif %}">
-                                        {{ attendance.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>{{ attendance.remarks|default:"-" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="col-md-4">
+                <form method="get">
+                    <input type="hidden" name="course" value="{{ selected_course }}">
+                    <label class="form-label">
+                        <i class="fas fa-calendar"></i> Filter by Date
+                    </label>
+                    <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+                </form>
             </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-calendar-check fa-4x text-muted mb-3"></i>
+            <div class="col-md-4 text-end">
+                <label class="form-label d-block">&nbsp;</label>
+                <a href="{% url 'main:mark_attendance' %}" class="btn-action">
+                    <i class="fas fa-plus"></i> Mark Attendance
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance List Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-list"></i> Attendance Records
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ attendances|length }} Records</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if attendances %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Course</th>
+                            <th>Student</th>
+                            <th class="text-center">Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                        <tr>
+                            <td class="text-muted">{{ attendance.date|date:"M d, Y" }}</td>
+                            <td><span class="badge badge-primary">{{ attendance.course.code }}</span></td>
+                            <td class="font-weight-bold">
+                                <i class="fas fa-user-circle"></i> {{ attendance.student.get_full_name }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-{% if attendance.status == 'present' %}success{% elif attendance.status == 'late' %}warning{% else %}danger{% endif %}">
+                                    {{ attendance.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ attendance.remarks|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-calendar-check"></i>
                 <p>No attendance records found</p>
-                <a href="{% url 'main:mark_attendance' %}" class="btn btn-primary">Mark Attendance</a>
+                <small>Mark attendance to start tracking student presence</small>
             </div>
-            {% endif %}
-        </main>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -1,61 +1,106 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Manage Quizzes{% endblock %}
+{% block page_title %}Manage Quizzes{% endblock %}
+{% block topbar_title %}The City School – Manage Quizzes{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-tasks"></i> Quizzes Management
+        </h2>
+        <p class="page-subtitle">Create and manage course quizzes</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Quizzes Management</h1></div>
+<!-- Create Quiz Button -->
+<div class="content-card" style="margin-bottom: 25px;">
+    <div class="card-body" style="padding: 20px; text-align: right;">
+        <a href="{% url 'main:create_quiz' %}" class="btn-action">
+            <i class="fas fa-plus"></i> Create New Quiz
+        </a>
+    </div>
+</div>
 
-        </header>
-        
-        <main class="page-content">
-            <div class="mb-4 text-end">
-                <a href="{% url 'main:create_quiz' %}" class="btn btn-gradient"><i class="fas fa-plus"></i> Create New Quiz</a>
-            </div>
-            
-            {% if quizzes %}
-                {% for quiz in quizzes %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h5>{{ quiz.title }}</h5>
-                                <p class="text-muted mb-2">{{ quiz.course.code }} - {{ quiz.course.name }}</p>
-                                <span class="badge bg-info">{{ quiz.question_count }} Questions</span>
-                                <span class="badge bg-secondary">{{ quiz.duration_minutes }} minutes</span>
-                                <span class="badge bg-{% if quiz.is_published %}success{% else %}warning{% endif %}">
+<!-- Quizzes List Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-list"></i> Your Quizzes
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ quizzes|length }} Total</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if quizzes %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Quiz Title</th>
+                            <th>Course</th>
+                            <th class="text-center">Questions</th>
+                            <th class="text-center">Duration</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quiz in quizzes %}
+                        <tr>
+                            <td class="font-weight-bold">{{ quiz.title }}</td>
+                            <td>
+                                <span class="badge badge-primary">{{ quiz.course.code }}</span>
+                                <small class="text-muted d-block">{{ quiz.course.name }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-info">{{ quiz.question_count }}</span>
+                            </td>
+                            <td class="text-center text-muted">{{ quiz.duration_minutes }} min</td>
+                            <td class="text-center">
+                                <span class="badge badge-{% if quiz.is_published %}success{% else %}warning{% endif %}">
                                     {% if quiz.is_published %}Published{% else %}Draft{% endif %}
                                 </span>
-                            </div>
-                            <div class="btn-group">
-                                <a href="{% url 'main:add_questions' quiz.id %}" class="btn btn-sm btn-outline-primary">Questions</a>
-                                <a href="{% url 'main:quiz_results' quiz.id %}" class="btn btn-sm btn-outline-info">Results</a>
-                                <a href="{% url 'main:edit_quiz' quiz.id %}" class="btn btn-sm btn-outline-success">Edit</a>
-                                <a href="{% url 'main:delete_quiz' quiz.id %}" class="btn btn-sm btn-outline-danger" 
-                                   onclick="return confirm('Delete this quiz?');">Delete</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-tasks fa-4x text-muted mb-3"></i>
-                    <p>No quizzes created yet</p>
-                    <a href="{% url 'main:create_quiz' %}" class="btn btn-primary">Create First Quiz</a>
-                </div>
-            {% endif %}
-        </main>
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons">
+                                    <a href="{% url 'main:add_questions' quiz.id %}" 
+                                       class="btn btn-sm btn-primary" 
+                                       title="Manage Questions">
+                                        <i class="fas fa-question-circle"></i>
+                                    </a>
+                                    <a href="{% url 'main:quiz_results' quiz.id %}" 
+                                       class="btn btn-sm btn-info" 
+                                       title="View Results">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                    <a href="{% url 'main:edit_quiz' quiz.id %}" 
+                                       class="btn btn-sm btn-edit" 
+                                       title="Edit Quiz">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'main:delete_quiz' quiz.id %}" 
+                                       class="btn btn-sm btn-delete" 
+                                       onclick="return confirm('Are you sure you want to delete this quiz?');"
+                                       title="Delete Quiz">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-tasks"></i>
+                <p>No quizzes created yet</p>
+                <small>Create your first quiz to assess student understanding</small>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
