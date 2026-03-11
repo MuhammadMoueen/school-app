@@ -1,106 +1,102 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Manage Enrollments - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+{% block page_title %}Manage Enrollments{% endblock %}
+{% block topbar_title %}The City School – Manage Enrollments{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
-
-{% block content %}
-<div class="enrollment-wrapper">
-    <!-- Header -->
-    <div class="page-header">
-        <h1><i class="fas fa-user-check"></i> Manage Student Enrollments</h1>
-        <a href="{% url 'main:dashboard' %}" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-user-check"></i> Manage Student Enrollments
+        </h2>
+        <p class="page-subtitle">Enroll students in your courses</p>
     </div>
-    
-    <!-- Enrollment Form -->
-    <div class="enrollment-form-section">
-        <h2><i class="fas fa-plus-circle"></i> Enroll Student in Subject</h2>
-        
-        <form method="post" class="enrollment-form">
+</div>
+
+<!-- Enroll Student Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-plus-circle"></i> Enroll Student in Subject
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="post" class="form-modern">
             {% csrf_token %}
-            
-            <div class="form-grid">
+            <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ form.student.id_for_label }}">
+                    <label for="{{ form.student.id_for_label }}" class="form-label">
                         <i class="fas fa-user-graduate"></i> Select Student
                     </label>
                     {{ form.student }}
                     {% if form.student.errors %}
-                        <span class="error-text">{{ form.student.errors.0 }}</span>
+                        <div class="form-error">{{ form.student.errors.0 }}</div>
                     {% endif %}
                 </div>
-                
                 <div class="form-group">
-                    <label for="{{ form.course.id_for_label }}">
+                    <label for="{{ form.course.id_for_label }}" class="form-label">
                         <i class="fas fa-book"></i> Select Subject
                     </label>
                     {{ form.course }}
                     {% if form.course.errors %}
-                        <span class="error-text">{{ form.course.errors.0 }}</span>
+                        <div class="form-error">{{ form.course.errors.0 }}</div>
                     {% endif %}
                 </div>
             </div>
-            
-            <button type="submit" class="btn-submit">
-                <i class="fas fa-check-circle"></i> Enroll Student
-            </button>
+            <div class="form-actions">
+                <button type="submit" class="btn-action">
+                    <i class="fas fa-check-circle"></i> Enroll Student
+                </button>
+                <a href="{% url 'main:dashboard' %}" class="btn-action btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
         </form>
     </div>
-    
-    <!-- Current Enrollments -->
-    <div class="enrollments-list-section">
-        <h2><i class="fas fa-list-alt"></i> Current Enrollments</h2>
-        
+</div>
+
+<!-- Enrollments List Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-list-alt"></i> Current Enrollments
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ enrollments|length }} Total</span>
+        </div>
+    </div>
+    <div class="card-body">
         {% if enrollments %}
-            <!-- Stats -->
-            <div class="enrollment-stats">
-                <div class="stat-box">
-                    <i class="fas fa-users"></i>
-                    <div class="stat-info">
-                        <h3>{{ enrollments|length }}</h3>
-                        <p>Total Enrollments</p>
-                    </div>
-                </div>
-                
-                <div class="stat-box">
-                    <i class="fas fa-user-graduate"></i>
-                    <div class="stat-info">
-                        <h3>{{ enrollments|length|default:0 }}</h3>
-                        <p>Active Students</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Enrollments Table -->
-            <div class="enrollments-table">
-                <table>
+            <div class="table-responsive">
+                <table class="data-table">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-user"></i> Student</th>
-                            <th><i class="fas fa-book"></i> Subject</th>
-                            <th><i class="fas fa-calendar"></i> Enrolled Date</th>
-                            <th><i class="fas fa-cog"></i> Actions</th>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Subject Code</th>
+                            <th class="text-center">Enrolled Date</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for enrollment in enrollments %}
                             <tr>
-                                <td class="student-name">
+                                <td class="font-weight-bold">
                                     <i class="fas fa-user-circle"></i> {{ enrollment.student.get_full_name }}
                                 </td>
-                                <td class="subject-name">{{ enrollment.course.name }}</td>
-                                <td class="date-info">{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
-                                <td>
-                                    <a href="{% url 'main:delete_enrollment' enrollment.id %}" 
-                                       class="btn-delete" 
-                                       onclick="return confirm('Are you sure you want to remove this enrollment? This action cannot be undone.')">
-                                        <i class="fas fa-trash-alt"></i> Remove
-                                    </a>
+                                <td>{{ enrollment.course.name }}</td>
+                                <td><span class="badge badge-primary">{{ enrollment.course.code }}</span></td>
+                                <td class="text-center text-muted">{{ enrollment.enrolled_at|date:"M d, Y" }}</td>
+                                <td class="text-center">
+                                    <div class="action-buttons">
+                                        <a href="{% url 'main:delete_enrollment' enrollment.id %}" 
+                                           class="btn btn-sm btn-delete" 
+                                           onclick="return confirm('Are you sure you want to remove this enrollment? This action cannot be undone.')"
+                                           title="Remove Enrollment">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -111,7 +107,7 @@
             <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
                 <p>No enrollments yet</p>
-                <p class="empty-subtitle">Start by enrolling students in your subjects using the form above</p>
+                <small>Start by enrolling students in your subjects using the form above</small>
             </div>
         {% endif %}
     </div>

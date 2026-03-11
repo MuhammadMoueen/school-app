@@ -54,9 +54,12 @@
                 {% endif %}
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn-action">
                     <i class="fas fa-save"></i> Create Course
                 </button>
+                <a href="{% url 'main:dashboard' %}" class="btn-action btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
             </div>
         </form>
     </div>

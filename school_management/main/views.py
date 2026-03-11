@@ -319,7 +319,7 @@ def teacher_dashboard(request):
     )[:5]
     
     # Statistics
-    total_students = User.objects.filter(role='student', enrollments__course__teacher=teacher).distinct().count()
+    total_students = User.objects.filter(role='student').count()  # All students in the system
     total_enrollments = Enrollment.objects.filter(course__teacher=teacher).count()
     
     context = {
