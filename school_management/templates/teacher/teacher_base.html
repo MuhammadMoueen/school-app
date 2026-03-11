@@ -1,0 +1,168 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}{% block page_title %}Teacher Panel{% endblock %} - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+<style>
+    /* Hide main navbar for teacher panel */
+    .top-navbar { display: none; }
+    body { padding-top: 0; }
+    main { padding: 0; }
+</style>
+{% block page_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Teacher Layout -->
+<div class="teacher-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="teacher-sidebar" id="teacherSidebar">
+        <!-- Simple Header -->
+        <div class="sidebar-header">
+            <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="sidebar-logo">
+            <h3 class="sidebar-title">The City School</h3>
+            <p class="sidebar-subtitle">of Bahawalpur</p>
+            <div class="sidebar-divider"></div>
+            <p class="sidebar-panel-label">Teacher Panel</p>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <nav class="teacher-nav">
+            <a href="{% url 'main:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt nav-icon"></i>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{% url 'main:manage_courses' %}" class="nav-item {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-book nav-icon"></i>
+                <span class="nav-text">My Courses</span>
+            </a>
+            <a href="{% url 'main:manage_lectures' %}" class="nav-item {% if 'lecture' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-file-video nav-icon"></i>
+                <span class="nav-text">Lectures</span>
+            </a>
+            <a href="{% url 'main:manage_attendance' %}" class="nav-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-calendar-check nav-icon"></i>
+                <span class="nav-text">Attendance</span>
+            </a>
+            <a href="{% url 'main:manage_quizzes' %}" class="nav-item {% if 'quiz' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-tasks nav-icon"></i>
+                <span class="nav-text">Quizzes</span>
+            </a>
+            <a href="{% url 'main:manage_enrollments' %}" class="nav-item {% if 'enrollment' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-user-check nav-icon"></i>
+                <span class="nav-text">Enrollments</span>
+            </a>
+            <a href="{% url 'main:manage_transcripts' %}" class="nav-item {% if 'transcript' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-clipboard-list nav-icon"></i>
+                <span class="nav-text">Grades/Transcripts</span>
+            </a>
+            <a href="{% url 'main:view_reports' %}" class="nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-comments nav-icon"></i>
+                <span class="nav-text">Reports</span>
+                {% if unread_reports > 0 %}
+                    <span class="nav-badge">{{ unread_reports }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'main:course_analytics' %}" class="nav-item {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-chart-bar nav-icon"></i>
+                <span class="nav-text">Course Analytics</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="teacher-main">
+        <!-- Top Navbar -->
+        <div class="teacher-topbar">
+            <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-left">
+                <h1>{% block topbar_title %}Dashboard \u2013 {{ user.get_full_name|default:user.username }}{% endblock %}</h1>
+            </div>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-actions">
+                <!-- Notification Icon -->
+                {% if user.role in 'teacher,student' %}
+                <div class="notification-section">
+                    <div class="notification-icon" id="notificationIcon" onclick="event.stopPropagation(); console.log('NOTIFICATION ONCLICK FIRED!'); document.getElementById('notificationDropdown').classList.toggle('show'); var pd = document.getElementById('profileDropdown'); if(pd) pd.classList.remove('show');">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_notification_count > 0 %}
+                            <span class="notification-badge">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown" onclick="event.stopPropagation();">
+                        <div class="notification-header">
+                            <span><i class="fas fa-bell"></i> Notifications</span>
+                            <span class="notification-unread-count">{{ unread_notification_count|default:0 }} unread</span>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-empty">
+                                <i class="fas fa-inbox"></i>
+                                <p>Loading notifications...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Profile Icon -->
+                <div class="profile-section">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon" onclick="event.stopPropagation(); console.log('PROFILE ONCLICK FIRED!'); document.getElementById('profileDropdown').classList.toggle('show'); var nd = document.getElementById('notificationDropdown'); if(nd) nd.classList.remove('show');">
+                    {% else %}
+                        <div class="profile-icon-circle" id="profileIcon" onclick="event.stopPropagation(); console.log('PROFILE ONCLICK FIRED!'); document.getElementById('profileDropdown').classList.toggle('show'); var nd = document.getElementById('notificationDropdown'); if(nd) nd.classList.remove('show');">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation();">
+                        <div class="profile-dropdown-header">
+                            <div class="profile-username">{{ user.username }}</div>
+                            <div class="profile-role">{{ user.get_role_display }}</div>
+                        </div>
+                        <a href="{% url 'main:home' %}" class="profile-dropdown-item">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                        <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </a>
+                        <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
+                            <i class="fas fa-key"></i> Change Password
+                        </a>
+                        <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div class="page-content">
+            {% block page_content %}
+            <!-- Page-specific content goes here -->
+            {% endblock %}
+        </div>
+        
+        <!-- Footer -->
+        <footer class="teacher-footer">
+            <p>&copy; 2026 The City School of Bahawalpur - All Rights Reserved</p>
+        </footer>
+    </main>
+</div>
+
+<!-- Scripts -->
+<script src="{% static 'js/teacher.js' %}"></script>
+{% block page_scripts %}{% endblock %}
+{% endblock %}

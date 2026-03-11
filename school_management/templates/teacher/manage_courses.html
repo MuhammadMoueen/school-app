@@ -1,76 +1,109 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Manage Courses - The city School{% endblock %}
+{% block page_title %}Manage Courses{% endblock %}
+{% block topbar_title %}The City School – Manage Courses{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-book"></i> Manage Courses
+        </h2>
+        <p class="page-subtitle">Create and manage your courses</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="management-page">
-    <header class="page-header">
-        <h1>Manage Courses</h1>
-        <a href="{% url 'main:dashboard' %}" class="btn-back">← Back to Dashboard</a>
-    </header>
-    
-    <!-- Create New Course -->
-    <div class="create-section">
-        <h2>Create New Course</h2>
-        <form method="post" class="inline-form">
+<!-- Create New Course Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-plus-circle"></i> Create New Course
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="post" class="form-modern">
             {% csrf_token %}
             <div class="form-row">
-                <div class="form-field">
-                    <label>Subject Name</label>
+                <div class="form-group">
+                    <label for="id_name" class="form-label">
+                        <i class="fas fa-book-open"></i> Subject Name
+                    </label>
                     {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="form-error">{{ form.name.errors.0 }}</div>
+                    {% endif %}
                 </div>
-                <div class="form-grid">
-                    <label>Subject Code</label>
+                <div class="form-group">
+                    <label for="id_code" class="form-label">
+                        <i class="fas fa-code"></i> Subject Code
+                    </label>
                     {{ form.code }}
+                    {% if form.code.errors %}
+                        <div class="form-error">{{ form.code.errors.0 }}</div>
+                    {% endif %}
                 </div>
             </div>
-            <div class="form-field">
-                <label>Description</label>
+            <div class="form-group">
+                <label for="id_description" class="form-label">
+                    <i class="fas fa-align-left"></i> Description
+                </label>
                 {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="form-error">{{ form.description.errors.0 }}</div>
+                {% endif %}
             </div>
-            {% if form.errors %}
-                <div class="form-errors">
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <p>{{ field }}: {{ error }}</p>
-                        {% endfor %}
-                    {% endfor %}
-                </div>
-            {% endif %}
-            <button type="submit" class="btn btn-primary">Create Course</button>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Create Course
+                </button>
+            </div>
         </form>
     </div>
-    
-    <!-- Courses List -->
-    <div class="list-section">
-        <h2>Your Courses</h2>
+</div>
+
+<!-- Courses List Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-list"></i> Your Courses
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ courses.count }} Total</span>
+        </div>
+    </div>
+    <div class="card-body">
         {% if courses %}
-            <div class="table-container">
-                <table>
+            <div class="table-responsive">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>Code</th>
-                            <th>Name</th>
+                            <th>Course Name</th>
                             <th>Description</th>
-                            <th>Students</th>
-                            <th>Actions</th>
+                            <th class="text-center">Students</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for course in courses %}
                             <tr>
-                                <td><span class="code-badge">{{ course.code }}</span></td>
-                                <td><strong>{{ course.name }}</strong></td>
-                                <td>{{ course.description|truncatewords:10 }}</td>
-                                <td>{{ course.enrollments.count }}</td>
-                                <td class="actions">
-                                    <a href="{% url 'main:edit_course' course.id %}" class="btn-edit">Edit</a>
-                                    <a href="{% url 'main:delete_course' course.id %}" class="btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
+                                <td><span class="badge badge-primary">{{ course.code }}</span></td>
+                                <td class="font-weight-bold">{{ course.name }}</td>
+                                <td class="text-muted">{{ course.description|truncatewords:10 }}</td>
+                                <td class="text-center">
+                                    <span class="badge badge-success">{{ course.enrollments.count }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-buttons">
+                                        <a href="{% url 'main:edit_course' course.id %}" class="btn btn-sm btn-edit" title="Edit Course">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'main:delete_course' course.id %}" class="btn btn-sm btn-delete" 
+                                           onclick="return confirm('Are you sure you want to delete this course?')" title="Delete Course">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -78,7 +111,11 @@
                 </table>
             </div>
         {% else %}
-            <p class="empty">No subjects created yet.</p>
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No courses created yet.</p>
+                <small>Create your first course using the form above.</small>
+            </div>
         {% endif %}
     </div>
 </div>
