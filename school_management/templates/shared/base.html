@@ -423,18 +423,6 @@
                             </a>
                         </li>
                     {% endif %}
-                    {% if user.is_authenticated and user.role != 'admin' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'main:home' %}">
-                                <i class="fas fa-home"></i> Home
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'main:dashboard' %}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                            </a>
-                        </li>
-                    {% endif %}
                     {% if user.is_authenticated %}
                         
                         <!-- Notification Icon for Teacher and Student -->
