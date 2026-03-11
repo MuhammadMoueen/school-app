@@ -13,13 +13,13 @@
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
     color: white;
     position: fixed;
-    height: 100vh;
+    height: calc(100vh - 70px);
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 900;
     box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
     left: 0;
-    top: 0;
+    top: 70px;
 }
 
 .sidebar-header {
@@ -202,7 +202,7 @@
 /* Dashboard Cards Grid */
 .dashboard-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 25px;
     margin-bottom: 30px;
 }
@@ -624,7 +624,7 @@
     }
     
     .dashboard-cards {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .dashboard-content {
@@ -633,6 +633,12 @@
     
     .teacher-topbar {
         padding: 15px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-cards {
+        grid-template-columns: 1fr;
     }
 }
 
