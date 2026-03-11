@@ -153,8 +153,8 @@
     gap: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     position: sticky;
-    top: 0;
-    z-index: 999;
+    top: 70px;
+    z-index: 899;
 }
 
 .sidebar-toggle-btn {
@@ -197,6 +197,12 @@
 /* Dashboard Content */
 .dashboard-content {
     padding: 30px;
+}
+
+/* Page Content Area */
+.page-content {
+    padding: 30px;
+    min-height: calc(100vh - 200px);
 }
 
 /* Dashboard Cards Grid */
@@ -603,6 +609,9 @@
     /* Mobile: Hide sidebar by default */
     .teacher-sidebar {
         transform: translateX(-100%);
+        top: 0;
+        height: 100vh;
+        z-index: 1001;
     }
     
     .teacher-sidebar.mobile-open {
@@ -612,6 +621,10 @@
     .teacher-main,
     .teacher-content {
         margin-left: 0;
+    }
+    
+    .teacher-topbar {
+        top: 0;
     }
     
     /* Show hamburger toggle on mobile */
@@ -627,7 +640,8 @@
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .dashboard-content {
+    .dashboard-content,
+    .page-content {
         padding: 20px;
     }
     

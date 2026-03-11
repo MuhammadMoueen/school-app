@@ -84,17 +84,6 @@
             <div class="topbar-left">
                 <h1 class="page-title">Edit Lecture</h1>
             </div>
-            
-            <div class="topbar-right">
-                <div class="user-profile">
-                    <span>{{ request.user.get_full_name }}</span>
-                    {% if request.user.profile_picture %}
-                        <img src="{{ request.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
-                    {% else %}
-                        <div class="profile-avatar">{{ request.user.first_name.0 }}{{ request.user.last_name.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
         </header>
         
         <!-- Page Content -->
