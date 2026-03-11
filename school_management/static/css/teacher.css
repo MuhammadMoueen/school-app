@@ -69,6 +69,8 @@
 /* Navigation Menu */
 .teacher-nav {
     padding: 10px 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .nav-item {
@@ -159,6 +161,19 @@
 .sidebar-toggle-btn:hover {
     background: rgba(255,255,255,0.3);
     transform: scale(1.05);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.topbar-left h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: white;
+    font-weight: 600;
+    line-height: 1;
 }
 
 .topbar-left h1 {
@@ -291,30 +306,12 @@
 
 /* Dashboard Content */
 .dashboard-content {
-    padding: 20px;
-}
-
-/* Welcome Header */
-.welcome-header {
-    margin-bottom: 30px;
-}
-
-.welcome-header h1 {
-    margin: 0;
-    font-size: 2rem;
-    color: #2c3e50;
-    font-weight: 700;
-}
-
-.welcome-header p {
-    margin: 8px 0 0 0;
-    color: #7f8c8d;
-    font-size: 1rem;
+    padding: 15px;
 }
 
 /* Page Content Area */
 .page-content {
-    padding: 20px;
+    padding: 15px;
     min-height: calc(100vh - 200px);
 }
 
@@ -322,8 +319,8 @@
 .dashboard-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
-    margin-bottom: 30px;
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
 .dashboard-card {
