@@ -9,7 +9,7 @@
 
 /* Sidebar Navigation */
 .teacher-sidebar {
-    width: 280px;
+    width: 250px;
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
     color: white;
     position: fixed;
@@ -18,10 +18,8 @@
     z-index: 1000;
     box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
-}
-
-.teacher-sidebar.collapsed {
-    width: 70px;
+    left: 0;
+    top: 0;
 }
 
 .sidebar-header {
@@ -64,32 +62,11 @@
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
+    display: none;
 }
 
 .sidebar-toggle:hover {
     background: rgba(255,255,255,0.3);
-}
-
-.teacher-sidebar.collapsed .sidebar-logo {
-    width: 40px;
-    height: 40px;
-}
-
-.teacher-sidebar.collapsed .sidebar-title,
-.teacher-sidebar.collapsed .nav-text,
-.teacher-sidebar.collapsed .nav-badge,
-.teacher-sidebar.collapsed .nav-section-title {
-    display: none;
-}
-
-.teacher-sidebar.collapsed .nav-item {
-    padding: 15px;
-    justify-content: center;
-}
-
-.teacher-sidebar.collapsed .nav-icon {
-    margin-right: 0;
-    font-size: 1.5rem;
 }
 
 /* Navigation Menu */
@@ -154,12 +131,17 @@
 /* Main Content Area */
 .teacher-main {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 250px;
     transition: margin-left 0.3s ease;
+    min-height: 100vh;
 }
 
-.teacher-sidebar.collapsed + .teacher-main {
-    margin-left: 70px;
+/* Alternative content wrapper (used by some templates) */
+.teacher-content {
+    flex: 1;
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
 }
 
 /* Top Navbar */
@@ -185,7 +167,7 @@
     font-size: 1.3rem;
     cursor: pointer;
     transition: all 0.3s;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
 }
@@ -617,21 +599,57 @@
 }
 
 /* Responsive Design */
-    
+@media (max-width: 1024px) {
+    /* Mobile: Hide sidebar by default */
     .teacher-sidebar {
-        transform: translateX(-280px);
+        transform: translateX(-100%);
     }
     
     .teacher-sidebar.mobile-open {
         transform: translateX(0);
     }
     
-    .teacher-main {
+    .teacher-main,
+    .teacher-content {
         margin-left: 0;
+    }
+    
+    /* Show hamburger toggle on mobile */
+    .sidebar-toggle-btn {
+        display: flex;
+    }
+    
+    .sidebar-toggle {
+        display: block;
     }
     
     .dashboard-cards {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .dashboard-content {
+        padding: 20px;
+    }
+    
+    .teacher-topbar {
+        padding: 15px 20px;
+    }
+}
+
+@media (min-width: 1025px) {
+    /* Desktop: Always show sidebar */
+    .teacher-sidebar {
+        transform: translateX(0);
+    }
+    
+    /* Hide mobile overlay on desktop */
+    .sidebar-overlay {
+        display: none !important;
+    }
+    
+    /* Hamburger hidden on desktop */
+    .sidebar-toggle-btn {
+        display: none;
     }
 }
 

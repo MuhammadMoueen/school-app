@@ -125,16 +125,4 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="{% static 'js/admin.js' %}"></script>
-<script>
-// Initialize charts with data from Django
-document.addEventListener('DOMContentLoaded', function() {
-    AdminStatistics.init({
-        monthlyData: {{ monthly_student_data|safe }},
-        yearlyData: {{ yearly_student_data|safe }},
-        monthlyEnrollData: {{ monthly_enrollment_data|safe }},
-        gradeLabels: {{ grade_labels|safe }},
-        gradeCounts: {{ grade_counts|safe }}
-    });
-});
-</script>
 {% endblock %}

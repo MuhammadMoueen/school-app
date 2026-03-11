@@ -7,38 +7,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('teacherSidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     
-    // Desktop sidebar toggle (in topbar)
+    // Check if we're on mobile
+    function isMobile() {
+        return window.innerWidth <= 1024;
+    }
+    
+    // Mobile/Desktop sidebar toggle (hamburger in topbar)
     if (sidebarToggleBtn) {
         sidebarToggleBtn.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
+            if (isMobile()) {
+                sidebar.classList.toggle('mobile-open');
+                sidebarOverlay.classList.toggle('active');
+            }
         });
     }
     
-    // Desktop sidebar toggle (in sidebar)
+    // Sidebar internal toggle (for mobile)
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
+            if (isMobile()) {
+                sidebar.classList.remove('mobile-open');
+                sidebarOverlay.classList.remove('active');
+            }
         });
     }
     
-    // Mobile sidebar toggle
-    if (mobileMenuToggle) {
-        mobileMenuToggle.addEventListener('click', function() {
-            sidebar.classList.add('mobile-open');
-            sidebarOverlay.classList.add('active');
-        });
-    }
-    
-    // Close sidebar when clicking overlay
+    // Close sidebar when clicking overlay (mobile only)
     if (sidebarOverlay) {
         sidebarOverlay.addEventListener('click', function() {
             sidebar.classList.remove('mobile-open');
             sidebarOverlay.classList.remove('active');
         });
     }
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (!isMobile()) {
+            // On desktop, remove mobile classes
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('active');
+        }
+    });
 });
 
 /**

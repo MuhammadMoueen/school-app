@@ -1,16 +1,21 @@
+{% load static %}
 <aside class="teacher-sidebar" id="teacherSidebar">
     <div class="sidebar-header">
-        <div class="logo-area">
-            <i class="fas fa-graduation-cap"></i>
-            <span class="sidebar-title">Teacher Panel</span>
+        <img src="{% static 'images/favicon.png' %}" alt="Logo" class="sidebar-logo">
+        <div class="sidebar-title">
+            <h3>Teacher Panel</h3>
+            <p>{{ request.user.get_full_name }}</p>
         </div>
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
     </div>
     
     <nav class="teacher-nav">
         <div class="nav-section">
             <div class="nav-section-title">Main</div>
-            <a href="{% url 'main:teacher_dashboard' %}" class="nav-item">
-                <i class="fas fa-home nav-icon"></i>
+            <a href="{% url 'main:dashboard' %}" class="nav-item">
+                <i class="fas fa-tachometer-alt nav-icon"></i>
                 <span class="nav-text">Dashboard</span>
             </a>
             <a href="{% url 'main:edit_profile' %}" class="nav-item">
