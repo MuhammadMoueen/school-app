@@ -94,6 +94,20 @@
                             <span class="notification-badge">{{ unread_notification_count }}</span>
                         {% endif %}
                     </div>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <span><i class="fas fa-bell"></i> Notifications</span>
+                            <span style="font-size: 0.9rem;">{{ unread_notification_count }} unread</span>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-empty">
+                                <i class="fas fa-inbox"></i>
+                                <p>Loading notifications...</p>
+                            </div>
+                        </div>
+                    </div>
                 {% endif %}
                 
                 <!-- Profile Icon -->

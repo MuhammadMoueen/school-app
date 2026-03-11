@@ -54,11 +54,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Profile Dropdown Toggle
     const profileIcon = document.getElementById('profileIcon');
     const profileDropdown = document.getElementById('profileDropdown');
+    const notificationIcon = document.getElementById('notificationIcon');
+    const notificationDropdown = document.getElementById('notificationDropdown');
     
     if (profileIcon && profileDropdown) {
         profileIcon.addEventListener('click', function(e) {
             e.stopPropagation();
             profileDropdown.classList.toggle('show');
+            
+            // Close notification dropdown if open
+            if (notificationDropdown) {
+                notificationDropdown.classList.remove('show');
+            }
         });
         
         // Close dropdown when clicking outside
@@ -67,6 +74,81 @@ document.addEventListener('DOMContentLoaded', function() {
                 profileDropdown.classList.remove('show');
             }
         });
+    }
+    
+    // Notification Dropdown Toggle
+    if (notificationIcon && notificationDropdown) {
+        notificationIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+            
+            // Close profile dropdown if open
+            if (profileDropdown) {
+                profileDropdown.classList.remove('show');
+            }
+            
+            // Load notifications when dropdown opens
+            if (notificationDropdown.classList.contains('show')) {
+                loadNotifications();
+            }
+        });
+        
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notificationDropdown.contains(e.target) && !notificationIcon.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+    }
+    
+    // Load notifications via AJAX
+    function loadNotifications() {
+        const notificationList = document.getElementById('notificationList');
+        if (!notificationList) return;
+        
+        // Show loading state
+        notificationList.innerHTML = `
+            <div class="notification-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading notifications...</p>
+            </div>
+        `;
+        
+        // Fetch notifications
+        fetch('/get-notifications/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    notificationList.innerHTML = data.notifications.map(notif => `
+                        <a href="${notif.link}" class="notification-item ${notif.is_read ? '' : 'unread'}">
+                            <div class="notification-sender">
+                                <i class="fas fa-user-circle"></i>
+                                ${notif.sender}
+                            </div>
+                            <div class="notification-message">${notif.message}</div>
+                            <div class="notification-time">
+                                <i class="far fa-clock"></i> ${notif.time_ago}
+                            </div>
+                        </a>
+                    `).join('');
+                } else {
+                    notificationList.innerHTML = `
+                        <div class="notification-empty">
+                            <i class="fas fa-inbox"></i>
+                            <p>No notifications yet</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load notifications</p>
+                    </div>
+                `;
+            });
     }
 });
 
