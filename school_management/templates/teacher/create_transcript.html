@@ -1,105 +1,125 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Create Transcript - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+{% block page_title %}Create Transcript{% endblock %}
+{% block topbar_title %}The City School – Create Transcript{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-
-{% block content %}
-<div class="transcript-form-wrapper">
-    <!-- Header -->
-    <div class="form-header">
-        <h1><i class="fas fa-file-medical"></i> Create Transcript</h1>
-        <div class="student-info">
-            <i class="fas fa-user-graduate"></i>
-            <p>{{ enrollment.student.get_full_name }} - {{ enrollment.course.name }}</p>
-        </div>
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-file-medical"></i> Create Transcript
+        </h2>
+        <p class="page-subtitle">
+            <i class="fas fa-user-graduate"></i> {{ enrollment.student.get_full_name }} - {{ enrollment.course.name }}
+        </p>
     </div>
-    
-    <!-- Form Content -->
-    <div class="form-content">
-        <!-- Grade Scale Info -->
-        <div class="grade-info">
-            <h3><i class="fas fa-info-circle"></i> Grading Scale (Auto-Calculated)</h3>
-            <div class="grade-scale">
-                <div class="grade-item">
-                    <div class="grade-letter">A</div>
-                    <div class="grade-range">85-100%</div>
+</div>
+
+<!-- Grading Scale Card -->
+<div class="content-card" style="margin-bottom: 25px;">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-info-circle"></i> Grading Scale (Auto-Calculated)
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col" style="min-width: 150px;">
+                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px;">
+                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">A</h2>
+                    <p class="stat-label" style="color: white; opacity: 0.9;">85-100%</p>
                 </div>
-                <div class="grade-item">
-                    <div class="grade-letter">B</div>
-                    <div class="grade-range">70-84%</div>
+            </div>
+            <div class="col" style="min-width: 150px;">
+                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%); color: white; padding: 20px; border-radius: 10px;">
+                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">B</h2>
+                    <p class="stat-label" style="color: white; opacity: 0.9;">70-84%</p>
                 </div>
-                <div class="grade-item">
-                    <div class="grade-letter">C</div>
-                    <div class="grade-range">55-69%</div>
+            </div>
+            <div class="col" style="min-width: 150px;">
+                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px;">
+                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">C</h2>
+                    <p class="stat-label" style="color: white; opacity: 0.9;">55-69%</p>
                 </div>
-                <div class="grade-item">
-                    <div class="grade-letter">D</div>
-                    <div class="grade-range">40-54%</div>
+            </div>
+            <div class="col" style="min-width: 150px;">
+                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #fdbb2d 0%, #ee9b37 100%); color: white; padding: 20px; border-radius: 10px;">
+                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">D</h2>
+                    <p class="stat-label" style="color: white; opacity: 0.9;">40-54%</p>
                 </div>
-                <div class="grade-item">
-                    <div class="grade-letter">F</div>
-                    <div class="grade-range">Below 40%</div>
+            </div>
+            <div class="col" style="min-width: 150px;">
+                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 20px; border-radius: 10px;">
+                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">F</h2>
+                    <p class="stat-label" style="color: white; opacity: 0.9;">Below 40%</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Form -->
-        <form method="post">
+    </div>
+</div>
+
+<!-- Transcript Form Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-edit"></i> Transcript Details
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="post" class="form-modern">
             {% csrf_token %}
             
-            <div class="form-grid">
+            <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ form.marks_obtained.id_for_label }}">
+                    <label for="{{ form.marks_obtained.id_for_label }}" class="form-label">
                         <i class="fas fa-check-circle"></i> Marks Obtained
                     </label>
                     {{ form.marks_obtained }}
                     {% if form.marks_obtained.errors %}
-                        <span class="error-text">{{ form.marks_obtained.errors.0 }}</span>
+                        <div class="form-error">{{ form.marks_obtained.errors.0 }}</div>
                     {% endif %}
                 </div>
                 
                 <div class="form-group">
-                    <label for="{{ form.total_marks.id_for_label }}">
+                    <label for="{{ form.total_marks.id_for_label }}" class="form-label">
                         <i class="fas fa-list-ol"></i> Total Marks
                     </label>
                     {{ form.total_marks }}
                     {% if form.total_marks.errors %}
-                        <span class="error-text">{{ form.total_marks.errors.0 }}</span>
+                        <div class="form-error">{{ form.total_marks.errors.0 }}</div>
                     {% endif %}
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.grade.id_for_label }}">
+                <label for="{{ form.grade.id_for_label }}" class="form-label">
                     <i class="fas fa-trophy"></i> Grade (Auto-calculated based on percentage)
                 </label>
                 {{ form.grade }}
                 {% if form.grade.errors %}
-                    <span class="error-text">{{ form.grade.errors.0 }}</span>
+                    <div class="form-error">{{ form.grade.errors.0 }}</div>
                 {% endif %}
-                <small class="remarks-hint">
+                <small style="display: block; margin-top: 8px; color: #6c757d;">
                     <i class="fas fa-info-circle"></i> This field is automatically calculated as you enter marks
                 </small>
             </div>
             
             <div class="form-group">
-                <label for="{{ form.remarks.id_for_label }}">
+                <label for="{{ form.remarks.id_for_label }}" class="form-label">
                     <i class="fas fa-comment-dots"></i> Remarks (Optional)
                 </label>
                 {{ form.remarks }}
                 {% if form.remarks.errors %}
-                    <span class="error-text">{{ form.remarks.errors.0 }}</span>
+                    <div class="form-error">{{ form.remarks.errors.0 }}</div>
                 {% endif %}
             </div>
             
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn-action">
                     <i class="fas fa-save"></i> Save Transcript
                 </button>
-                <a href="{% url 'main:manage_transcripts' %}" class="btn btn-secondary">
+                <a href="{% url 'main:manage_transcripts' %}" class="btn-action btn-secondary">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>
