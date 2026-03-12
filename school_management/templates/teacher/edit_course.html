@@ -1,32 +1,66 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
 
-{% block title %}Edit Subject{% endblock %}
+{% block page_title %}Edit Course{% endblock %}
+{% block topbar_title %}The City School – Edit Course{% endblock %}
 
-{% block content %}
-<div class="form-container">
-    <div class="form-box">
-        <h2>Edit Subject</h2>
-        
-        <form method="post">
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-edit"></i> Edit Course
+        </h2>
+        <p class="page-subtitle">Update course information</p>
+    </div>
+</div>
+
+<!-- Edit Course Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-book"></i> Course Details
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="post" class="form-modern">
             {% csrf_token %}
-            
-            <div class="form-field">
-                <label>Subject Name</label>
-                {{ form.name }}
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_name" class="form-label">
+                        <i class="fas fa-book-open"></i> Subject Name
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="form-error">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_code" class="form-label">
+                        <i class="fas fa-code"></i> Subject Code
+                    </label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                        <div class="form-error">{{ form.code.errors.0 }}</div>
+                    {% endif %}
+                </div>
             </div>
-            
-            <div class="form-field">
-                <label>Subject Code</label>
-                {{ form.code }}
-            </div>
-            
-            <div class="form-field">
-                <label>Description</label>
+            <div class="form-group">
+                <label for="id_description" class="form-label">
+                    <i class="fas fa-align-left"></i> Description
+                </label>
                 {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="form-error">{{ form.description.errors.0 }}</div>
+                {% endif %}
             </div>
-            
-            <button type="submit" class="btn btn-primary">Update Subject</button>
-            <a href="{% url 'main:manage_courses' %}" class="btn btn-secondary">Cancel</a>
+            <div class="form-actions">
+                <button type="submit" class="btn-action">
+                    <i class="fas fa-save"></i> Update Course
+                </button>
+                <a href="{% url 'main:manage_courses' %}" class="btn-action btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
         </form>
     </div>
 </div>
