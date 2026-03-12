@@ -208,7 +208,7 @@ class CourseForm(forms.ModelForm):
     """Form to create/edit subjects"""
     class Meta:
         model = Course
-        fields = ['name', 'code', 'description']
+        fields = ['name', 'code', 'description', 'student_class', 'section']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Subject Name (e.g., Biology)',
@@ -222,12 +222,20 @@ class CourseForm(forms.ModelForm):
                 'placeholder': 'Subject description',
                 'class': 'form-control',
                 'rows': 3
+            }),
+            'student_class': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'section': forms.Select(attrs={
+                'class': 'form-control'
             })
         }
         labels = {
             'name': 'Subject Name',
             'code': 'Subject Code',
-            'description': 'Description'
+            'description': 'Description',
+            'student_class': 'Class',
+            'section': 'Section'
         }
 
 
