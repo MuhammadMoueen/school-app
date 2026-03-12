@@ -48,10 +48,32 @@ PreassignedUsername = PreassignedEmail
 
 # Course model
 class Course(models.Model):
+    CLASS_CHOICES = (
+        ('Prep', 'Prep'),
+        ('1', '1'),
+        ('2', '2'),
+        ('3', '3'),
+        ('4', '4'),
+        ('5', '5'),
+        ('6', '6'),
+        ('7', '7'),
+        ('8', '8'),
+        ('9', '9'),
+        ('10', '10'),
+    )
+    
+    SECTION_CHOICES = (
+        ('A', 'A'),
+        ('B', 'B'),
+        ('C', 'C'),
+    )
+    
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses_teaching', limit_choices_to={'role': 'teacher'})
+    student_class = models.CharField(max_length=10, choices=CLASS_CHOICES, default='1', help_text='Class/Grade level')
+    section = models.CharField(max_length=10, choices=SECTION_CHOICES, default='A', help_text='Section')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -59,7 +81,7 @@ class Course(models.Model):
         ordering = ['name']
     
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.code} - {self.name} (Class {self.student_class}-{self.section})"
 
 
 # Lecture/Material model - for course materials
