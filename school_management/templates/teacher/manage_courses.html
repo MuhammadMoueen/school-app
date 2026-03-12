@@ -53,6 +53,26 @@
                     <div class="form-error">{{ form.description.errors.0 }}</div>
                 {% endif %}
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_student_class" class="form-label">
+                        <i class="fas fa-chalkboard"></i> Class
+                    </label>
+                    {{ form.student_class }}
+                    {% if form.student_class.errors %}
+                        <div class="form-error">{{ form.student_class.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_section" class="form-label">
+                        <i class="fas fa-users"></i> Section
+                    </label>
+                    {{ form.section }}
+                    {% if form.section.errors %}
+                        <div class="form-error">{{ form.section.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
             <div class="form-actions">
                 <button type="submit" class="btn-action">
                     <i class="fas fa-save"></i> Create Course
@@ -83,6 +103,8 @@
                         <tr>
                             <th>Code</th>
                             <th>Course Name</th>
+                            <th>Class</th>
+                            <th>Section</th>
                             <th>Description</th>
                             <th class="text-center">Students</th>
                             <th class="text-center">Actions</th>
@@ -93,6 +115,8 @@
                             <tr>
                                 <td><span class="badge badge-primary">{{ course.code }}</span></td>
                                 <td class="font-weight-bold">{{ course.name }}</td>
+                                <td><span class="badge badge-info">Class {{ course.student_class }}</span></td>
+                                <td><span class="badge badge-success">{{ course.section }}</span></td>
                                 <td class="text-muted">{{ course.description|truncatewords:10 }}</td>
                                 <td class="text-center">
                                     <span class="badge badge-success">{{ course.enrollments.count }}</span>
