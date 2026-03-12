@@ -44,15 +44,6 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="form-group">
-                <label for="id_description" class="form-label">
-                    <i class="fas fa-align-left"></i> Description
-                </label>
-                {{ form.description }}
-                {% if form.description.errors %}
-                    <div class="form-error">{{ form.description.errors.0 }}</div>
-                {% endif %}
-            </div>
             <div class="form-row">
                 <div class="form-group">
                     <label for="id_student_class" class="form-label">
@@ -72,6 +63,15 @@
                         <div class="form-error">{{ form.section.errors.0 }}</div>
                     {% endif %}
                 </div>
+            </div>
+            <div class="form-group">
+                <label for="id_description" class="form-label">
+                    <i class="fas fa-align-left"></i> Description
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="form-error">{{ form.description.errors.0 }}</div>
+                {% endif %}
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn-action">
