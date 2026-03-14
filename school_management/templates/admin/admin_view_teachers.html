@@ -1,22 +1,29 @@
 {% extends 'shared/base.html' %}
 {% load static %}
 
-{% block title %}View Teachers - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+{% block title %}Manage Teachers - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+
+{% block main_container_class %}container-fluid px-3 px-lg-4{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+    .teachers-dashboard {
+        margin-top: 0;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="teachers-wrapper">
+<div class="teachers-wrapper teachers-dashboard">
     <!-- Header -->
     <div class="page-header">
-        <h1><i class="fas fa-chalkboard-teacher"></i> All Teachers</h1>
-        <div>
-            <a href="{% url 'main:admin_create_teacher' %}" class="btn-back" style="margin-right: 10px; background: rgba(46, 204, 113, 0.9);">
-                <i class="fas fa-plus"></i> Create Teacher
+        <h1><i class="fas fa-chalkboard-teacher"></i> Manage Teachers</h1>
+        <div class="header-actions">
+            <a href="{% url 'main:admin_create_teacher' %}" class="btn-add btn btn-sm">
+                <i class="fas fa-plus-circle"></i> Add New Teacher
             </a>
-            <a href="{% url 'main:dashboard' %}" class="btn-back">
+            <a href="{% url 'main:dashboard' %}" class="btn-back btn btn-sm">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
@@ -25,57 +32,67 @@
     <!-- Teachers List -->
     <div class="teachers-section">
         {% if teachers %}
-            <div class="teachers-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Teacher Name</th>
-                            <th><i class="fas fa-id-card"></i> Username</th>
-                            <th><i class="fas fa-envelope"></i> Email</th>
-                            <th><i class="fas fa-building"></i> Department</th>
-                            <th><i class="fas fa-book"></i> Subjects</th>
-                            <th><i class="fas fa-users"></i> Students</th>
-                            <th><i class="fas fa-cog"></i> Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for teacher in teachers %}
-                            <tr>
-                                <td class="teacher-name">
-                                    <i class="fas fa-user-tie"></i> {{ teacher.get_full_name }}
-                                </td>
-                                <td>{{ teacher.username }}</td>
-                                <td>{{ teacher.email|default:"N/A" }}</td>
-                                <td>{{ teacher.department|default:"N/A" }}</td>
-                                <td>
-                                    <span class="stats-badge">
-                                        <i class="fas fa-book courses-badge"></i>
-                                        <span class="courses-badge">{{ teacher.course_count }}</span>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="stats-badge">
-                                        <i class="fas fa-user-graduate students-badge"></i>
-                                        <span class="students-badge">{{ teacher.student_count }}</span>
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{% url 'main:admin_edit_user' teacher.id %}" class="btn btn-sm btn-outline-primary" style="margin-right: 5px;">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <a href="{% url 'main:admin_delete_teacher' teacher.id %}" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card students-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-user-tie"></i> Teachers</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="teachers-table">
+                        <div class="table-responsive">
+                            <table class="table w-100 align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> Teacher Name</th>
+                                        <th><i class="fas fa-id-card"></i> Username</th>
+                                        <th><i class="fas fa-envelope"></i> Email</th>
+                                        <th><i class="fas fa-building"></i> Department</th>
+                                        <th><i class="fas fa-book"></i> Subjects</th>
+                                        <th><i class="fas fa-users"></i> Students</th>
+                                        <th><i class="fas fa-cog"></i> Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for teacher in teachers %}
+                                        <tr>
+                                            <td class="teacher-name">
+                                                <i class="fas fa-user-tie"></i> {{ teacher.get_full_name }}
+                                            </td>
+                                            <td>{{ teacher.username }}</td>
+                                            <td>{{ teacher.email|default:"N/A" }}</td>
+                                            <td>{{ teacher.department|default:"N/A" }}</td>
+                                            <td>
+                                                <span class="stats-badge">
+                                                    <i class="fas fa-book"></i>
+                                                    {{ teacher.course_count }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="stats-badge">
+                                                    <i class="fas fa-user-graduate"></i>
+                                                    {{ teacher.student_count }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'main:admin_edit_user' teacher.id %}" class="btn-edit btn btn-sm">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <a href="{% url 'main:admin_delete_teacher' teacher.id %}" class="btn-delete btn btn-sm">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         {% else %}
             <div class="empty-state">
                 <i class="fas fa-chalkboard-teacher"></i>
                 <p>No teachers yet</p>
+                <p style="font-size: 0.95rem;">Teachers will appear here after being created</p>
             </div>
         {% endif %}
     </div>

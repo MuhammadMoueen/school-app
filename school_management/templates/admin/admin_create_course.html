@@ -3,69 +3,78 @@
 
 {% block title %}Add New Course - Admin Panel{% endblock %}
 
+{% block main_container_class %}container-fluid px-3 px-lg-4{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="courses-wrapper">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1><i class="fas fa-plus-circle"></i> Add New Course</h1>
-        <a href="{% url 'main:admin_courses_hub' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Courses Hub
-        </a>
-    </div>
+<div class="course-create-dashboard">
+    <div class="form-wrapper">
+        <div class="form-header">
+            <h1><i class="fas fa-plus-circle"></i> Add New Course</h1>
+            <p>Create a new course and assign it to a teacher</p>
+        </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="create-form">
-                <h3><i class="fas fa-plus-circle"></i> Create New Course</h3>
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="form-group">
-                        {{ form.name.label_tag }}
-                        {{ form.name }}
-                        {% if form.name.errors %}
-                            <small class="text-danger">{{ form.name.errors.0 }}</small>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        {{ form.code.label_tag }}
-                        {{ form.code }}
-                        {% if form.code.errors %}
-                            <small class="text-danger">{{ form.code.errors.0 }}</small>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        {{ form.teacher.label_tag }}
-                        {{ form.teacher }}
-                        {% if form.teacher.errors %}
-                            <small class="text-danger">{{ form.teacher.errors.0 }}</small>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        {{ form.description.label_tag }}
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                            <small class="text-danger">{{ form.description.errors.0 }}</small>
-                        {% endif %}
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-block">
+        <div class="form-content">
+            <div class="info-box mb-4">
+                <h5><i class="fas fa-info-circle"></i> How it works</h5>
+                <ul>
+                    <li>Enter a clear course name and unique course code.</li>
+                    <li>Select the teacher who will manage this course.</li>
+                    <li>Add optional description for students and staff.</li>
+                    <li>Save and then manage enrollments from Courses List.</li>
+                </ul>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <span class="error-text">{{ form.name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.code.id_for_label }}">{{ form.code.label }}</label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                        <span class="error-text">{{ form.code.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.teacher.id_for_label }}">{{ form.teacher.label }}</label>
+                    {{ form.teacher }}
+                    {% if form.teacher.errors %}
+                        <span class="error-text">{{ form.teacher.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <span class="error-text">{{ form.description.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Create Course
                     </button>
-                </form>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <a href="{% url 'main:admin_manage_courses' %}" class="btn btn-outline-primary">
+                    <a href="{% url 'main:admin_manage_courses' %}" class="btn btn-secondary">
                         <i class="fas fa-list"></i> View All Courses
                     </a>
+                    <a href="{% url 'main:admin_courses_hub' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Courses Hub
+                    </a>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>

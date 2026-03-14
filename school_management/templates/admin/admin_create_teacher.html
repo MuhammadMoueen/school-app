@@ -22,7 +22,7 @@
             </p>
             <ol style="margin: 10px 0 0 20px; color: #1976d2;">
                 <li>Enter teacher's full name (e.g., M Nouman)</li>
-                <li>System auto-generates email with random code: <strong>mnouman1234@teacher.edu.pk</strong></li>
+                <li>System auto-generates email with random code: <strong>mmoueen73@teacher.edu.pk</strong></li>
                 <li>System auto-generates username from email</li>
                 <li>Temporary password is set to: <strong>Teacher@123</strong></li>
                 <li>Share the credentials with the teacher</li>
@@ -76,19 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const fullName = this.value.trim();
         
         if (fullName.length > 0) {
-            const nameParts = fullName.split(' ');
-            let firstLetter = '';
-            let lastName = '';
-            
-            if (nameParts.length < 2) {
-                firstLetter = nameParts[0][0].toLowerCase();
-                lastName = nameParts[0].toLowerCase();
-            } else {
-                firstLetter = nameParts[0][0].toLowerCase();
-                lastName = nameParts[nameParts.length - 1].toLowerCase();
-            }
-            
-            const randomCode = Math.floor(1000 + Math.random() * 9000);
+            const nameParts = fullName.split(' ').filter(Boolean);
+            const firstPart = (nameParts[0] || 't').replace(/[^a-zA-Z]/g, '');
+            const lastPart = (nameParts[nameParts.length - 1] || 'teacher').replace(/[^a-zA-Z]/g, '');
+            const firstLetter = (firstPart[0] || 't').toLowerCase();
+            const lastName = (lastPart || 'teacher').toLowerCase();
+
+            const randomCode = Math.floor(10 + Math.random() * 90);
             const email = `${firstLetter}${lastName}${randomCode}@teacher.edu.pk`;
             
             previewEmail.textContent = email;

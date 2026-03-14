@@ -3,6 +3,8 @@
 
 {% block title %}Search Users - Admin Panel{% endblock %}
 
+{% block main_container_class %}container-fluid px-3 px-lg-4{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
 {% endblock %}
@@ -39,43 +41,45 @@
             <div class="results-count">
                 <i class="fas fa-info-circle"></i> Found {{ users.count }} user(s)
             </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Department/Class</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
+
+            <div class="table-responsive">
+                <table class="table w-100 align-middle mb-0">
+                    <thead>
                         <tr>
-                            <td><strong>{{ user.username }}</strong></td>
-                            <td>{{ user.get_full_name }}</td>
-                            <td>{{ user.email|default:"N/A" }}</td>
-                            <td>
-                                <span class="badge badge-{{ user.role }}">{{ user.get_role_display }}</span>
-                            </td>
-                            <td>
-                                {% if user.role == 'teacher' %}
-                                    {{ user.department|default:"N/A" }}
-                                {% else %}
-                                    {{ user.student_class|default:"N/A" }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'main:admin_edit_user' user.id %}" class="action-btn">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                            </td>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Department/Class</th>
+                            <th>Actions</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>{{ user.get_full_name }}</td>
+                                <td>{{ user.email|default:"N/A" }}</td>
+                                <td>
+                                    <span class="badge badge-{{ user.role }}">{{ user.get_role_display }}</span>
+                                </td>
+                                <td>
+                                    {% if user.role == 'teacher' %}
+                                        {{ user.department|default:"N/A" }}
+                                    {% else %}
+                                        {{ user.student_class|default:"N/A" }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'main:admin_edit_user' user.id %}" class="action-btn">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         {% else %}
             <div style="text-align: center; padding: 40px; color: #95a5a6;">
                 <i class="fas fa-search" style="font-size: 4rem; opacity: 0.3;"></i>

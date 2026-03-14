@@ -3,20 +3,27 @@
 
 {% block title %}Manage Students - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
 
+{% block main_container_class %}container-fluid px-3 px-lg-4{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+    .students-dashboard {
+        margin-top: 0;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="students-wrapper">
+<div class="students-wrapper students-dashboard">
     <!-- Header -->
     <div class="page-header">
         <h1><i class="fas fa-users-cog"></i> Manage Students</h1>
         <div class="header-actions">
-            <a href="{% url 'main:coordinator_create_student' %}" class="btn-add">
+            <a href="{% url 'main:coordinator_create_student' %}" class="btn-add btn btn-sm">
                 <i class="fas fa-plus-circle"></i> Add New Student
             </a>
-            <a href="{% url 'main:dashboard' %}" class="btn-back">
+            <a href="{% url 'main:dashboard' %}" class="btn-back btn btn-sm">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
@@ -26,85 +33,118 @@
     <div class="students-section">
         <!-- Pre-assigned Emails Section -->
         {% if preassigned_emails %}
-            <div style="margin-bottom: 30px;">
-                <h2 style="color: #667eea; font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-user-clock"></i> Pre-Assigned Emails (Pending Signup)
-                </h2>
-                <div class="students-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th><i class="fas fa-user"></i> Student Name</th>
-                                <th><i class="fas fa-envelope"></i> Assigned Email</th>
-                                <th><i class="fas fa-user-shield"></i> Assigned By</th>
-                                <th><i class="fas fa-calendar"></i> Date Assigned</th>
-                                <th><i class="fas fa-info-circle"></i> Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for preassigned in preassigned_emails %}
-                                <tr>
-                                    <td class="student-name">
-                                        <i class="fas fa-user-circle"></i> {{ preassigned.full_name|default:"Not specified" }}
-                                    </td>
-                                    <td><strong>{{ preassigned.email }}</strong></td>
-                                    <td>{{ preassigned.assigned_by.get_full_name }}</td>
-                                    <td>{{ preassigned.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        <span style="color: #f39c12; font-weight: 600;">
-                                            <i class="fas fa-clock"></i> Awaiting Registration
-                                        </span>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="card students-card mb-4">
+                <div class="card-header">
+                    <h2><i class="fas fa-user-clock"></i> Pre-Assigned Emails (Pending Signup)</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="students-table">
+                        <div class="table-responsive">
+                            <table class="table w-100 align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> Student Name</th>
+                                        <th><i class="fas fa-envelope"></i> Assigned Email</th>
+                                        <th><i class="fas fa-user-shield"></i> Assigned By</th>
+                                        <th><i class="fas fa-calendar"></i> Date Assigned</th>
+                                        <th><i class="fas fa-info-circle"></i> Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for preassigned in preassigned_emails %}
+                                        <tr>
+                                            <td class="student-name">
+                                                <i class="fas fa-user-circle"></i> {{ preassigned.full_name|default:"Not specified" }}
+                                            </td>
+                                            <td><strong>{{ preassigned.email }}</strong></td>
+                                            <td>{{ preassigned.assigned_by.get_full_name }}</td>
+                                            <td>{{ preassigned.created_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <span style="color: #f39c12; font-weight: 600;">
+                                                    <i class="fas fa-clock"></i> Awaiting Registration
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         {% endif %}
         
         <!-- Registered Students Section -->
-        <h2 style="color: #667eea; font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-user-check"></i> Registered Students
-        </h2>
         {% if students %}
-            <div class="students-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Student Name</th>
-                            <th><i class="fas fa-id-card"></i> Username</th>
-                            <th><i class="fas fa-envelope"></i> Email</th>
-                            <th><i class="fas fa-book-reader"></i> Enrollments</th>
-                            <th><i class="fas fa-calendar"></i> Date Joined</th>
-                            <th><i class="fas fa-cog"></i> Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for student in students %}
-                            <tr>
-                                <td class="student-name">
-                                    <i class="fas fa-user-circle"></i> {{ student.get_full_name }}
-                                </td>
-                                <td>{{ student.username }}</td>
-                                <td>{{ student.email|default:"N/A" }}</td>
-                                <td>
-                                    <span class="enrollment-badge">{{ student.enrollment_count }} subject{{ student.enrollment_count|pluralize }}</span>
-                                </td>
-                                <td>{{ student.date_joined|date:"M d, Y" }}</td>
-                                <td>
-                                    <a href="{% url 'main:admin_edit_user' student.id %}" class="btn-edit" style="margin-right: 8px;">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <a href="{% url 'main:coordinator_delete_student' student.id %}" class="btn-delete"
-                                       onclick="return confirm('Are you sure you want to delete {{ student.get_full_name }}? This action cannot be undone.')">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card students-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-user-check"></i> Registered Students</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="students-table">
+                        <div class="table-responsive">
+                            <table class="table w-100 align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> Student Name</th>
+                                        <th><i class="fas fa-id-card"></i> Username</th>
+                                        <th><i class="fas fa-envelope"></i> Email</th>
+                                        <th><i class="fas fa-book-reader"></i> Enrollments</th>
+                                        <th><i class="fas fa-circle-info"></i> Class</th>
+                                        <th><i class="fas fa-check-circle"></i> Status</th>
+                                        <th><i class="fas fa-calendar"></i> Date Joined</th>
+                                        <th><i class="fas fa-cog"></i> Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                        <tr>
+                                            <td class="student-name">
+                                                <i class="fas fa-user-circle"></i> {{ student.get_full_name }}
+                                            </td>
+                                            <td>{{ student.username }}</td>
+                                            <td>{{ student.email|default:"N/A" }}</td>
+                                            <td>
+                                                <span class="enrollment-badge">{{ student.enrollment_count }} subject{{ student.enrollment_count|pluralize }}</span>
+                                            </td>
+                                            <td>
+                                                {% if student.student_class %}
+                                                    <span class="class-badge" style="background: #e8f5e9; color: #2e7d32; border-radius: 12px;">
+                                                        {% if student.section %}
+                                                            Class {{ student.student_class }}{{ student.section }}
+                                                        {% else %}
+                                                            {{ student.student_class }}
+                                                        {% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span style="color: #999; font-size: 0.85rem;">Not assigned</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <select class="status-select" data-student-id="{{ student.id }}">
+                                                    <option value="active" {% if student.status == 'active' %}selected{% endif %}>Active</option>
+                                                    <option value="inactive" {% if student.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                                    <option value="suspended" {% if student.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                                                    <option value="alumni" {% if student.status == 'alumni' %}selected{% endif %}>Alumni</option>
+                                                </select>
+                                            </td>
+                                            <td>{{ student.date_joined|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'main:admin_edit_user' student.id %}" class="btn-edit btn btn-sm">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <a href="{% url 'main:coordinator_delete_student' student.id %}" class="btn-delete btn btn-sm"
+                                                   onclick="return confirm('Are you sure you want to delete {{ student.get_full_name }}? This action cannot be undone.')">
+                                                    <i class="fas fa-trash-alt"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         {% else %}
             <div class="empty-state">
@@ -115,4 +155,81 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelects = document.querySelectorAll('.status-select');
+    
+    statusSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const studentId = this.dataset.studentId;
+            const newStatus = this.value;
+            const selectElement = this;
+            
+            // Disable the select while saving
+            selectElement.disabled = true;
+            const originalValue = selectElement.value;
+            
+            fetch('{% url "main:update_student_status" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    student_id: parseInt(studentId),
+                    status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                selectElement.disabled = false;
+                
+                if (data.success) {
+                    // Show success message
+                    const messageDiv = document.createElement('div');
+                    messageDiv.style.position = 'fixed';
+                    messageDiv.style.top = '20px';
+                    messageDiv.style.right = '20px';
+                    messageDiv.style.background = '#4caf50';
+                    messageDiv.style.color = 'white';
+                    messageDiv.style.padding = '15px 20px';
+                    messageDiv.style.borderRadius = '4px';
+                    messageDiv.style.zIndex = '9999';
+                    messageDiv.textContent = data.message;
+                    document.body.appendChild(messageDiv);
+                    
+                    // Remove the message after 3 seconds
+                    setTimeout(() => messageDiv.remove(), 3000);
+                } else {
+                    // Show error message and revert
+                    selectElement.value = originalValue;
+                    alert('Error updating status: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                selectElement.disabled = false;
+                selectElement.value = originalValue;
+                console.error('Error:', error);
+                alert('Error updating status. Please try again.');
+            });
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

@@ -405,6 +405,16 @@ main .container .alert {
     position: relative;
 }
 
+.topbar-actions .profile-trigger {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .topbar-actions .profile-icon-circle {
     width: 40px;
     height: 40px;
@@ -420,6 +430,11 @@ main .container .alert {
     color: white;
     font-size: 1.3rem;
     user-select: none;
+}
+
+.topbar-actions .profile-trigger:focus-visible .profile-icon-circle {
+    outline: 3px solid rgba(255,255,255,0.35);
+    outline-offset: 2px;
 }
 
 .topbar-actions .profile-icon-circle * {

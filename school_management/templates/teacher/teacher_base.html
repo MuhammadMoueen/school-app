@@ -90,7 +90,7 @@
                 <!-- Notification Icon -->
                 {% if user.role in 'teacher,student' %}
                 <div class="notification-section">
-                    <div class="notification-icon" id="notificationIcon" onclick="event.stopPropagation(); console.log('NOTIFICATION ONCLICK FIRED!'); document.getElementById('notificationDropdown').classList.toggle('show'); var pd = document.getElementById('profileDropdown'); if(pd) pd.classList.remove('show');">
+                    <div class="notification-icon" id="notificationIcon">
                         <i class="fas fa-bell"></i>
                         {% if unread_notification_count > 0 %}
                             <span class="notification-badge">{{ unread_notification_count }}</span>
@@ -98,7 +98,7 @@
                     </div>
                     
                     <!-- Notification Dropdown -->
-                    <div class="notification-dropdown" id="notificationDropdown" onclick="event.stopPropagation();">
+                    <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <span><i class="fas fa-bell"></i> Notifications</span>
                             <span class="notification-unread-count">{{ unread_notification_count|default:0 }} unread</span>
@@ -115,27 +115,26 @@
                 
                 <!-- Profile Icon -->
                 <div class="profile-section">
+                    <button type="button" class="profile-trigger" id="profileToggleBtn" aria-expanded="false" aria-controls="profileDropdown">
                     {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon" onclick="event.stopPropagation(); console.log('PROFILE ONCLICK FIRED!'); document.getElementById('profileDropdown').classList.toggle('show'); var nd = document.getElementById('notificationDropdown'); if(nd) nd.classList.remove('show');">
+                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
                     {% else %}
-                        <div class="profile-icon-circle" id="profileIcon" onclick="event.stopPropagation(); console.log('PROFILE ONCLICK FIRED!'); document.getElementById('profileDropdown').classList.toggle('show'); var nd = document.getElementById('notificationDropdown'); if(nd) nd.classList.remove('show');">
+                        <div class="profile-icon-circle" id="profileIcon">
                             <i class="fas fa-user-circle"></i>
                         </div>
                     {% endif %}
+                    </button>
                     
-                    <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation();">
+                    <div class="profile-dropdown" id="profileDropdown">
                         <div class="profile-dropdown-header">
                             <div class="profile-username">{{ user.username }}</div>
                             <div class="profile-role">{{ user.get_role_display }}</div>
                         </div>
-                        <a href="{% url 'main:home' %}" class="profile-dropdown-item">
-                            <i class="fas fa-home"></i> Home
+                        <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
+                            <i class="fas fa-user-edit"></i> My Profile
                         </a>
                         <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
                             <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                        <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
-                            <i class="fas fa-user-edit"></i> Edit Profile
                         </a>
                         <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
                             <i class="fas fa-key"></i> Change Password
@@ -159,5 +158,54 @@
 
 <!-- Scripts -->
 <script src="{% static 'js/teacher.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const profileToggleBtn = document.getElementById('profileToggleBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+
+    if (!profileToggleBtn || !profileDropdown) {
+        return;
+    }
+
+    function closeProfileDropdown() {
+        profileDropdown.classList.remove('show');
+        profileToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    profileToggleBtn.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const shouldShow = !profileDropdown.classList.contains('show');
+        closeProfileDropdown();
+
+        if (notificationDropdown) {
+            notificationDropdown.classList.remove('show');
+        }
+
+        if (shouldShow) {
+            profileDropdown.classList.add('show');
+            profileToggleBtn.setAttribute('aria-expanded', 'true');
+        }
+    });
+
+    profileDropdown.addEventListener('click', function (event) {
+        event.stopPropagation();
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.profile-section')) {
+            closeProfileDropdown();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeProfileDropdown();
+        }
+    });
+});
+</script>
 {% block page_scripts %}{% endblock %}
 {% endblock %}

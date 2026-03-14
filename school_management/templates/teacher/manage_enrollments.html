@@ -26,15 +26,6 @@
             {% csrf_token %}
             <div class="form-row">
                 <div class="form-group">
-                    <label for="{{ form.student.id_for_label }}" class="form-label">
-                        <i class="fas fa-user-graduate"></i> Select Student
-                    </label>
-                    {{ form.student }}
-                    {% if form.student.errors %}
-                        <div class="form-error">{{ form.student.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <div class="form-group">
                     <label for="{{ form.course.id_for_label }}" class="form-label">
                         <i class="fas fa-book"></i> Select Subject
                     </label>
@@ -43,10 +34,25 @@
                         <div class="form-error">{{ form.course.errors.0 }}</div>
                     {% endif %}
                 </div>
+                <div class="form-group">
+                    <label for="{{ form.students.id_for_label }}" class="form-label">
+                        <i class="fas fa-user-graduate"></i> Select Students
+                    </label>
+                    {{ form.students }}
+                    {% if form.students.errors %}
+                        <div class="form-error">{{ form.students.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                        <div class="form-error">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+                    <small id="student-filter-message" style="display: block; margin-top: 8px; color: #6c757d;">
+                        Select a subject to load students from the matching class and section.
+                    </small>
+                </div>
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn-action">
-                    <i class="fas fa-check-circle"></i> Enroll Student
+                    <i class="fas fa-check-circle"></i> Enroll Students
                 </button>
                 <a href="{% url 'main:dashboard' %}" class="btn-action btn-secondary">
                     <i class="fas fa-times"></i> Cancel
@@ -112,4 +118,90 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const courseSelect = document.getElementById('{{ form.course.id_for_label }}');
+    const studentsSelect = document.getElementById('{{ form.students.id_for_label }}');
+    const messageElement = document.getElementById('student-filter-message');
+    const endpoint = "{% url 'main:get_course_students' %}";
+
+    if (!courseSelect || !studentsSelect || !messageElement) {
+        return;
+    }
+
+    const selectedStudents = new Set(Array.from(studentsSelect.options)
+        .filter(option => option.selected)
+        .map(option => option.value));
+
+    function setMessage(text, isError) {
+        messageElement.textContent = text;
+        messageElement.style.color = isError ? '#dc3545' : '#6c757d';
+    }
+
+    function resetStudents(placeholder) {
+        studentsSelect.innerHTML = '';
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.textContent = placeholder;
+        studentsSelect.appendChild(option);
+    }
+
+    function loadStudents(courseId) {
+        if (!courseId) {
+            studentsSelect.disabled = true;
+            resetStudents('Select a subject first');
+            setMessage('Select a subject to load students from the matching class and section.', false);
+            return;
+        }
+
+        studentsSelect.disabled = true;
+        resetStudents('Loading students...');
+        setMessage('Loading students for the selected class and section...', false);
+
+        fetch(`${endpoint}?course_id=${courseId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load students.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                studentsSelect.innerHTML = '';
+
+                if (!data.students || !data.students.length) {
+                    studentsSelect.disabled = true;
+                    resetStudents('No students available');
+                    setMessage(data.message || 'No students found for this class and section.', true);
+                    return;
+                }
+
+                data.students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = student.roll_number ? `${student.name} (${student.roll_number})` : student.name;
+                    option.selected = selectedStudents.has(String(student.id));
+                    studentsSelect.appendChild(option);
+                });
+
+                studentsSelect.disabled = false;
+                setMessage('Only students from the selected class and section are shown.', false);
+            })
+            .catch(() => {
+                studentsSelect.disabled = true;
+                resetStudents('Unable to load students');
+                setMessage('Unable to load students right now. Please try again.', true);
+            });
+    }
+
+    courseSelect.addEventListener('change', function () {
+        selectedStudents.clear();
+        loadStudents(this.value);
+    });
+
+    loadStudents(courseSelect.value);
+});
+</script>
 {% endblock %}

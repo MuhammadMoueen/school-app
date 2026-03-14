@@ -1124,23 +1124,69 @@ def manage_enrollments(request):
     )
     
     if request.method == 'POST':
-        form = EnrollmentForm(request.POST)
-        # Filter subjects to only show teacher's subjects
-        form.fields['course'].queryset = Course.objects.filter(teacher=request.user)
-        
+        form = EnrollmentForm(request.POST, teacher=request.user)
+
         if form.is_valid():
-            enrollment = form.save()
-            messages.success(request, f'{enrollment.student.get_full_name()} enrolled in {enrollment.course.name}!')
-            return redirect('main:manage_enrollments')
+            created_enrollments, skipped_students = form.save()
+            course = form.cleaned_data['course']
+
+            if created_enrollments:
+                messages.success(
+                    request,
+                    f'{len(created_enrollments)} student(s) enrolled in {course.name} ({course.student_class}{course.section}).'
+                )
+
+            if skipped_students:
+                skipped_names = ', '.join(student.get_full_name() or student.username for student in skipped_students)
+                messages.warning(
+                    request,
+                    f'These student(s) were already enrolled in {course.name}: {skipped_names}.'
+                )
+
+            if created_enrollments or skipped_students:
+                return redirect('main:manage_enrollments')
     else:
-        form = EnrollmentForm()
-        form.fields['course'].queryset = Course.objects.filter(teacher=request.user)
+        form = EnrollmentForm(teacher=request.user)
     
     context = {
         'enrollments': enrollments,
         'form': form
     }
     return render(request, 'teacher/manage_enrollments.html', context)
+
+
+@login_required
+def get_course_students(request):
+    """Return students matching the selected course class and section"""
+    if request.user.role != 'teacher':
+        return JsonResponse({'students': [], 'message': 'Access denied.'}, status=403)
+
+    course_id = request.GET.get('course_id')
+    if not course_id:
+        return JsonResponse({'students': [], 'message': 'Course not provided.'}, status=400)
+
+    course = get_object_or_404(Course, id=course_id, teacher=request.user)
+    students = User.objects.filter(
+        role='student',
+        student_class=course.student_class,
+        section=course.section,
+    ).exclude(
+        enrollments__course=course
+    ).order_by('first_name', 'last_name', 'username')
+
+    student_data = [
+        {
+            'id': student.id,
+            'name': student.get_full_name() or student.username,
+            'roll_number': student.roll_number,
+        }
+        for student in students
+    ]
+
+    return JsonResponse({
+        'students': student_data,
+        'message': '' if student_data else 'No students found for this class and section.',
+    })
 
 
 @login_required
@@ -2122,4 +2168,60 @@ def admin_search_api(request):
         })
 
     return JsonResponse({'results': results})
+
+
+@login_required
+def update_student_status(request):
+    """AJAX endpoint to update student status"""
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'error': 'Access denied.'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=400)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        new_status = data.get('status')
+        
+        if not student_id or not new_status:
+            return JsonResponse({'success': False, 'error': 'Missing required fields.'}, status=400)
+        
+        # Validate status choice
+        valid_statuses = ['active', 'inactive', 'suspended', 'alumni']
+        if new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'error': 'Invalid status.'}, status=400)
+        
+        # Get student
+        student = User.objects.get(id=student_id, role='student')
+        old_status = student.status
+        student.status = new_status
+        student.save()
+        
+        # Create audit log
+        try:
+            from .models import AuditLog
+            AuditLog.objects.create(
+                admin=request.user,
+                action='update_student_status',
+                description=f'Updated student status from {old_status} to {new_status}: {student.username} ({student.get_full_name()})',
+                target_user=student,
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+        except:
+            pass  # Continue even if audit log fails
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Status updated to {new_status}',
+            'new_status': new_status,
+            'status_display': student.get_status_display()
+        })
+    
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 

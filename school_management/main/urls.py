@@ -40,6 +40,7 @@ urlpatterns = [
     path('panel/teachers-hub/', views.admin_teachers_hub, name='admin_teachers_hub'),
     path('panel/courses-hub/', views.admin_courses_hub, name='admin_courses_hub'),
     path('panel/search-api/', views.admin_search_api, name='admin_search_api'),
+    path('panel/students/update-status/', views.update_student_status, name='update_student_status'),
     
     # Teacher URLs
     path('teacher/courses/', views.manage_courses, name='manage_courses'),
@@ -78,6 +79,7 @@ urlpatterns = [
     path('discussions/<int:thread_id>/resolve/', views.mark_discussion_resolved, name='mark_discussion_resolved'),
     
     path('teacher/enrollments/', views.manage_enrollments, name='manage_enrollments'),
+    path('teacher/enrollments/students/', views.get_course_students, name='get_course_students'),
     path('teacher/enrollments/<int:enrollment_id>/delete/', views.delete_enrollment, name='delete_enrollment'),
     path('teacher/transcripts/', views.manage_transcripts, name='manage_transcripts'),
     path('teacher/transcripts/create/<int:enrollment_id>/', views.create_transcript, name='create_transcript'),

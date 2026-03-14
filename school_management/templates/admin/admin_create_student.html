@@ -22,8 +22,9 @@
                 <i class="fas fa-info-circle"></i> How it works:
             </p>
             <ol style="margin: 10px 0 0 20px; color: #1976d2;">
-                <li>Enter student's full name (e.g., M Moueen)</li>
-                <li>System auto-generates email with random code: <strong>mmoueen1234@school.edu.pk</strong></li>
+                <li>Enter student's full name (e.g., Ali Khan)</li>
+                <li>Select class and section (if applicable)</li>
+                <li>System auto-generates email: <strong>ali32635@student.edu.pk</strong></li>
                 <li>System auto-generates username from email</li>
                 <li>Account is created with password: <strong>Student@123</strong></li>
                 <li>Share the credentials with the student</li>
@@ -37,16 +38,38 @@
             <div class="form-group">
                 <label for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
                 {{ form.full_name }}
-                <div id="email-preview" style="margin-top: 10px; padding: 10px; background: #f0f4ff; border-left: 3px solid #667eea; border-radius: 4px; display: none;">
-                    <span style="color: #555; font-size: 0.9rem;">Generated Email: </span>
-                    <strong id="preview-email" style="color: #667eea; font-size: 1rem;"></strong>
-                </div>
                 {% if form.full_name.errors %}
                     <span class="error-text">{{ form.full_name.errors.0 }}</span>
                 {% endif %}
                 {% if form.full_name.help_text %}
                     <span class="help-text">{{ form.full_name.help_text }}</span>
                 {% endif %}
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label for="{{ form.student_class.id_for_label }}">{{ form.student_class.label }}</label>
+                    {{ form.student_class }}
+                    {% if form.student_class.errors %}
+                        <span class="error-text">{{ form.student_class.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.section.id_for_label }}">{{ form.section.label }}</label>
+                    {{ form.section }}
+                    {% if form.section.errors %}
+                        <span class="error-text">{{ form.section.errors.0 }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div id="email-preview" style="margin: 20px 0; padding: 15px; background: #f0f4ff; border-left: 3px solid #667eea; border-radius: 4px; display: none;">
+                <span style="color: #555; font-size: 0.9rem;">Generated Email: </span>
+                <strong id="preview-email" style="color: #667eea; font-size: 1.1rem;"></strong>
+                <span style="color: #999; font-size: 0.85rem; display: block; margin-top: 5px;">
+                    Username: <strong id="preview-username" style="color: #667eea;"></strong>
+                </span>
             </div>
             
             <div class="form-actions">
@@ -66,32 +89,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.getElementById('{{ form.full_name.id_for_label }}');
     const emailPreview = document.getElementById('email-preview');
     const previewEmail = document.getElementById('preview-email');
+    const previewUsername = document.getElementById('preview-username');
     
-    nameInput.addEventListener('input', function() {
-        const fullName = this.value.trim();
-        
+    function generateEmail() {
+        const fullName = nameInput.value.trim();
+
         if (fullName.length > 0) {
-            const nameParts = fullName.split(' ');
-            let firstLetter = '';
-            let lastName = '';
-            
-            if (nameParts.length < 2) {
-                firstLetter = nameParts[0][0].toLowerCase();
-                lastName = nameParts[0].toLowerCase();
-            } else {
-                firstLetter = nameParts[0][0].toLowerCase();
-                lastName = nameParts[nameParts.length - 1].toLowerCase();
-            }
-            
-            const randomCode = Math.floor(1000 + Math.random() * 9000);
-            const email = `${firstLetter}${lastName}${randomCode}@school.edu.pk`;
+            const nameParts = fullName.split(' ').filter(Boolean);
+            const firstName = (nameParts[0] || 'student').replace(/[^a-zA-Z]/g, '').toLowerCase() || 'student';
+            const randomCode = Math.floor(10000 + Math.random() * 90000);
+            const emailBase = `${firstName}${randomCode}`;
+            const email = `${emailBase}@student.edu.pk`;
+            const username = emailBase;
             
             previewEmail.textContent = email;
+            previewUsername.textContent = username;
             emailPreview.style.display = 'block';
         } else {
             emailPreview.style.display = 'none';
         }
-    });
+    }
+    
+    nameInput.addEventListener('input', generateEmail);
 });
 </script>
 {% endblock %}

@@ -218,12 +218,15 @@
 .page-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 30px;
+    padding: 30px 40px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 20px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
 }
 
 .page-header h1 {
@@ -238,6 +241,9 @@
 .header-actions {
     display: flex;
     gap: 15px;
+    margin-left: auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 /* Badges */
@@ -297,23 +303,34 @@ thead {
 }
 
 th {
-    padding: 15px 20px;
+    padding: 12px 15px;
     text-align: left;
     font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
 }
 
 tbody tr {
     border-bottom: 1px solid #f0f0f0;
     transition: all 0.3s;
+    height: auto;
 }
 
 tbody tr:hover {
     background: #f8f9fa;
 }
 
+/* Responsive table wrapper with horizontal scroll */
+.students-table table,
+.teachers-table table {
+    min-width: 100%;
+    width: 100%;
+}
+
 td {
-    padding: 15px 20px;
+    padding: 10px 15px;
     color: #2c3e50;
+    font-size: 0.95rem;
 }
 
 .empty-state {
@@ -347,41 +364,43 @@ td {
 }
 
 .btn-edit {
-    padding: 6px 14px;
+    padding: 5px 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     text-decoration: none;
     border-radius: 6px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     transition: all 0.3s;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    white-space: nowrap;
 }
 
 .btn-edit:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     color: white;
 }
 
 .btn-delete {
-    padding: 6px 14px;
+    padding: 5px 12px;
     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
     color: white;
     text-decoration: none;
     border-radius: 6px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     transition: all 0.3s;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    white-space: nowrap;
 }
 
 .btn-delete:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
     color: white;
 }
@@ -389,10 +408,30 @@ td {
 .enrollment-badge {
     background: #e3f2fd;
     color: #1976d2;
-    padding: 4px 10px;
+    padding: 4px 8px;
     border-radius: 12px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.stats-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.class-badge {
+    font-size: 0.8rem !important;
+    padding: 4px 8px !important;
 }
 
 /* ========== DASHBOARD SPECIFIC ========== */
@@ -1041,8 +1080,9 @@ td {
 /* ========== STATISTICS PAGE ========== */
 
 .stats-wrapper {
-    max-width: 1400px;
-    margin: 30px auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 30px 0;
 }
 
 .stats-header {
@@ -1201,12 +1241,18 @@ td {
 /* ========== SEARCH PAGE ========== */
 
 .search-wrapper {
-    max-width: 1200px;
-    margin: 40px auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 30px 0;
     background: white;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     overflow: hidden;
+}
+
+.search-wrapper .table-responsive,
+.stats-wrapper .table-responsive {
+    width: 100%;
 }
 
 .search-header {
@@ -1241,23 +1287,274 @@ td {
 .students-wrapper,
 .teachers-wrapper {
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    overflow: hidden;
-    margin-bottom: 30px;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 100%;
 }
 
 .students-section,
 .teachers-section {
-    padding: 30px;
+    padding: 0;
 }
 
 .students-table,
 .teachers-table {
     background: white;
-    border-radius: 12px;
+    border-radius: 0;
+    overflow: auto;
+    box-shadow: none;
+    width: 100%;
+}
+
+.students-table .table-responsive,
+.teachers-table .table-responsive {
+    width: 100%;
+}
+
+/* Scoped polish for Manage Students dashboard page */
+.students-dashboard .page-header {
+    border-radius: 14px;
+    margin-bottom: 20px;
+    padding: 24px 30px;
+}
+
+.students-dashboard .students-section {
+    padding: 0 12px 24px;
+}
+
+.teachers-dashboard .teachers-section {
+    padding: 0 12px 24px;
+}
+
+.students-dashboard .students-card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08);
     overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.teachers-dashboard .students-card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08);
+    overflow: hidden;
+}
+
+.students-dashboard .students-card .card-header {
+    background: #ffffff;
+    border-bottom: 1px solid #edf1f7;
+    padding: 14px 20px;
+}
+
+.teachers-dashboard .students-card .card-header {
+    background: #ffffff;
+    border-bottom: 1px solid #edf1f7;
+    padding: 14px 20px;
+}
+
+.students-dashboard .students-card .card-header h2 {
+    margin: 0;
+    color: #3f63d8;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.teachers-dashboard .students-card .card-header h2 {
+    margin: 0;
+    color: #3f63d8;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.students-dashboard .students-card .card-body {
+    padding: 0;
+}
+
+.teachers-dashboard .students-card .card-body {
+    padding: 0;
+}
+
+.students-dashboard .students-table {
+    margin: 0;
+}
+
+.teachers-dashboard .teachers-table {
+    margin: 0;
+}
+
+.students-dashboard .students-table tbody tr {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.students-dashboard .students-table tbody tr:hover {
+    background-color: #f2f6ff;
+    box-shadow: inset 3px 0 0 #667eea;
+}
+
+.students-dashboard .btn-add,
+.students-dashboard .btn-back {
+    padding: 7px 14px;
+    font-size: 0.875rem;
+    border-radius: 7px;
+}
+
+.students-dashboard .btn-edit,
+.students-dashboard .btn-delete {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border-radius: 5px;
+}
+
+.teachers-dashboard .btn-add,
+.teachers-dashboard .btn-back {
+    padding: 7px 14px;
+    font-size: 0.875rem;
+    border-radius: 7px;
+}
+
+.teachers-dashboard .btn-edit,
+.teachers-dashboard .btn-delete {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border-radius: 5px;
+}
+
+/* Compact table layout for student/teacher manage pages */
+.students-dashboard .students-table table,
+.teachers-dashboard .teachers-table table {
+    font-size: 0.88rem;
+}
+
+.students-dashboard .students-table th,
+.students-dashboard .students-table td,
+.teachers-dashboard .teachers-table th,
+.teachers-dashboard .teachers-table td {
+    padding: 7px 10px;
+    vertical-align: middle;
+}
+
+.students-dashboard .students-table td:nth-child(2),
+.students-dashboard .students-table td:nth-child(3),
+.teachers-dashboard .teachers-table td:nth-child(2),
+.teachers-dashboard .teachers-table td:nth-child(3) {
+    max-width: 180px;
+    overflow-wrap: anywhere;
+}
+
+.students-dashboard .students-table th:last-child,
+.students-dashboard .students-table td:last-child,
+.teachers-dashboard .teachers-table th:last-child,
+.teachers-dashboard .teachers-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.teachers-dashboard .teachers-table tbody tr {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.teachers-dashboard .teachers-table tbody tr:hover {
+    background-color: #f2f6ff;
+    box-shadow: inset 3px 0 0 #667eea;
+}
+
+/* Course pages aligned with student-create and teacher-manage themes */
+.course-create-dashboard .form-wrapper {
+    max-width: 760px;
+    margin: 30px auto;
+}
+
+.course-create-dashboard .info-box {
+    margin-bottom: 22px;
+}
+
+.course-create-dashboard .form-actions {
+    flex-wrap: wrap;
+}
+
+.courses-dashboard .page-header {
+    border-radius: 14px;
+    margin-bottom: 20px;
+    padding: 24px 30px;
+}
+
+.courses-dashboard .courses-section {
+    padding: 0 12px 24px;
+}
+
+.courses-dashboard .students-card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08);
+    overflow: hidden;
+}
+
+.courses-dashboard .students-card .card-header {
+    background: #ffffff;
+    border-bottom: 1px solid #edf1f7;
+    padding: 14px 20px;
+}
+
+.courses-dashboard .students-card .card-header h2 {
+    margin: 0;
+    color: #3f63d8;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.courses-dashboard .courses-table {
+    margin: 0;
+}
+
+.courses-dashboard .btn-add,
+.courses-dashboard .btn-back {
+    padding: 7px 14px;
+    font-size: 0.875rem;
+    border-radius: 7px;
+}
+
+.courses-dashboard .btn-edit,
+.courses-dashboard .btn-delete {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border-radius: 5px;
+}
+
+.courses-dashboard .courses-table table {
+    font-size: 0.88rem;
+}
+
+.courses-dashboard .courses-table th,
+.courses-dashboard .courses-table td {
+    padding: 7px 10px;
+    vertical-align: middle;
+}
+
+.courses-dashboard .courses-table th:last-child,
+.courses-dashboard .courses-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.courses-dashboard .courses-table tbody tr {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.courses-dashboard .courses-table tbody tr:hover {
+    background-color: #f2f6ff;
+    box-shadow: inset 3px 0 0 #667eea;
 }
 
 /* ========== BULK IMPORT ========== */
@@ -1374,6 +1671,116 @@ td {
     text-align: center;
 }
 
+/* ========== TABLE ENHANCEMENTS ========== */
+
+/* Section headers for student/teacher pages */
+.students-section > h2,
+.teachers-section > h2 {
+    color: #667eea;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    padding: 0 40px;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* First section header padding top */
+.students-section > h2:first-of-type,
+.teachers-section > h2:first-of-type {
+    padding-top: 30px;
+}
+
+/* Table container with scrolling support */
+.students-table,
+.teachers-table {
+    margin: 0 40px 30px 40px;
+}
+
+.students-table:last-child,
+.teachers-table:last-child {
+    margin-bottom: 40px;
+}
+
+/* Compact table styling */
+.students-table table,
+.teachers-table table {
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+}
+
+.students-table thead,
+.teachers-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.students-table tbody tr,
+.teachers-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+    height: auto;
+}
+
+.students-table tbody tr:hover,
+.teachers-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Ensure action buttons stay tight */
+.students-table td:last-child,
+.teachers-table td:last-child {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.students-table a,
+.teachers-table a {
+    margin-right: 6px;
+}
+
+.students-table a:last-child,
+.teachers-table a:last-child {
+    margin-right: 0;
+}
+
+/* Student/teacher name styling */
+.student-name,
+.teacher-name {
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.student-name i,
+.teacher-name i {
+    color: #667eea;
+    width: 20px;
+}
+
+/* Status select in tables */
+.status-select {
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.status-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
 /* ========== RESPONSIVE DESIGN ========== */
 
 @media (max-width: 992px) {
@@ -1391,6 +1798,21 @@ td {
     
     .charts-grid {
         grid-template-columns: 1fr;
+    }
+    
+    /* Table responsiveness */
+    .students-table,
+    .teachers-table {
+        margin: 0 20px 30px 20px;
+    }
+    
+    .students-table table,
+    .teachers-table table {
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 10px 12px;
     }
 }
 
@@ -1432,6 +1854,24 @@ td {
     .page-header {
         flex-direction: column;
         text-align: center;
+        padding: 20px;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+        margin-left: 0;
+    }
+    
+    .btn-add,
+    .btn-back {
+        width: 100%;
+        justify-content: center;
     }
     
     .form-actions,
@@ -1451,5 +1891,41 @@ td {
     .export-btn {
         justify-content: center;
         width: 100%;
+    }
+    
+    /* Responsive table styles for mobile */
+    .students-table,
+    .teachers-table {
+        margin: 0 10px 30px 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .students-table table,
+    .teachers-table table {
+        font-size: 0.85rem;
+        min-width: 700px;
+    }
+    
+    .students-section > h2,
+    .teachers-section > h2 {
+        padding: 0 10px;
+        font-size: 1.1rem;
+    }
+    
+    th, td {
+        padding: 8px 10px;
+    }
+    
+    .btn-edit,
+    .btn-delete {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        gap: 3px;
+    }
+    
+    .btn-edit i,
+    .btn-delete i {
+        font-size: 0.7rem;
     }
 }

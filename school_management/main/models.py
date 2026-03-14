@@ -9,7 +9,16 @@ class User(AbstractUser):
         ('teacher', 'Teacher'),
         ('student', 'Student'),
     )
+    
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('suspended', 'Suspended'),
+        ('alumni', 'Alumni'),
+    )
+    
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', help_text='User status (for students and record keeping)')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)

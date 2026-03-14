@@ -7,6 +7,7 @@ from django.utils import timezone
 import csv
 import io
 import random
+import re
 
 
 class TeacherSignupForm(UserCreationForm):
@@ -239,22 +240,78 @@ class CourseForm(forms.ModelForm):
         }
 
 
-class EnrollmentForm(forms.ModelForm):
-    """Form to enroll students in subjects"""
-    student = forms.ModelChoiceField(
-        queryset=User.objects.filter(role='student'),
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Select Student'
+class EnrollmentForm(forms.Form):
+    """Form to enroll one or more students in a subject"""
+    students = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-control',
+            'size': 8,
+        }),
+        label='Select Students'
     )
     course = forms.ModelChoiceField(
-        queryset=Course.objects.all(),
+        queryset=Course.objects.none(),
         widget=forms.Select(attrs={'class': 'form-control'}),
         label='Select Subject'
     )
-    
-    class Meta:
-        model = Enrollment
-        fields = ['student', 'course']
+
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.teacher = teacher
+
+        if teacher is not None:
+            self.fields['course'].queryset = Course.objects.filter(teacher=teacher).order_by('code', 'name')
+            self.fields['course'].label_from_instance = (
+                lambda course: f"{course.code} - {course.name} - {course.student_class}{course.section}"
+            )
+
+        selected_course_id = self.data.get('course') or self.initial.get('course')
+        if teacher is not None and selected_course_id:
+            try:
+                course = self.fields['course'].queryset.get(pk=selected_course_id)
+                self.fields['students'].queryset = User.objects.filter(
+                    role='student',
+                    student_class=course.student_class,
+                    section=course.section,
+                ).order_by('first_name', 'last_name', 'username')
+            except (Course.DoesNotExist, ValueError, TypeError):
+                self.fields['students'].queryset = User.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        course = cleaned_data.get('course')
+        students = cleaned_data.get('students')
+
+        if not course or not students:
+            return cleaned_data
+
+        invalid_students = [
+            student.get_full_name() or student.username
+            for student in students
+            if student.student_class != course.student_class or student.section != course.section
+        ]
+        if invalid_students:
+            raise forms.ValidationError(
+                'Selected students must belong to the same class and section as the chosen subject.'
+            )
+
+        return cleaned_data
+
+    def save(self):
+        course = self.cleaned_data['course']
+        students = self.cleaned_data['students']
+        created_enrollments = []
+        skipped_students = []
+
+        for student in students:
+            enrollment, created = Enrollment.objects.get_or_create(student=student, course=course)
+            if created:
+                created_enrollments.append(enrollment)
+            else:
+                skipped_students.append(student)
+
+        return created_enrollments, skipped_students
 
 
 class TranscriptForm(forms.ModelForm):
@@ -332,64 +389,102 @@ class AdminCreateStudentForm(forms.ModelForm):
         max_length=100,
         required=True,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Enter student full name (e.g., M Moueen)',
+            'placeholder': 'Enter student full name (e.g., Ali Khan)',
             'class': 'form-control'
         }),
         label='Student Full Name',
-        help_text='Email will be auto-generated from name (e.g., M Moueen → mmoueen123@school.edu.pk)'
+        help_text='First and last name'
+    )
+    
+    student_class = forms.ChoiceField(
+        required=True,
+        choices=[('', '-- Select Class --')] + [
+            ('Prep', 'Prep'),
+            ('1', 'Class 1'),
+            ('2', 'Class 2'),
+            ('3', 'Class 3'),
+            ('4', 'Class 4'),
+            ('5', 'Class 5'),
+            ('6', 'Class 6'),
+            ('7', 'Class 7'),
+            ('8', 'Class 8'),
+            ('9', 'Class 9'),
+            ('10', 'Class 10'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        label='Class'
+    )
+    
+    section = forms.ChoiceField(
+        required=False,
+        choices=[('', '-- Select Section (Optional for Prep) --'), ('A', 'A'), ('B', 'B'), ('C', 'C')],
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        label='Section'
     )
     
     class Meta:
         model = User
         fields = []
     
+    def clean(self):
+        cleaned_data = super().clean()
+        student_class = cleaned_data.get('student_class')
+        section = cleaned_data.get('section')
+        
+        # Prep class does not require section
+        if student_class and student_class != 'Prep' and not section:
+            raise forms.ValidationError('Section is required for Class 1-10.')
+        
+        return cleaned_data
+    
     def save(self, commit=True):
         full_name = self.cleaned_data.get('full_name').strip()
+        student_class = self.cleaned_data.get('student_class')
+        section = self.cleaned_data.get('section', '')
         
-        # Parse name: first letter + last name
+        # Parse name: get first name and last name
         name_parts = full_name.split()
         if len(name_parts) < 2:
             # If only one name, use it as both first and last
-            first_letter = name_parts[0][0].lower()
-            last_name = name_parts[0].lower()
+            first_name = name_parts[0]
+            last_name = name_parts[0]
         else:
-            first_letter = name_parts[0][0].lower()
-            last_name = name_parts[-1].lower()  # Use last part as last name
+            first_name = name_parts[0]
+            last_name = name_parts[-1]
         
-        # Generate base email with random 4-digit code
-        random_code = random.randint(1000, 9999)
-        base_email = f"{first_letter}{last_name}{random_code}@school.edu.pk"
-        email = base_email
-        
-        # Ensure email is unique - if exists, generate new random code
-        while User.objects.filter(email=email).exists():
-            random_code = random.randint(1000, 9999)
-            email = f"{first_letter}{last_name}{random_code}@school.edu.pk"
-        
-        # Generate username from email
-        base_username = email.split('@')[0].lower()
-        username = base_username
-        counter = 1
-        
-        # Ensure username is unique
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
+        # New format: <firstname><5 random digits>@student.edu.pk
+        # Example: Ali Khan -> ali32635@student.edu.pk
+        first_name_clean = re.sub(r'[^a-zA-Z]', '', first_name).lower() or 'student'
+
+        while True:
+            random_code = random.randint(10000, 99999)
+            email_base = f"{first_name_clean}{random_code}"
+            email = f"{email_base}@student.edu.pk"
+
+            if not User.objects.filter(email=email).exists() and not User.objects.filter(username=email_base).exists():
+                username = email_base
+                break
         
         # Create user instance directly
         user = User()
         user.username = username
         user.email = email
         user.role = 'student'
+        user.status = 'active'
+        user.student_class = student_class
+        user.section = section if section else ''
         user.is_active = True
         
         # Set default password: Student@123
         user.set_password('Student@123')
         
         # Set full name
-        name_parts = full_name.strip().split(' ', 1)
-        user.first_name = name_parts[0]
-        user.last_name = name_parts[1] if len(name_parts) > 1 else ''
+        user.first_name = first_name
+        user.last_name = last_name
         
         if commit:
             user.save()
@@ -492,7 +587,7 @@ class AdminCreateTeacherForm(forms.ModelForm):
             'class': 'form-control'
         }),
         label='Teacher Full Name',
-        help_text='Email will be auto-generated from name (e.g., M Nouman → mnouman123@teacher.edu.pk)'
+        help_text='Email will be auto-generated from name (e.g., M Moueen -> mmoueen73@teacher.edu.pk)'
     )
     
     class Meta:
@@ -506,31 +601,22 @@ class AdminCreateTeacherForm(forms.ModelForm):
         name_parts = full_name.split()
         if len(name_parts) < 2:
             # If only one name, use it as both first and last
-            first_letter = name_parts[0][0].lower()
-            last_name = name_parts[0].lower()
+            first_letter = re.sub(r'[^a-zA-Z]', '', name_parts[0][:1]).lower() or 't'
+            last_name = re.sub(r'[^a-zA-Z]', '', name_parts[0]).lower() or 'teacher'
         else:
-            first_letter = name_parts[0][0].lower()
-            last_name = name_parts[-1].lower()  # Use last part as last name
-        
-        # Generate base email with random 4-digit code
-        random_code = random.randint(1000, 9999)
-        base_email = f"{first_letter}{last_name}{random_code}@teacher.edu.pk"
-        email = base_email
-        
-        # Ensure email is unique - if exists, generate new random code
-        while User.objects.filter(email=email).exists():
-            random_code = random.randint(1000, 9999)
-            email = f"{first_letter}{last_name}{random_code}@teacher.edu.pk"
-        
-        # Generate username from email
-        base_username = email.split('@')[0].lower()
-        username = base_username
-        counter = 1
-        
-        # Ensure username is unique
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
+            first_letter = re.sub(r'[^a-zA-Z]', '', name_parts[0][:1]).lower() or 't'
+            last_name = re.sub(r'[^a-zA-Z]', '', name_parts[-1]).lower() or 'teacher'
+
+        # New format: <first letter><lastname><2 random digits>@teacher.edu.pk
+        # Example: M Moueen -> mmoueen73@teacher.edu.pk
+        while True:
+            random_code = random.randint(10, 99)
+            email_base = f"{first_letter}{last_name}{random_code}"
+            email = f"{email_base}@teacher.edu.pk"
+
+            if not User.objects.filter(email=email).exists() and not User.objects.filter(username=email_base).exists():
+                username = email_base
+                break
         
         # Create user instance
         user = User()

@@ -3,6 +3,8 @@
 
 {% block title %}Statistics & Analytics - Admin Panel{% endblock %}
 
+{% block main_container_class %}container-fluid px-3 px-lg-4{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
 {% endblock %}
@@ -76,22 +78,24 @@
                 </div>
             </div>
             <div class="data-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Grade</th>
-                            <th>Count</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for grade in grade_distribution %}
+                <div class="table-responsive">
+                    <table class="table w-100 align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td><strong>{{ grade.grade }}</strong></td>
-                                <td>{{ grade.count }}</td>
+                                <th>Grade</th>
+                                <th>Count</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for grade in grade_distribution %}
+                                <tr>
+                                    <td><strong>{{ grade.grade }}</strong></td>
+                                    <td>{{ grade.count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
         {% endif %}
@@ -100,22 +104,24 @@
         {% if departments %}
         <h3 class="section-title"><i class="fas fa-building"></i> Teachers by Department</h3>
         <div class="data-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Department</th>
-                        <th>Teacher Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for dept in departments %}
+            <div class="table-responsive">
+                <table class="table w-100 align-middle mb-0">
+                    <thead>
                         <tr>
-                            <td>{{ dept.department }}</td>
-                            <td>{{ dept.count }}</td>
+                            <th>Department</th>
+                            <th>Teacher Count</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for dept in departments %}
+                            <tr>
+                                <td>{{ dept.department }}</td>
+                                <td>{{ dept.count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -125,4 +131,22 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="{% static 'js/admin.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined' || typeof window.AdminStatistics === 'undefined') {
+        console.error('Chart.js or AdminStatistics is not loaded.');
+        return;
+    }
+
+    const statsPayload = {
+        monthlyData: JSON.parse('{{ monthly_student_data|escapejs }}'),
+        yearlyData: JSON.parse('{{ yearly_student_data|escapejs }}'),
+        monthlyEnrollData: JSON.parse('{{ monthly_enrollment_data|escapejs }}'),
+        gradeLabels: JSON.parse('{{ grade_labels|escapejs }}'),
+        gradeCounts: JSON.parse('{{ grade_counts|escapejs }}')
+    };
+
+    window.AdminStatistics.init(statsPayload);
+});
+</script>
 {% endblock %}

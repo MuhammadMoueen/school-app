@@ -1,21 +1,7 @@
 /**
  * Teacher Dashboard JavaScript
- * Handles sidebar navigation and mobile menu interactions
+ * Handles sidebar navigation and topbar dropdown interactions.
  */
-
-// Global click handler to close dropdowns - runs immediately
-document.addEventListener('click', function(e) {
-    const profileDropdown = document.getElementById('profileDropdown');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    
-    // Close all dropdowns when clicking anywhere (unless click is inside them)
-    if (profileDropdown && !e.target.closest('.profile-section')) {
-        profileDropdown.classList.remove('show');
-    }
-    if (notificationDropdown && !e.target.closest('.notification-section')) {
-        notificationDropdown.classList.remove('show');
-    }
-});
 
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('teacherSidebar');
@@ -65,101 +51,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Profile and Notification Dropdowns - Simplified and Fixed
-    const profileIcon = document.getElementById('profileIcon');
-    const profileDropdown = document.getElementById('profileDropdown');
+    // Notification Dropdown
     const notificationIcon = document.getElementById('notificationIcon');
     const notificationDropdown = document.getElementById('notificationDropdown');
-    
-    console.log('=== DROPDOWN INITIALIZATION ===');
-    console.log('Profile Icon found:', !!profileIcon);
-    console.log('Profile Dropdown found:', !!profileDropdown);
-    console.log('Notification Icon found:', !!notificationIcon);
-    console.log('Notification Dropdown found:', !!notificationDropdown);
-    
-    // Test if clicks work anywhere on page
-    document.body.addEventListener('click', function(e) {
-        console.log('BODY CLICK detected at:', e.target);
-    }, true);
-    
-    // Profile Icon Click Handler
-    if (profileIcon && profileDropdown) {
-        profileIcon.style.cursor = 'pointer';
-        
-        profileIcon.addEventListener('click', function(event) {
-            event.stopPropagation();
-            event.preventDefault();
-            console.log('✅ PROFILE ICON CLICKED!');
-            
-            const isVisible = profileDropdown.classList.contains('show');
-            console.log('Dropdown visible before toggle:', isVisible);
-            
-            profileDropdown.classList.toggle('show');
-            
-            console.log('Dropdown visible after toggle:', profileDropdown.classList.contains('show'));
-            
-            // Close notification if open
-            if (notificationDropdown) {
-                notificationDropdown.classList.remove('show');
-            }
-        }, false);
-        
-        console.log('✓ Profile click handler attached');
-    } else {
-        console.error('❌ Profile elements missing!', {profileIcon, profileDropdown});
+
+    function closeDropdown(dropdown) {
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
     }
-    
-    // Notification Icon Click Handler
+
+    function toggleDropdown(dropdown, otherDropdown) {
+        if (!dropdown) {
+            return;
+        }
+
+        const shouldShow = !dropdown.classList.contains('show');
+        closeDropdown(dropdown);
+        closeDropdown(otherDropdown);
+
+        if (shouldShow) {
+            dropdown.classList.add('show');
+        }
+    }
+
     if (notificationIcon && notificationDropdown) {
         notificationIcon.style.cursor = 'pointer';
-        
+
         notificationIcon.addEventListener('click', function(event) {
             event.stopPropagation();
             event.preventDefault();
-            console.log('✅ NOTIFICATION ICON CLICKED!');
-            
-            const isVisible = notificationDropdown.classList.contains('show');
-            console.log('Dropdown visible before toggle:', isVisible);
-            
-            notificationDropdown.classList.toggle('show');
-            
-            console.log('Dropdown visible after toggle:', notificationDropdown.classList.contains('show'));
-            
-            // Close profile if open
-            if (profileDropdown) {
-                profileDropdown.classList.remove('show');
+            const profileDropdown = document.getElementById('profileDropdown');
+            const profileToggleBtn = document.getElementById('profileToggleBtn');
+
+            toggleDropdown(notificationDropdown, profileDropdown);
+
+            if (profileToggleBtn) {
+                profileToggleBtn.setAttribute('aria-expanded', 'false');
             }
-            
-            // Load notifications
+
             if (notificationDropdown.classList.contains('show')) {
                 loadNotifications();
             }
-        }, false);
-        
-        console.log('✓ Notification click handler attached');
-    } else {
-        console.error('❌ Notification elements missing!', {notificationIcon, notificationDropdown});
+        });
     }
-    
-    // Close dropdowns when clicking outside
+
     document.addEventListener('click', function(event) {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const profileIcon = document.getElementById('profileIcon');
-        const notificationIcon = document.getElementById('notificationIcon');
-        
-        // Close profile dropdown if clicking outside
-        if (profileDropdown && profileIcon) {
-            if (!profileIcon.contains(event.target) && !profileDropdown.contains(event.target)) {
-                profileDropdown.classList.remove('show');
-            }
-        }
-        
-        // Close notification dropdown if clicking outside
-        if (notificationDropdown && notificationIcon) {
-            if (!notificationIcon.contains(event.target) && !notificationDropdown.contains(event.target)) {
-                notificationDropdown.classList.remove('show');
-            }
+        if (!event.target.closest('.notification-section')) {
+            closeDropdown(notificationDropdown);
         }
     });
     

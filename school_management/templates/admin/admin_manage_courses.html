@@ -3,59 +3,68 @@
 
 {% block title %}Manage Courses - Admin Panel{% endblock %}
 
+{% block main_container_class %}container-fluid px-3 px-lg-4{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="courses-wrapper">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+<div class="courses-wrapper courses-dashboard">
+    <div class="page-header">
         <h1><i class="fas fa-list-alt"></i> All Courses</h1>
-        <div>
-            <a href="{% url 'main:admin_create_course' %}" class="btn btn-primary" style="margin-right: 10px;">
+        <div class="header-actions">
+            <a href="{% url 'main:admin_create_course' %}" class="btn-add btn btn-sm">
                 <i class="fas fa-plus-circle"></i> Add New Course
             </a>
-            <a href="{% url 'main:admin_courses_hub' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Courses Hub
+            <a href="{% url 'main:admin_courses_hub' %}" class="btn-back btn btn-sm">
+                <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
     </div>
 
-    <div class="courses-list">
-        <h3><i class="fas fa-list"></i> All Courses ({{ courses|length }})</h3>
-        
+    <div class="courses-section">
         {% if courses %}
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Name</th>
-                            <th>Teacher</th>
-                            <th>Students</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for course in courses %}
-                            <tr>
-                                <td><strong>{{ course.code }}</strong></td>
-                                <td>{{ course.name }}</td>
-                                <td>{{ course.teacher.get_full_name }}</td>
-                                <td>{{ course.enrollment_count }}</td>
-                                <td>
-                                    <a href="{% url 'main:admin_edit_course' course.id %}" class="btn-edit" style="margin-right: 8px;">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <a href="{% url 'main:admin_delete_course' course.id %}" class="btn-delete" 
-                                       onclick="return confirm('Are you sure you want to delete {{ course.name }}? This will remove all enrollments and transcripts.');">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card students-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-list"></i> All Courses ({{ courses|length }})</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="teachers-table courses-table">
+                        <div class="table-responsive">
+                            <table class="table w-100 align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Teacher</th>
+                                        <th>Students</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for course in courses %}
+                                        <tr>
+                                            <td><strong>{{ course.code }}</strong></td>
+                                            <td>{{ course.name }}</td>
+                                            <td>{{ course.teacher.get_full_name }}</td>
+                                            <td>{{ course.enrollment_count }}</td>
+                                            <td>
+                                                <a href="{% url 'main:admin_edit_course' course.id %}" class="btn-edit btn btn-sm">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <a href="{% url 'main:admin_delete_course' course.id %}" class="btn-delete btn btn-sm"
+                                                   onclick="return confirm('Are you sure you want to delete {{ course.name }}? This will remove all enrollments and transcripts.');">
+                                                    <i class="fas fa-trash-alt"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         {% else %}
             <div class="text-center text-muted mt-4 mb-4" style="padding: 40px;">
