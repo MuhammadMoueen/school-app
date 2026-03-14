@@ -51,183 +51,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Profile + Notification dropdowns
-    const notificationIcon = document.getElementById('notificationIcon');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    const profileDropdown = document.getElementById('profileDropdown');
-    const profileToggleBtn = document.getElementById('profileToggleBtn');
-    const profileIcon = document.getElementById('profileIcon');
-    const profileTrigger = profileToggleBtn || profileIcon;
-
-    function closeDropdown(dropdown) {
-        if (dropdown) {
-            dropdown.classList.remove('show');
-        }
-    }
-
-    function setProfileExpanded(expanded) {
-        if (profileToggleBtn) {
-            profileToggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        }
-    }
-
-    function closeProfileDropdown() {
-        closeDropdown(profileDropdown);
-        setProfileExpanded(false);
-    }
-
-    function closeNotificationDropdown() {
-        closeDropdown(notificationDropdown);
-    }
-
-    if (profileTrigger && profileDropdown) {
-        profileTrigger.addEventListener('click', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-
-            const shouldShow = !profileDropdown.classList.contains('show');
-            closeProfileDropdown();
-            closeNotificationDropdown();
-
-            if (shouldShow) {
-                profileDropdown.classList.add('show');
-                setProfileExpanded(true);
+    document.querySelectorAll('.js-auto-submit').forEach(function(element) {
+        element.addEventListener('change', function() {
+            if (this.form) {
+                this.form.submit();
             }
         });
-    }
-
-    if (notificationIcon && notificationDropdown) {
-        notificationIcon.style.cursor = 'pointer';
-
-        notificationIcon.addEventListener('click', function(event) {
-            event.stopPropagation();
-            event.preventDefault();
-
-            const shouldShow = !notificationDropdown.classList.contains('show');
-            closeNotificationDropdown();
-            closeProfileDropdown();
-
-            if (shouldShow) {
-                notificationDropdown.classList.add('show');
-                loadNotifications();
-            }
-        });
-    }
-
-    if (profileDropdown) {
-        profileDropdown.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
-    }
-
-    if (notificationDropdown) {
-        notificationDropdown.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
-    }
-
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.profile-section')) {
-            closeProfileDropdown();
-        }
-        if (!event.target.closest('.notification-section')) {
-            closeNotificationDropdown();
-        }
     });
 
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeProfileDropdown();
-            closeNotificationDropdown();
-        }
-    });
-    
-    // Load notifications via AJAX
-    function loadNotifications() {
-        const notificationList = document.getElementById('notificationList');
-        if (!notificationList) return;
-        
-        // Show loading state
-        notificationList.innerHTML = `
-            <div class="notification-empty">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading notifications...</p>
-            </div>
-        `;
-        
-        // Fetch notifications
-        fetch('/notifications/get/')
-            .then(response => response.json())
-            .then(data => {
-                if (data.notifications && data.notifications.length > 0) {
-                    notificationList.innerHTML = data.notifications.map(notif => `
-                        <a href="${notif.url}" class="notification-item ${notif.is_read ? '' : 'unread'}" data-id="${notif.id}" data-type="${notif.type}">
-                            <div class="notification-sender">
-                                <i class="fas ${notif.icon}"></i>
-                                ${notif.sender}
-                            </div>
-                            <div class="notification-message">${notif.message}</div>
-                            <div class="notification-time"><i class="far fa-clock"></i> ${notif.time}</div>
-                        </a>
-                    `).join('');
-
-                    notificationList.querySelectorAll('.notification-item').forEach(item => {
-                        item.addEventListener('click', function() {
-                            const id = this.dataset.id;
-                            const type = this.dataset.type;
-                            markAsRead(id, type);
-                        });
-                    });
-                } else {
-                    notificationList.innerHTML = `
-                        <div class="notification-empty">
-                            <i class="fas fa-inbox"></i>
-                            <p>No notifications yet</p>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Error loading notifications:', error);
-                notificationList.innerHTML = `
-                    <div class="notification-empty">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Failed to load notifications</p>
-                    </div>
-                `;
-            });
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+    document.querySelectorAll('.js-confirm').forEach(function(element) {
+        element.addEventListener('click', function(event) {
+            const message = this.dataset.confirmMessage || 'Are you sure?';
+            if (!window.confirm(message)) {
+                event.preventDefault();
             }
-        }
-        return cookieValue;
-    }
-
-    function markAsRead(id, type) {
-        fetch('/notifications/mark-read/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                id: parseInt(id, 10),
-                type: type
-            })
-        }).catch(error => {
-            console.error('Error marking notification as read:', error);
         });
-    }
+    });
+
+    document.querySelectorAll('.js-progress-width').forEach(function(element) {
+        const widthValue = parseFloat(element.dataset.progressWidth || '0');
+        const safeWidth = Math.max(0, Math.min(100, widthValue));
+        element.style.width = safeWidth + '%';
+    });
 });
 
 /**

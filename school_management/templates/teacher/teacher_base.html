@@ -5,12 +5,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-<style>
-    /* Hide main navbar for teacher panel */
-    .top-navbar { display: none; }
-    body { padding-top: 0; }
-    main { padding: 0; }
-</style>
 {% block page_css %}{% endblock %}
 {% endblock %}
 
@@ -86,65 +80,6 @@
                 <h1>{% block topbar_title %}Dashboard \u2013 {{ user.get_full_name|default:user.username }}{% endblock %}</h1>
             </div>
             <div class="topbar-spacer"></div>
-            <div class="topbar-actions">
-                <!-- Notification Icon -->
-                {% if user.role in 'teacher,student' %}
-                <div class="notification-section">
-                    <div class="notification-icon" id="notificationIcon">
-                        <i class="fas fa-bell"></i>
-                        {% if unread_notification_count > 0 %}
-                            <span class="notification-badge">{{ unread_notification_count }}</span>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Notification Dropdown -->
-                    <div class="notification-dropdown" id="notificationDropdown">
-                        <div class="notification-header">
-                            <span><i class="fas fa-bell"></i> Notifications</span>
-                            <span class="notification-unread-count">{{ unread_notification_count|default:0 }} unread</span>
-                        </div>
-                        <div class="notification-list" id="notificationList">
-                            <div class="notification-empty">
-                                <i class="fas fa-inbox"></i>
-                                <p>Loading notifications...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Profile Icon -->
-                <div class="profile-section">
-                    <button type="button" class="profile-trigger" id="profileToggleBtn" aria-expanded="false" aria-controls="profileDropdown">
-                    {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
-                    {% else %}
-                        <div class="profile-icon-circle" id="profileIcon">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                    {% endif %}
-                    </button>
-                    
-                    <div class="profile-dropdown" id="profileDropdown">
-                        <div class="profile-dropdown-header">
-                            <div class="profile-username">{{ user.username }}</div>
-                            <div class="profile-role">{{ user.get_role_display }}</div>
-                        </div>
-                        <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
-                            <i class="fas fa-user-edit"></i> My Profile
-                        </a>
-                        <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                        <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
-                            <i class="fas fa-key"></i> Change Password
-                        </a>
-                        <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <!-- Page Content -->
