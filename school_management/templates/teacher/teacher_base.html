@@ -5,6 +5,12 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+<style>
+    /* Hide main navbar for teacher panel */
+    .top-navbar { display: none; }
+    body { padding-top: 0; }
+    main { padding: 0; }
+</style>
 {% block page_css %}{% endblock %}
 {% endblock %}
 
@@ -80,6 +86,9 @@
                 <h1>{% block topbar_title %}Dashboard \u2013 {{ user.get_full_name|default:user.username }}{% endblock %}</h1>
             </div>
             <div class="topbar-spacer"></div>
+            <div class="topbar-actions">
+                <!-- Notification and profile icons intentionally removed -->
+            </div>
         </div>
         
         <!-- Page Content -->
