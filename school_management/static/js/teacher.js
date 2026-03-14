@@ -51,9 +51,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Notification Dropdown
+    // Profile + Notification dropdowns
     const notificationIcon = document.getElementById('notificationIcon');
     const notificationDropdown = document.getElementById('notificationDropdown');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const profileToggleBtn = document.getElementById('profileToggleBtn');
+    const profileIcon = document.getElementById('profileIcon');
+    const profileTrigger = profileToggleBtn || profileIcon;
 
     function closeDropdown(dropdown) {
         if (dropdown) {
@@ -61,18 +65,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function toggleDropdown(dropdown, otherDropdown) {
-        if (!dropdown) {
-            return;
+    function setProfileExpanded(expanded) {
+        if (profileToggleBtn) {
+            profileToggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         }
+    }
 
-        const shouldShow = !dropdown.classList.contains('show');
-        closeDropdown(dropdown);
-        closeDropdown(otherDropdown);
+    function closeProfileDropdown() {
+        closeDropdown(profileDropdown);
+        setProfileExpanded(false);
+    }
 
-        if (shouldShow) {
-            dropdown.classList.add('show');
-        }
+    function closeNotificationDropdown() {
+        closeDropdown(notificationDropdown);
+    }
+
+    if (profileTrigger && profileDropdown) {
+        profileTrigger.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const shouldShow = !profileDropdown.classList.contains('show');
+            closeProfileDropdown();
+            closeNotificationDropdown();
+
+            if (shouldShow) {
+                profileDropdown.classList.add('show');
+                setProfileExpanded(true);
+            }
+        });
     }
 
     if (notificationIcon && notificationDropdown) {
@@ -81,24 +102,43 @@ document.addEventListener('DOMContentLoaded', function() {
         notificationIcon.addEventListener('click', function(event) {
             event.stopPropagation();
             event.preventDefault();
-            const profileDropdown = document.getElementById('profileDropdown');
-            const profileToggleBtn = document.getElementById('profileToggleBtn');
 
-            toggleDropdown(notificationDropdown, profileDropdown);
+            const shouldShow = !notificationDropdown.classList.contains('show');
+            closeNotificationDropdown();
+            closeProfileDropdown();
 
-            if (profileToggleBtn) {
-                profileToggleBtn.setAttribute('aria-expanded', 'false');
-            }
-
-            if (notificationDropdown.classList.contains('show')) {
+            if (shouldShow) {
+                notificationDropdown.classList.add('show');
                 loadNotifications();
             }
         });
     }
 
+    if (profileDropdown) {
+        profileDropdown.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    }
+
+    if (notificationDropdown) {
+        notificationDropdown.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    }
+
     document.addEventListener('click', function(event) {
+        if (!event.target.closest('.profile-section')) {
+            closeProfileDropdown();
+        }
         if (!event.target.closest('.notification-section')) {
-            closeDropdown(notificationDropdown);
+            closeNotificationDropdown();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeProfileDropdown();
+            closeNotificationDropdown();
         }
     });
     
@@ -116,22 +156,28 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         // Fetch notifications
-        fetch('/get-notifications/')
+        fetch('/notifications/get/')
             .then(response => response.json())
             .then(data => {
                 if (data.notifications && data.notifications.length > 0) {
                     notificationList.innerHTML = data.notifications.map(notif => `
-                        <a href="${notif.link}" class="notification-item ${notif.is_read ? '' : 'unread'}">
+                        <a href="${notif.url}" class="notification-item ${notif.is_read ? '' : 'unread'}" data-id="${notif.id}" data-type="${notif.type}">
                             <div class="notification-sender">
-                                <i class="fas fa-user-circle"></i>
+                                <i class="fas ${notif.icon}"></i>
                                 ${notif.sender}
                             </div>
                             <div class="notification-message">${notif.message}</div>
-                            <div class="notification-time">
-                                <i class="far fa-clock"></i> ${notif.time_ago}
-                            </div>
+                            <div class="notification-time"><i class="far fa-clock"></i> ${notif.time}</div>
                         </a>
                     `).join('');
+
+                    notificationList.querySelectorAll('.notification-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const id = this.dataset.id;
+                            const type = this.dataset.type;
+                            markAsRead(id, type);
+                        });
+                    });
                 } else {
                     notificationList.innerHTML = `
                         <div class="notification-empty">
@@ -150,6 +196,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function markAsRead(id, type) {
+        fetch('/notifications/mark-read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                id: parseInt(id, 10),
+                type: type
+            })
+        }).catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
     }
 });
 

@@ -1454,7 +1454,8 @@ main .container .alert {
 
 /* Page Header Section */
 .page-header-section {
-    margin-bottom: 25px;
+    margin-top: 8px;
+    margin-bottom: 32px;
 }
 
 .page-header-content {
@@ -1466,7 +1467,7 @@ main .container .alert {
 }
 
 .page-main-title {
-    margin: 0;
+    margin: 0 0 6px 0;
     font-size: 1.8rem;
     color: #2c3e50;
     font-weight: 700;
@@ -1501,7 +1502,7 @@ main .container .alert {
 }
 
 .card-header-section {
-    padding: 20px 25px;
+    padding: 22px 25px;
     border-bottom: 2px solid #f0f0f0;
     display: flex;
     align-items: center;

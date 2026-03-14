@@ -158,54 +158,5 @@
 
 <!-- Scripts -->
 <script src="{% static 'js/teacher.js' %}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const profileToggleBtn = document.getElementById('profileToggleBtn');
-    const profileDropdown = document.getElementById('profileDropdown');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-
-    if (!profileToggleBtn || !profileDropdown) {
-        return;
-    }
-
-    function closeProfileDropdown() {
-        profileDropdown.classList.remove('show');
-        profileToggleBtn.setAttribute('aria-expanded', 'false');
-    }
-
-    profileToggleBtn.addEventListener('click', function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const shouldShow = !profileDropdown.classList.contains('show');
-        closeProfileDropdown();
-
-        if (notificationDropdown) {
-            notificationDropdown.classList.remove('show');
-        }
-
-        if (shouldShow) {
-            profileDropdown.classList.add('show');
-            profileToggleBtn.setAttribute('aria-expanded', 'true');
-        }
-    });
-
-    profileDropdown.addEventListener('click', function (event) {
-        event.stopPropagation();
-    });
-
-    document.addEventListener('click', function (event) {
-        if (!event.target.closest('.profile-section')) {
-            closeProfileDropdown();
-        }
-    });
-
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-            closeProfileDropdown();
-        }
-    });
-});
-</script>
 {% block page_scripts %}{% endblock %}
 {% endblock %}
