@@ -7,6 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
+from datetime import datetime
 import json
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignEmailForm, CourseForm, EnrollmentForm, TranscriptForm,
@@ -1162,113 +1163,168 @@ def submit_assignment(request, assignment_id):
 
 @login_required
 def manage_attendance(request):
-    """View and manage attendance records"""
+    """Teacher attendance page: mark/edit attendance, view history, and daily analytics."""
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('main:home')
-    
+
     teacher = request.user
-    courses = Course.objects.filter(teacher=teacher)
-    
-    # Filter by course if specified
-    course_id = request.GET.get('course')
-    date_filter = request.GET.get('date')
-    
-    attendances = Attendance.objects.filter(course__teacher=teacher).select_related('student', 'course')
-    
-    if course_id:
-        attendances = attendances.filter(course_id=course_id)
-    if date_filter:
-        attendances = attendances.filter(date=date_filter)
-    
-    attendances = attendances.order_by('-date', 'student__username')
-    
-    context = {
-        'attendances': attendances,
-        'courses': courses,
-        'selected_course': course_id,
-        'selected_date': date_filter,
+    courses = Course.objects.filter(teacher=teacher).order_by('code', 'name')
+
+    selected_course_id = (request.POST.get('course') if request.method == 'POST' else request.GET.get('course'))
+    raw_selected_date = (request.POST.get('date') if request.method == 'POST' else request.GET.get('date'))
+
+    selected_date = timezone.localdate()
+    if raw_selected_date:
+        try:
+            selected_date = datetime.strptime(raw_selected_date, '%Y-%m-%d').date()
+        except ValueError:
+            messages.warning(request, 'Invalid date selected. Showing today instead.')
+
+    selected_course = None
+    students = []
+    history_rows = []
+    attendance_exists = False
+    total_students = 0
+    today = timezone.localdate()
+    today_summary = {
+        'total_students': 0,
+        'present': 0,
+        'absent': 0,
+        'late': 0,
+        'leave': 0,
+        'attendance_rate': 0,
     }
-    
+
+    if selected_course_id:
+        selected_course = get_object_or_404(Course, id=selected_course_id, teacher=teacher)
+        enrollments = Enrollment.objects.filter(course=selected_course).select_related('student').order_by(
+            'student__first_name',
+            'student__last_name',
+            'student__username',
+        )
+        total_students = enrollments.count()
+
+        selected_date_records = Attendance.objects.filter(
+            course=selected_course,
+            date=selected_date,
+        ).select_related('student')
+        attendance_map = {record.student_id: record for record in selected_date_records}
+        attendance_exists = selected_date_records.exists()
+
+        if request.method == 'POST':
+            valid_statuses = {choice[0] for choice in Attendance.STATUS_CHOICES}
+
+            for enrollment in enrollments:
+                student = enrollment.student
+                status = request.POST.get(f'status_{student.id}', 'present')
+                remarks = request.POST.get(f'remarks_{student.id}', '').strip()
+
+                if status not in valid_statuses:
+                    status = 'present'
+
+                existing_record = attendance_map.get(student.id)
+                if existing_record:
+                    existing_record.status = status
+                    existing_record.remarks = remarks
+                    existing_record.marked_by = teacher
+                    existing_record.student_class = selected_course.student_class
+                    existing_record.section = selected_course.section
+                    existing_record.save()
+                else:
+                    Attendance.objects.create(
+                        course=selected_course,
+                        student=student,
+                        date=selected_date,
+                        status=status,
+                        remarks=remarks,
+                        marked_by=teacher,
+                        student_class=selected_course.student_class,
+                        section=selected_course.section,
+                    )
+
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='mark_attendance',
+                description=f'Teacher {teacher_name} marked attendance for {selected_course.name} (Class {selected_course.student_class}{selected_course.section}) on {selected_date}',
+                course=selected_course,
+            )
+
+            if attendance_exists:
+                messages.info(request, 'Attendance already recorded for this date.')
+                messages.success(request, 'Existing attendance has been updated successfully.')
+            else:
+                messages.success(request, f'Attendance saved successfully for {selected_course.name} on {selected_date}.')
+
+            return redirect(f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}")
+
+        selected_date_records = Attendance.objects.filter(
+            course=selected_course,
+            date=selected_date,
+        ).select_related('student')
+        attendance_map = {record.student_id: record for record in selected_date_records}
+        attendance_exists = selected_date_records.exists()
+
+        for enrollment in enrollments:
+            record = attendance_map.get(enrollment.student_id)
+            students.append({
+                'student': enrollment.student,
+                'attendance': record,
+                'status': record.status if record else 'present',
+            })
+
+        course_records = Attendance.objects.filter(course=selected_course).order_by('-date')
+        history_map = {}
+        for record in course_records:
+            row = history_map.setdefault(record.date, {
+                'date': record.date,
+                'present': 0,
+                'absent': 0,
+                'late': 0,
+                'leave': 0,
+            })
+            row[record.status] += 1
+
+        history_rows = sorted(history_map.values(), key=lambda row: row['date'], reverse=True)[:20]
+
+        today_records = Attendance.objects.filter(course=selected_course, date=today)
+        today_summary['total_students'] = total_students
+        today_summary['present'] = today_records.filter(status='present').count()
+        today_summary['absent'] = today_records.filter(status='absent').count()
+        today_summary['late'] = today_records.filter(status='late').count()
+        today_summary['leave'] = today_records.filter(status='leave').count()
+        today_summary['attendance_rate'] = round(
+            (today_summary['present'] / total_students * 100) if total_students > 0 else 0,
+            2,
+        )
+
+    context = {
+        'courses': courses,
+        'selected_course': selected_course,
+        'selected_course_id': str(selected_course.id) if selected_course else '',
+        'selected_date': selected_date.isoformat(),
+        'students': students,
+        'attendance_exists': attendance_exists,
+        'history_rows': history_rows,
+        'today_summary': today_summary,
+        'today_date': today,
+    }
     return render(request, 'teacher/manage_attendance.html', context)
 
 
 @login_required
 def mark_attendance(request):
-    """Mark attendance for a course on a specific date"""
+    """Legacy route - redirect to unified attendance management page."""
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('main:home')
-    
-    teacher = request.user
-    
-    if request.method == 'POST':
-        course_id = request.POST.get('course')
-        date = request.POST.get('date')
-        
-        course = get_object_or_404(Course, id=course_id, teacher=teacher)
-        
-        # Get all enrolled students
-        enrollments = Enrollment.objects.filter(course=course).select_related('student')
-        
-        for enrollment in enrollments:
-            student = enrollment.student
-            status = request.POST.get(f'status_{student.id}', 'present')
-            remarks = request.POST.get(f'remarks_{student.id}', '')
-            
-            # Create or update attendance record
-            Attendance.objects.update_or_create(
-                course=course,
-                student=student,
-                date=date,
-                defaults={
-                    'status': status,
-                    'remarks': remarks,
-                    'marked_by': teacher
-                }
-            )
 
-        teacher_name = teacher.get_full_name() or teacher.username
-        log_teacher_activity(
-            teacher=teacher,
-            action_type='mark_attendance',
-            description=f'Teacher {teacher_name} marked attendance for {course.name} (Class {course.student_class}{course.section}) on {date}',
-            course=course,
-        )
-        
-        messages.success(request, f'Attendance marked successfully for {course.name} on {date}')
-        return redirect('main:manage_attendance')
-    
-    # GET request - show form
-    courses = Course.objects.filter(teacher=teacher)
-    
-    # Get selected course and date from GET params
-    course_id = request.GET.get('course')
-    date = request.GET.get('date')
-    
-    students = []
-    selected_course = None
-    
-    if course_id:
-        selected_course = get_object_or_404(Course, id=course_id, teacher=teacher)
-        enrollments = Enrollment.objects.filter(course=selected_course).select_related('student')
-        
-        # Get existing attendance records for this date if any
-        existing_attendance = {}
-        if date:
-            existing_records = Attendance.objects.filter(course=selected_course, date=date)
-            existing_attendance = {a.student_id: a for a in existing_records}
-        
-        students = [{'student': e.student, 'attendance': existing_attendance.get(e.student_id)} for e in enrollments]
-    
-    context = {
-        'courses': courses,
-        'selected_course': selected_course,
-        'selected_date': date,
-        'students': students,
-    }
-    
-    return render(request, 'teacher/mark_attendance.html', context)
+    course_id = request.GET.get('course', '')
+    selected_date = request.GET.get('date', '')
+    if course_id and selected_date:
+        return redirect(f"{reverse('main:manage_attendance')}?course={course_id}&date={selected_date}")
+    return redirect('main:manage_attendance')
 
 
 @login_required
@@ -1294,6 +1350,7 @@ def attendance_report(request, course_id):
         present = attendances.filter(status='present').count()
         absent = attendances.filter(status='absent').count()
         late = attendances.filter(status='late').count()
+        leave = attendances.filter(status='leave').count()
         
         percentage = (present / total * 100) if total > 0 else 0
         
@@ -1303,6 +1360,7 @@ def attendance_report(request, course_id):
             'present': present,
             'absent': absent,
             'late': late,
+            'leave': leave,
             'percentage': round(percentage, 2)
         })
     
@@ -2117,6 +2175,48 @@ def student_dashboard(request):
         })
 
     pending_assignments_count = sum(1 for row in assignment_rows if row['status'] == 'Pending')
+
+    attendance_records = list(
+        Attendance.objects.filter(
+            student=student,
+            course_id__in=enrolled_course_ids,
+        ).select_related('course').order_by('-date', 'course__code')
+    )
+
+    attendance_by_course = {}
+    for record in attendance_records:
+        stats = attendance_by_course.setdefault(record.course_id, {
+            'course': record.course,
+            'present': 0,
+            'absent': 0,
+            'late': 0,
+            'leave': 0,
+            'total': 0,
+        })
+        stats[record.status] += 1
+        stats['total'] += 1
+
+    attendance_summary_rows = []
+    for enrollment in enrollments:
+        stats = attendance_by_course.get(enrollment.course_id, {
+            'course': enrollment.course,
+            'present': 0,
+            'absent': 0,
+            'late': 0,
+            'leave': 0,
+            'total': 0,
+        })
+        attendance_rate = (stats['present'] / stats['total'] * 100) if stats['total'] else 0
+        attendance_summary_rows.append({
+            'course': stats['course'],
+            'present': stats['present'],
+            'absent': stats['absent'],
+            'late': stats['late'],
+            'leave': stats['leave'],
+            'attendance_rate': round(attendance_rate, 2),
+        })
+
+    attendance_history_rows = attendance_records[:20]
     
     context = {
         'student': student,
@@ -2125,6 +2225,8 @@ def student_dashboard(request):
         'recent_lectures': lectures,
         'assignment_rows': assignment_rows,
         'pending_assignments_count': pending_assignments_count,
+        'attendance_summary_rows': attendance_summary_rows,
+        'attendance_history_rows': attendance_history_rows,
         'total_courses': enrollments.count(),
     }
     

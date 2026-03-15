@@ -360,11 +360,14 @@ class Attendance(models.Model):
         ('present', 'Present'),
         ('absent', 'Absent'),
         ('late', 'Late'),
+        ('leave', 'Leave'),
     )
     
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='attendances')
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='attendances', limit_choices_to={'role': 'student'})
     date = models.DateField()
+    student_class = models.CharField(max_length=20, blank=True)
+    section = models.CharField(max_length=10, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='present')
     remarks = models.TextField(blank=True)
     marked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='marked_attendances')
@@ -375,6 +378,12 @@ class Attendance(models.Model):
         unique_together = ['course', 'student', 'date']
         ordering = ['-date', 'student']
     
+    def save(self, *args, **kwargs):
+        if self.course_id:
+            self.student_class = self.course.student_class
+            self.section = self.course.section
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.student.username} - {self.course.code} - {self.date} - {self.status}"
 

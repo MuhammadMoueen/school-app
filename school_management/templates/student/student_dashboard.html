@@ -107,6 +107,76 @@
         {% endif %}
     </div>
 
+    <div class="section-divider"><hr></div>
+
+    <div class="reports-section">
+        <h2><i class="fas fa-calendar-check"></i> My Attendance</h2>
+        <p class="section-desc">Track attendance status by course and review daily records</p>
+
+        {% if attendance_summary_rows %}
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attendance_summary_rows %}
+                    <tr>
+                        <td>{{ row.course.name }}</td>
+                        <td class="text-center"><span class="badge bg-success">{{ row.present }}</span></td>
+                        <td class="text-center"><span class="badge bg-danger">{{ row.absent }}</span></td>
+                        <td class="text-center"><strong>{{ row.attendance_rate }}%</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if attendance_history_rows %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attendance_history_rows %}
+                    <tr>
+                        <td>{{ row.date|date:"M d, Y" }}</td>
+                        <td>{{ row.course.name }}</td>
+                        <td>
+                            {% if row.status == 'present' %}
+                                <span class="badge bg-success">Present</span>
+                            {% elif row.status == 'absent' %}
+                                <span class="badge bg-danger">Absent</span>
+                            {% elif row.status == 'late' %}
+                                <span class="badge bg-warning text-dark">Late</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark">Leave</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-check"></i>
+            <p>No attendance records available yet</p>
+        </div>
+        {% endif %}
+    </div>
+
     <div class="reports-section">
         <h2><i class="fas fa-file-video"></i> My Lectures</h2>
         <p class="section-desc">Recent lectures published for your enrolled courses</p>

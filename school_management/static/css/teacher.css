@@ -1911,6 +1911,45 @@ main .container .alert {
     font-size: 0.9rem;
 }
 
+/* Attendance summary widgets */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.stat-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 12px;
+    background: #ffffff;
+    text-align: center;
+}
+
+.stat-box .stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-box .stat-label {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+@media (max-width: 992px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .page-main-title {

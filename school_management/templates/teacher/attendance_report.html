@@ -29,6 +29,7 @@
                                 <th>Present</th>
                                 <th>Absent</th>
                                 <th>Late</th>
+                                <th>Leave</th>
                                 <th>Attendance %</th>
                             </tr>
                         </thead>
@@ -40,6 +41,7 @@
                                 <td><span class="badge bg-success">{{ stat.present }}</span></td>
                                 <td><span class="badge bg-danger">{{ stat.absent }}</span></td>
                                 <td><span class="badge bg-warning">{{ stat.late }}</span></td>
+                                <td><span class="badge bg-info text-dark">{{ stat.leave }}</span></td>
                                 <td>
                                     <strong>{{ stat.percentage }}%</strong>
                                     {% if stat.percentage >= 75 %}

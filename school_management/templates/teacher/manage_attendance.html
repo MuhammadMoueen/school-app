@@ -10,97 +10,176 @@
         <h2 class="page-main-title">
             <i class="fas fa-calendar-check"></i> Attendance Management
         </h2>
-        <p class="page-subtitle">Track and manage student attendance</p>
+        <p class="page-subtitle">Load enrolled students, mark daily attendance, and track trends by course</p>
     </div>
 </div>
 
-<!-- Filter Card -->
 <div class="content-card">
     <div class="card-body card-body-pad-20">
-        <div class="row align-items-end">
-            <div class="col-md-4">
-                <form method="get">
-                    <label class="form-label">
-                        <i class="fas fa-book"></i> Filter by Course
-                    </label>
-                    <select name="course" class="form-select js-auto-submit">
-                        <option value="">All Courses</option>
-                        {% for course in courses %}
-                        <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
-                            {{ course.code }} - {{ course.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </form>
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label" for="courseSelect">
+                    <i class="fas fa-book"></i> Select Course
+                </label>
+                <select id="courseSelect" name="course" class="form-select" required>
+                    <option value="">Choose a course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }} (Class {{ course.student_class }}{{ course.section }})
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-4">
-                <form method="get">
-                    <input type="hidden" name="course" value="{{ selected_course }}">
-                    <label class="form-label">
-                        <i class="fas fa-calendar"></i> Filter by Date
-                    </label>
-                    <input type="date" name="date" class="form-control js-auto-submit" value="{{ selected_date }}">
-                </form>
+                <label class="form-label" for="dateSelect">
+                    <i class="fas fa-calendar"></i> Select Date
+                </label>
+                <input id="dateSelect" type="date" name="date" class="form-control" value="{{ selected_date }}" required>
             </div>
-            <div class="col-md-4 text-end">
-                <label class="form-label d-block">&nbsp;</label>
-                <a href="{% url 'main:mark_attendance' %}" class="btn-action">
-                    <i class="fas fa-plus"></i> Mark Attendance
-                </a>
+            <div class="col-md-3 text-end">
+                <button type="submit" class="btn-action w-100">
+                    <i class="fas fa-users"></i> Load Students
+                </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
-<!-- Attendance List Card -->
+{% if selected_course %}
 <div class="content-card">
     <div class="card-header-section">
         <h3 class="card-section-title">
-            <i class="fas fa-list"></i> Attendance Records
+            <i class="fas fa-user-check"></i> Mark Attendance: {{ selected_course.code }} - {{ selected_course.name }}
         </h3>
         <div class="card-header-actions">
-            <span class="badge badge-info">{{ attendances|length }} Records</span>
+            <span class="badge badge-info">Class {{ selected_course.student_class }}{{ selected_course.section }}</span>
         </div>
     </div>
     <div class="card-body">
-        {% if attendances %}
+        {% if attendance_exists %}
+        <div class="alert alert-warning mb-3">
+            Attendance already recorded for this date.
+        </div>
+        {% endif %}
+
+        {% if students %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="course" value="{{ selected_course.id }}">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+
             <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Course</th>
-                            <th>Student</th>
-                            <th class="text-center">Status</th>
+                            <th>Student Name</th>
+                            <th class="text-center">Attendance Status</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for attendance in attendances %}
+                        {% for item in students %}
                         <tr>
-                            <td class="text-muted">{{ attendance.date|date:"M d, Y" }}</td>
-                            <td><span class="badge badge-primary">{{ attendance.course.code }}</span></td>
-                            <td class="font-weight-bold">
-                                <i class="fas fa-user-circle"></i> {{ attendance.student.get_full_name }}
+                            <td>
+                                <strong>{{ item.student.get_full_name|default:item.student.username }}</strong>
+                                <small class="text-muted d-block">@{{ item.student.username }}</small>
                             </td>
                             <td class="text-center">
-                                <span class="badge badge-{% if attendance.status == 'present' %}success{% elif attendance.status == 'late' %}warning{% else %}danger{% endif %}">
-                                    {{ attendance.get_status_display }}
-                                </span>
+                                <select name="status_{{ item.student.id }}" class="form-select form-select-sm">
+                                    <option value="present" {% if item.status == 'present' %}selected{% endif %}>Present</option>
+                                    <option value="absent" {% if item.status == 'absent' %}selected{% endif %}>Absent</option>
+                                    <option value="late" {% if item.status == 'late' %}selected{% endif %}>Late</option>
+                                    <option value="leave" {% if item.status == 'leave' %}selected{% endif %}>Leave</option>
+                                </select>
                             </td>
-                            <td class="text-muted">{{ attendance.remarks|default:"-" }}</td>
+                            <td>
+                                <input type="text" name="remarks_{{ item.student.id }}" class="form-control" value="{{ item.attendance.remarks|default:'' }}" placeholder="Optional remark">
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+
+            <div class="text-end mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    {% if attendance_exists %}Update Attendance{% else %}Save Attendance{% endif %}
+                </button>
+            </div>
+        </form>
         {% else %}
             <div class="empty-state">
                 <i class="fas fa-calendar-check"></i>
-                <p>No attendance records found</p>
-                <small>Mark attendance to start tracking student presence</small>
+                <p>No enrolled students found for this course</p>
             </div>
         {% endif %}
     </div>
 </div>
+
+<div class="content-card mb-25">
+    <div class="card-header-section">
+        <h3 class="card-section-title"><i class="fas fa-chart-pie"></i> Today's Attendance Summary ({{ today_date|date:"M d, Y" }})</h3>
+    </div>
+    <div class="card-body card-body-pad-20">
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value">{{ today_summary.total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value text-success">{{ today_summary.present }}</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value text-danger">{{ today_summary.absent }}</div>
+                <div class="stat-label">Absent Today</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value text-warning">{{ today_summary.attendance_rate }}%</div>
+                <div class="stat-label">Attendance Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title"><i class="fas fa-history"></i> Attendance History</h3>
+    </div>
+    <div class="card-body">
+        {% if history_rows %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Leave</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history_rows %}
+                    <tr>
+                        <td>{{ row.date|date:"M d, Y" }}</td>
+                        <td class="text-center"><span class="badge badge-success">{{ row.present }}</span></td>
+                        <td class="text-center"><span class="badge badge-danger">{{ row.absent }}</span></td>
+                        <td class="text-center"><span class="badge badge-warning">{{ row.late }}</span></td>
+                        <td class="text-center"><span class="badge badge-info">{{ row.leave }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-history"></i>
+            <p>No attendance history yet for this course</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}
