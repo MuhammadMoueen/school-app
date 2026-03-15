@@ -10,7 +10,7 @@ def notification_count(request):
     """
     if request.user.is_authenticated:
         try:
-            from .models import TeacherActivityNotification, TeacherActivityResponse, MarksReport, ReportReply, LectureNotification
+            from .models import TeacherActivityNotification, TeacherActivityResponse, MarksReport, ReportReply, LectureNotification, AuditLog
 
             unread_count = 0
             recent_notifications = []
@@ -28,6 +28,11 @@ def notification_count(request):
                     teacher=request.user,
                     is_read_by_teacher=False,
                 ).count()
+                unread_assignment_notifications = AuditLog.objects.filter(
+                    target_user=request.user,
+                    action__in=['create_course', 'edit_course'],
+                    is_seen_by_target=False,
+                ).count()
                 unread_admin_responses = TeacherActivityResponse.objects.filter(
                     notification__activity__teacher=request.user,
                     is_read_by_teacher=False,
@@ -36,7 +41,7 @@ def notification_count(request):
                     recipient=request.user,
                     is_read=False,
                 ).count()
-                unread_count = unread_reports + unread_admin_responses + unread_lecture_notifications
+                unread_count = unread_reports + unread_assignment_notifications + unread_admin_responses + unread_lecture_notifications
             elif request.user.role == 'student':
                 unread_report_replies = ReportReply.objects.filter(
                     report__student=request.user,

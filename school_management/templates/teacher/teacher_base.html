@@ -45,10 +45,6 @@
                 <i class="fas fa-file-video nav-icon"></i>
                 <span class="nav-text">Lectures</span>
             </a>
-            <a href="{% url 'main:manage_assignments' %}" class="nav-item {% if 'assignment' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fas fa-file-signature nav-icon"></i>
-                <span class="nav-text">Assignments</span>
-            </a>
             <a href="{% url 'main:manage_attendance' %}" class="nav-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-calendar-check nav-icon"></i>
                 <span class="nav-text">Attendance</span>
@@ -89,7 +85,80 @@
             <div class="topbar-left">
                 <h1>{% block topbar_title %}Dashboard \u2013 {{ user.get_full_name|default:user.username }}{% endblock %}</h1>
             </div>
-            
+            <div class="topbar-spacer"></div>
+            <div class="topbar-actions">
+                <!-- Notification Icon -->
+                {% if user.role in 'teacher,student' %}
+                <div class="notification-section">
+                    <div class="notification-icon" id="notificationIcon">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_notification_count > 0 %}
+                            <span class="notification-badge">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <span><i class="fas fa-bell"></i> Notifications</span>
+                            <span class="notification-unread-count">{{ unread_notification_count|default:0 }} unread</span>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-empty">
+                                <i class="fas fa-inbox"></i>
+                                <p>Loading notifications...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Profile Icon -->
+                <div class="profile-section">
+                    <button type="button" class="profile-trigger" id="profileToggleBtn" aria-expanded="false" aria-controls="profileDropdown">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
+                    {% else %}
+                        <div class="profile-icon-circle" id="profileIcon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                    {% endif %}
+                    </button>
+                    
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">
+                            <div class="profile-username">{{ user.username }}</div>
+                            <div class="profile-role">{{ user.get_role_display }}</div>
+                        </div>
+                        <a href="{% url 'main:home' %}" class="profile-dropdown-item">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                        <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </a>
+                        <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
+                            <i class="fas fa-key"></i> Change Password
+                        </a>
+                        <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div class="page-content">
+            {% block page_content %}
+            <!-- Page-specific content goes here -->
+            {% endblock %}
+        </div>
+    </main>
+</div>
+
 <!-- Scripts -->
 <script src="{% static 'js/teacher.js' %}"></script>
 {% block page_scripts %}{% endblock %}

@@ -17,6 +17,7 @@ from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignmentForm, AssignmentSubmissionForm, AssignmentGradingForm)
 from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture,
                     Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply,
+                    AuditLog,
                     TeacherActivityLog, TeacherActivityNotification, TeacherActivityResponse,
                     LectureAttachment, LectureView, LectureDownload, LectureNotification,
                     Assignment, AssignmentAttachment, AssignmentSubmission)
@@ -2279,6 +2280,9 @@ def student_report_detail(request, report_id):
             reply.report = report
             reply.sender = request.user
             reply.save()
+
+            report.is_read_by_teacher = False
+            report.save(update_fields=['is_read_by_teacher', 'updated_at'])
             
             messages.success(request, 'Reply sent successfully!')
             return redirect('main:student_report_detail', report_id=report.id)
@@ -2334,7 +2338,7 @@ def get_notifications(request):
         return JsonResponse({'notifications': notifications})
     
     if request.user.role == 'teacher':
-        # Get unread student reports for teacher
+        # Student reports addressed to teacher
         reports = MarksReport.objects.filter(
             teacher=request.user
         ).select_related('student', 'transcript__enrollment__course').order_by('-created_at')[:20]
@@ -2343,12 +2347,73 @@ def get_notifications(request):
             notifications.append({
                 'id': report.id,
                 'type': 'report',
-                'sender': report.student.get_full_name(),
-                'message': f"Report about {report.transcript.enrollment.course.name}: {report.message[:50]}...",
+                'sender': report.student.get_full_name() or report.student.username,
+                'message': f"Student {report.student.get_full_name() or report.student.username} sent a report in {report.transcript.enrollment.course.name}",
                 'time': _relative_time_text(report.created_at),
                 'is_read': report.is_read_by_teacher,
-                'url': f"/teacher/report/{report.id}/",
+                'sort_time': report.created_at.isoformat(),
+                'url': reverse('main:report_detail', args=[report.id]),
                 'icon': 'fa-user-graduate'
+            })
+
+        # Student replies inside existing report conversation threads
+        student_replies = ReportReply.objects.filter(
+            report__teacher=request.user,
+            sender__role='student',
+        ).select_related('sender', 'report', 'report__transcript__enrollment__course').order_by('-created_at')[:20]
+
+        for reply in student_replies:
+            sender_name = reply.sender.get_full_name() or reply.sender.username
+            notifications.append({
+                'id': reply.id,
+                'type': 'student_reply',
+                'sender': sender_name,
+                'message': f"Student {sender_name} sent you a message",
+                'time': _relative_time_text(reply.created_at),
+                'is_read': reply.report.is_read_by_teacher,
+                'sort_time': reply.created_at.isoformat(),
+                'url': reverse('main:report_detail', args=[reply.report.id]),
+                'icon': 'fa-comment-dots'
+            })
+
+        # Teacher outbound messages to students (activity confirmation)
+        teacher_replies = ReportReply.objects.filter(
+            report__teacher=request.user,
+            sender=request.user,
+        ).select_related('report', 'report__student').order_by('-created_at')[:20]
+
+        for reply in teacher_replies:
+            student_name = reply.report.student.get_full_name() or reply.report.student.username
+            notifications.append({
+                'id': reply.id,
+                'type': 'teacher_reply_sent',
+                'sender': request.user.get_full_name() or request.user.username,
+                'message': f"You sent a message to {student_name}",
+                'time': _relative_time_text(reply.created_at),
+                'is_read': True,
+                'sort_time': reply.created_at.isoformat(),
+                'url': reverse('main:report_detail', args=[reply.report.id]),
+                'icon': 'fa-paper-plane'
+            })
+
+        # Admin to teacher assignment/system activity notifications
+        assignment_notifications = AuditLog.objects.filter(
+            target_user=request.user,
+            action__in=['create_course', 'edit_course'],
+        ).select_related('admin').order_by('-created_at')[:20]
+
+        for audit in assignment_notifications:
+            admin_name = audit.admin.get_full_name() or audit.admin.username
+            notifications.append({
+                'id': audit.id,
+                'type': 'course_assignment',
+                'sender': admin_name,
+                'message': audit.description,
+                'time': _relative_time_text(audit.created_at),
+                'is_read': audit.is_seen_by_target,
+                'sort_time': audit.created_at.isoformat(),
+                'url': reverse('main:manage_courses'),
+                'icon': 'fa-book-open'
             })
 
         admin_responses = TeacherActivityResponse.objects.filter(
@@ -2363,6 +2428,7 @@ def get_notifications(request):
                 'message': response.message,
                 'time': _relative_time_text(response.created_at),
                 'is_read': response.is_read_by_teacher,
+                'sort_time': response.created_at.isoformat(),
                 'url': reverse('main:dashboard'),
                 'icon': 'fa-user-shield'
             })
@@ -2379,9 +2445,14 @@ def get_notifications(request):
                 'message': notif.message,
                 'time': _relative_time_text(notif.created_at),
                 'is_read': notif.is_read,
+                'sort_time': notif.created_at.isoformat(),
                 'url': reverse('main:lecture_discussions', args=[notif.lecture.id]),
                 'icon': 'fa-comments'
             })
+
+        notifications.sort(key=lambda item: item.get('sort_time', ''), reverse=True)
+        for item in notifications:
+            item.pop('sort_time', None)
     
     elif request.user.role == 'student':
         # Get unread teacher replies to student's reports
@@ -2398,6 +2469,7 @@ def get_notifications(request):
                 'message': f"Reply to your report: {reply.message[:50]}...",
                 'time': _relative_time_text(reply.created_at),
                 'is_read': reply.is_read_by_student,
+                'sort_time': reply.created_at.isoformat(),
                 'url': f"/student/report/{reply.report.id}/",
                 'icon': 'fa-chalkboard-teacher'
             })
@@ -2414,9 +2486,14 @@ def get_notifications(request):
                 'message': notif.message,
                 'time': _relative_time_text(notif.created_at),
                 'is_read': notif.is_read,
+                'sort_time': notif.created_at.isoformat(),
                 'url': reverse('main:student_lecture_detail', args=[notif.lecture.id]),
                 'icon': 'fa-comments'
             })
+
+        notifications.sort(key=lambda item: item.get('sort_time', ''), reverse=True)
+        for item in notifications:
+            item.pop('sort_time', None)
     
     return JsonResponse({'notifications': notifications})
 
@@ -2442,6 +2519,19 @@ def mark_notification_read(request):
                 id=notif_id,
                 notification__activity__teacher=request.user,
             ).update(is_read_by_teacher=True)
+        elif notif_type == 'student_reply' and request.user.role == 'teacher':
+            report_ids = list(ReportReply.objects.filter(
+                id=notif_id,
+                report__teacher=request.user,
+                sender__role='student',
+            ).values_list('report_id', flat=True))
+            if report_ids:
+                MarksReport.objects.filter(id__in=report_ids, teacher=request.user).update(is_read_by_teacher=True)
+        elif notif_type == 'course_assignment' and request.user.role == 'teacher':
+            AuditLog.objects.filter(
+                id=notif_id,
+                target_user=request.user,
+            ).update(is_seen_by_target=True, seen_by_target_at=timezone.now())
         elif notif_type == 'reply' and request.user.role == 'student':
             ReportReply.objects.filter(id=notif_id, report__student=request.user).update(is_read_by_student=True)
         elif notif_type == 'lecture_notification' and request.user.role in ['teacher', 'student']:
@@ -2769,7 +2859,8 @@ def admin_create_course(request):
             AuditLog.objects.create(
                 admin=request.user,
                 action='create_course',
-                description=f'Created course: {course.code} - {course.name} (Teacher: {course.teacher.get_full_name()})',
+                description=f'Admin assigned you to {course.name} (Class {course.student_class}{course.section})',
+                target_user=course.teacher,
                 ip_address=request.META.get('REMOTE_ADDR')
             )
             
@@ -2812,19 +2903,30 @@ def admin_edit_course(request, course_id):
     from .models import AuditLog
     
     course = get_object_or_404(Course, id=course_id)
+    previous_teacher = course.teacher
     
     if request.method == 'POST':
         form = AdminCourseForm(request.POST, instance=course)
         if form.is_valid():
-            form.save()
+            course = form.save()
             
             # Create audit log
             AuditLog.objects.create(
                 admin=request.user,
                 action='edit_course',
-                description=f'Edited course: {course.code} - {course.name}',
+                description=f'Admin updated your assignment for {course.name} (Class {course.student_class}{course.section})',
+                target_user=course.teacher,
                 ip_address=request.META.get('REMOTE_ADDR')
             )
+
+            if previous_teacher != course.teacher:
+                AuditLog.objects.create(
+                    admin=request.user,
+                    action='edit_course',
+                    description=f'Admin assigned you to {course.name} (Class {course.student_class}{course.section})',
+                    target_user=course.teacher,
+                    ip_address=request.META.get('REMOTE_ADDR')
+                )
             
             messages.success(request, f'Course "{course.name}" has been updated successfully.')
             return redirect('main:admin_manage_courses')
