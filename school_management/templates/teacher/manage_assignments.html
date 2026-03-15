@@ -1,0 +1,112 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block page_title %}Manage Assignments{% endblock %}
+{% block topbar_title %}The City School - Manage Assignments{% endblock %}
+
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title"><i class="fas fa-file-signature"></i> Assignment Management</h2>
+        <p class="page-subtitle">Create, publish, and track assignments by course</p>
+    </div>
+</div>
+
+<div class="content-card mb-25">
+    <div class="card-body card-body-pad-20">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="courseFilter">Course</label>
+                <select id="courseFilter" name="course" class="form-select">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.code }} - {{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="statusFilter">Status</label>
+                <select id="statusFilter" name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Published</option>
+                    <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="searchInput">Search</label>
+                <input id="searchInput" type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Title, instructions, course...">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 mb-2"><i class="fas fa-filter"></i> Apply</button>
+                <a href="{% url 'main:create_assignment' %}" class="btn-action w-100 text-center d-inline-block"><i class="fas fa-plus"></i> New</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title"><i class="fas fa-list"></i> Assignments</h3>
+        <div class="card-header-actions"><span class="badge badge-info">{{ assignments|length }} Total</span></div>
+    </div>
+    <div class="card-body">
+        {% if assignments %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Assignment Title</th>
+                        <th>Course</th>
+                        <th class="text-center">Deadline</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in assignments %}
+                    <tr>
+                        <td>
+                            <strong>{{ assignment.title }}</strong>
+                            <small class="text-muted d-block">{{ assignment.instructions|truncatechars:90 }}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-primary">{{ assignment.course.code }}</span>
+                            <small class="text-muted d-block">{{ assignment.course.name }}</small>
+                        </td>
+                        <td class="text-center">{{ assignment.deadline|date:"M d, Y h:i A" }}</td>
+                        <td class="text-center">
+                            {% if assignment.status == 'published' %}
+                                <span class="badge badge-success">Published</span>
+                            {% elif assignment.status == 'closed' %}
+                                <span class="badge badge-warning">Closed</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="action-buttons">
+                                <a href="{% url 'main:assignment_submissions' assignment.id %}" class="btn btn-sm btn-primary" title="View Submissions"><i class="fas fa-eye"></i></a>
+                                <a href="{% url 'main:edit_assignment' assignment.id %}" class="btn btn-sm btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                                <a href="{% url 'main:delete_assignment' assignment.id %}" class="btn btn-sm btn-delete js-confirm" data-confirm-message="Delete this assignment?" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-file-signature"></i>
+            <p>No assignments found</p>
+            <small>Create your first assignment to begin.</small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/teacher.js' %}"></script>
+{% endblock %}

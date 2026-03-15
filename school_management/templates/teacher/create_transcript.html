@@ -17,7 +17,7 @@
 </div>
 
 <!-- Grading Scale Card -->
-<div class="content-card" style="margin-bottom: 25px;">
+<div class="content-card mb-25">
     <div class="card-header-section">
         <h3 class="card-section-title">
             <i class="fas fa-info-circle"></i> Grading Scale (Auto-Calculated)
@@ -25,34 +25,34 @@
     </div>
     <div class="card-body">
         <div class="row text-center">
-            <div class="col" style="min-width: 150px;">
-                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px;">
-                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">A</h2>
-                    <p class="stat-label" style="color: white; opacity: 0.9;">85-100%</p>
+            <div class="col min-w-150">
+                <div class="stat-box-analytics grade-scale-box grade-a">
+                    <h2 class="stat-number grade-letter">A</h2>
+                    <p class="stat-label grade-range">85-100%</p>
                 </div>
             </div>
-            <div class="col" style="min-width: 150px;">
-                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%); color: white; padding: 20px; border-radius: 10px;">
-                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">B</h2>
-                    <p class="stat-label" style="color: white; opacity: 0.9;">70-84%</p>
+            <div class="col min-w-150">
+                <div class="stat-box-analytics grade-scale-box grade-b">
+                    <h2 class="stat-number grade-letter">B</h2>
+                    <p class="stat-label grade-range">70-84%</p>
                 </div>
             </div>
-            <div class="col" style="min-width: 150px;">
-                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px;">
-                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">C</h2>
-                    <p class="stat-label" style="color: white; opacity: 0.9;">55-69%</p>
+            <div class="col min-w-150">
+                <div class="stat-box-analytics grade-scale-box grade-c">
+                    <h2 class="stat-number grade-letter">C</h2>
+                    <p class="stat-label grade-range">55-69%</p>
                 </div>
             </div>
-            <div class="col" style="min-width: 150px;">
-                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #fdbb2d 0%, #ee9b37 100%); color: white; padding: 20px; border-radius: 10px;">
-                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">D</h2>
-                    <p class="stat-label" style="color: white; opacity: 0.9;">40-54%</p>
+            <div class="col min-w-150">
+                <div class="stat-box-analytics grade-scale-box grade-d">
+                    <h2 class="stat-number grade-letter">D</h2>
+                    <p class="stat-label grade-range">40-54%</p>
                 </div>
             </div>
-            <div class="col" style="min-width: 150px;">
-                <div class="stat-box-analytics" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 20px; border-radius: 10px;">
-                    <h2 class="stat-number" style="color: white; font-size: 2.5rem; margin-bottom: 5px;">F</h2>
-                    <p class="stat-label" style="color: white; opacity: 0.9;">Below 40%</p>
+            <div class="col min-w-150">
+                <div class="stat-box-analytics grade-scale-box grade-f">
+                    <h2 class="stat-number grade-letter">F</h2>
+                    <p class="stat-label grade-range">Below 40%</p>
                 </div>
             </div>
         </div>
@@ -100,7 +100,7 @@
                 {% if form.grade.errors %}
                     <div class="form-error">{{ form.grade.errors.0 }}</div>
                 {% endif %}
-                <small style="display: block; margin-top: 8px; color: #6c757d;">
+                <small class="field-help-text">
                     <i class="fas fa-info-circle"></i> This field is automatically calculated as you enter marks
                 </small>
             </div>

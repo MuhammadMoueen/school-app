@@ -1,0 +1,202 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Teacher Activity Logs - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+    .activity-filter-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        padding: 22px;
+        margin-bottom: 25px;
+    }
+
+    .activity-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(160px, 1fr));
+        gap: 14px;
+        align-items: end;
+    }
+
+    .activity-filter-grid .wide-field {
+        grid-column: span 2;
+    }
+
+    .activity-log-table td .activity-desc {
+        margin: 0;
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .activity-log-table td .activity-meta {
+        margin-top: 6px;
+        font-size: 0.82rem;
+        color: #7f8c8d;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 30px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #eef2ff;
+        color: #4b5bcc;
+    }
+
+    .activity-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    @media (max-width: 1200px) {
+        .activity-filter-grid {
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+        }
+
+        .activity-filter-grid .wide-field {
+            grid-column: span 3;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .activity-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .activity-filter-grid .wide-field {
+            grid-column: span 1;
+        }
+
+        .activity-actions {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="page-header">
+        <h1><i class="fas fa-clipboard-list"></i> Teacher Activity Logs</h1>
+        <div class="header-actions">
+            <a href="{% url 'main:admin_teachers_hub' %}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Teachers Hub
+            </a>
+        </div>
+    </div>
+
+    <div class="activity-filter-card">
+        <form method="get" class="activity-filter-grid">
+            <div>
+                <label class="form-label" for="teacher">Teacher</label>
+                <select id="teacher" name="teacher" class="form-control">
+                    <option value="">All Teachers</option>
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}" {% if selected_teacher == teacher.id|stringformat:'s' %}selected{% endif %}>
+                            {{ teacher.get_full_name|default:teacher.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label" for="course">Course</label>
+                <select id="course" name="course" class="form-control">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:'s' %}selected{% endif %}>
+                            {{ course.name }} ({{ course.student_class }}{{ course.section }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label" for="start_date">From Date</label>
+                <input id="start_date" type="date" name="start_date" value="{{ start_date }}" class="form-control">
+            </div>
+
+            <div>
+                <label class="form-label" for="end_date">To Date</label>
+                <input id="end_date" type="date" name="end_date" value="{{ end_date }}" class="form-control">
+            </div>
+
+            <div class="wide-field">
+                <label class="form-label" for="q">Search</label>
+                <input id="q" type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by teacher name, action, or course...">
+            </div>
+
+            <div>
+                <button type="submit" class="btn-add w-100"><i class="fas fa-filter"></i> Apply Filters</button>
+            </div>
+
+            <div>
+                <a href="{% url 'main:admin_teacher_activity_logs' %}" class="btn-back w-100" style="justify-content:center;">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="content-section">
+        <div class="activity-actions">
+            <h2><i class="fas fa-history"></i> Complete Teacher Activity History</h2>
+            <span class="status-pill"><i class="fas fa-layer-group"></i> {{ activities|length }} record(s)</span>
+        </div>
+
+        {% if activities %}
+            <div class="data-table activity-log-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Teacher</th>
+                            <th>Action Type</th>
+                            <th>Course / Class / Section</th>
+                            <th>Description</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                            <tr>
+                                <td>
+                                    <strong>{{ activity.teacher_name }}</strong>
+                                    {% if activity.teacher.department %}
+                                        <div class="activity-meta">{{ activity.teacher.department }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ activity.get_action_type_display }}</td>
+                                <td>
+                                    {% if activity.course %}
+                                        <strong>{{ activity.course.name }}</strong><br>
+                                        <small>Class {{ activity.student_class }}{{ activity.section }}</small>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <p class="activity-desc">{{ activity.description }}</p>
+                                </td>
+                                <td>{{ activity.timestamp|date:"M d, Y - H:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No teacher activity records found for the selected filters.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

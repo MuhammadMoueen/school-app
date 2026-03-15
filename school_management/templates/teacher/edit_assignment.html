@@ -1,0 +1,88 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block page_title %}Edit Assignment{% endblock %}
+{% block topbar_title %}The City School - Edit Assignment{% endblock %}
+
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title"><i class="fas fa-edit"></i> Edit Assignment</h2>
+        <p class="page-subtitle">Update assignment details and resources</p>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.course.id_for_label }}">Select Course</label>
+                {{ form.course }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.title.id_for_label }}">Assignment Title</label>
+                {{ form.title }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.instructions.id_for_label }}">Instructions</label>
+                {{ form.instructions }}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.deadline.id_for_label }}">Deadline</label>
+                    {{ form.deadline }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
+                    {{ form.status }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        {{ form.allow_resubmission }}
+                        <label class="form-check-label" for="{{ form.allow_resubmission.id_for_label }}">Allow resubmission</label>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.max_attempts.id_for_label }}">Maximum Attempts</label>
+                    {{ form.max_attempts }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.attachments.id_for_label }}">Add Attachments</label>
+                {{ form.attachments }}
+            </div>
+
+            {% if attachments %}
+            <div class="mb-3">
+                <label class="form-label">Existing Attachments</label>
+                <div class="list-group">
+                    {% for attachment in attachments %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ attachment.title|default:attachment.file.name }}</span>
+                        <a href="{% url 'main:delete_assignment_attachment' assignment.id attachment.id %}" class="btn btn-sm btn-danger js-confirm" data-confirm-message="Delete this attachment?">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger">Please correct the highlighted errors.</div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'main:manage_assignments' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -16,14 +16,14 @@
 
 <!-- Filter Card -->
 <div class="content-card">
-    <div class="card-body" style="padding: 20px;">
+    <div class="card-body card-body-pad-20">
         <div class="row align-items-end">
             <div class="col-md-4">
                 <form method="get">
                     <label class="form-label">
                         <i class="fas fa-book"></i> Filter by Course
                     </label>
-                    <select name="course" class="form-select" onchange="this.form.submit()">
+                    <select name="course" class="form-select js-auto-submit">
                         <option value="">All Courses</option>
                         {% for course in courses %}
                         <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
@@ -39,7 +39,7 @@
                     <label class="form-label">
                         <i class="fas fa-calendar"></i> Filter by Date
                     </label>
-                    <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+                    <input type="date" name="date" class="form-control js-auto-submit" value="{{ selected_date }}">
                 </form>
             </div>
             <div class="col-md-4 text-end">

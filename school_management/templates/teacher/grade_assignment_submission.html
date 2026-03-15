@@ -1,0 +1,46 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block page_title %}Grade Submission{% endblock %}
+{% block topbar_title %}Grade Assignment Submission{% endblock %}
+
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title"><i class="fas fa-star"></i> Grade Submission</h2>
+        <p class="page-subtitle">{{ submission.assignment.title }} | {{ submission.student.get_full_name|default:submission.student.username }}</p>
+    </div>
+</div>
+
+<div class="content-card mb-25">
+    <div class="card-body card-body-pad-20">
+        <p><strong>Submitted at:</strong> {{ submission.submitted_at|date:"M d, Y h:i A" }}</p>
+        <p><strong>Status:</strong> {% if submission.is_late %}Late{% else %}Submitted{% endif %}</p>
+        {% if submission.is_late and submission.late_by_text %}<p class="text-danger"><strong>{{ submission.late_by_text }}</strong></p>{% endif %}
+        <p><strong>Student Message:</strong> {{ submission.comment|default:'-' }}</p>
+        <a href="{{ submission.submission_file.url }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View Submitted File</a>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.score.id_for_label }}">Score</label>
+                {{ form.score }}
+                {% if form.score.errors %}<div class="text-danger mt-1">{{ form.score.errors }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.feedback.id_for_label }}">Feedback</label>
+                {{ form.feedback }}
+                {% if form.feedback.errors %}<div class="text-danger mt-1">{{ form.feedback.errors }}</div>{% endif %}
+            </div>
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'main:assignment_submissions' submission.assignment.id %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Grade</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

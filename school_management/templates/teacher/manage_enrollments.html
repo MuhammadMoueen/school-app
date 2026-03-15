@@ -45,7 +45,7 @@
                     {% if form.non_field_errors %}
                         <div class="form-error">{{ form.non_field_errors.0 }}</div>
                     {% endif %}
-                    <small id="student-filter-message" style="display: block; margin-top: 8px; color: #6c757d;">
+                    <small id="student-filter-message" class="student-filter-message">
                         Select a subject to load students from the matching class and section.
                     </small>
                 </div>
@@ -97,8 +97,8 @@
                                 <td class="text-center">
                                     <div class="action-buttons">
                                         <a href="{% url 'main:delete_enrollment' enrollment.id %}" 
-                                           class="btn btn-sm btn-delete" 
-                                           onclick="return confirm('Are you sure you want to remove this enrollment? This action cannot be undone.')"
+                                                         class="btn btn-sm btn-delete js-confirm"
+                                                         data-confirm-message="Are you sure you want to remove this enrollment? This action cannot be undone."
                                            title="Remove Enrollment">
                                             <i class="fas fa-trash-alt"></i>
                                         </a>
@@ -121,87 +121,5 @@
 {% endblock %}
 
 {% block page_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const courseSelect = document.getElementById('{{ form.course.id_for_label }}');
-    const studentsSelect = document.getElementById('{{ form.students.id_for_label }}');
-    const messageElement = document.getElementById('student-filter-message');
-    const endpoint = "{% url 'main:get_course_students' %}";
-
-    if (!courseSelect || !studentsSelect || !messageElement) {
-        return;
-    }
-
-    const selectedStudents = new Set(Array.from(studentsSelect.options)
-        .filter(option => option.selected)
-        .map(option => option.value));
-
-    function setMessage(text, isError) {
-        messageElement.textContent = text;
-        messageElement.style.color = isError ? '#dc3545' : '#6c757d';
-    }
-
-    function resetStudents(placeholder) {
-        studentsSelect.innerHTML = '';
-        const option = document.createElement('option');
-        option.disabled = true;
-        option.textContent = placeholder;
-        studentsSelect.appendChild(option);
-    }
-
-    function loadStudents(courseId) {
-        if (!courseId) {
-            studentsSelect.disabled = true;
-            resetStudents('Select a subject first');
-            setMessage('Select a subject to load students from the matching class and section.', false);
-            return;
-        }
-
-        studentsSelect.disabled = true;
-        resetStudents('Loading students...');
-        setMessage('Loading students for the selected class and section...', false);
-
-        fetch(`${endpoint}?course_id=${courseId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to load students.');
-                }
-                return response.json();
-            })
-            .then(data => {
-                studentsSelect.innerHTML = '';
-
-                if (!data.students || !data.students.length) {
-                    studentsSelect.disabled = true;
-                    resetStudents('No students available');
-                    setMessage(data.message || 'No students found for this class and section.', true);
-                    return;
-                }
-
-                data.students.forEach(student => {
-                    const option = document.createElement('option');
-                    option.value = student.id;
-                    option.textContent = student.roll_number ? `${student.name} (${student.roll_number})` : student.name;
-                    option.selected = selectedStudents.has(String(student.id));
-                    studentsSelect.appendChild(option);
-                });
-
-                studentsSelect.disabled = false;
-                setMessage('Only students from the selected class and section are shown.', false);
-            })
-            .catch(() => {
-                studentsSelect.disabled = true;
-                resetStudents('Unable to load students');
-                setMessage('Unable to load students right now. Please try again.', true);
-            });
-    }
-
-    courseSelect.addEventListener('change', function () {
-        selectedStudents.clear();
-        loadStudents(this.value);
-    });
-
-    loadStudents(courseSelect.value);
-});
-</script>
+<script src="{% static 'js/teacher_enrollments.js' %}" data-student-endpoint="{% url 'main:get_course_students' %}"></script>
 {% endblock %}

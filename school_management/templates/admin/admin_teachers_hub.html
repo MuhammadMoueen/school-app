@@ -18,7 +18,7 @@
 
     <div class="hub-body">
         <!-- Action Cards -->
-        <div class="hub-actions">
+        <div class="hub-actions teachers-hub-actions">
             <a href="{% url 'main:admin_create_teacher' %}" class="hub-action-card">
                 <i class="fas fa-user-plus"></i>
                 <span>Add Teacher</span>
@@ -28,6 +28,11 @@
                 <i class="fas fa-users-cog"></i>
                 <span>Manage Teachers List</span>
                 <small>View, edit & delete teachers</small>
+            </a>
+            <a href="{% url 'main:admin_teacher_activity_logs' %}" class="hub-action-card">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Teacher Activity Logs</span>
+                <small>View teacher actions and activity history</small>
             </a>
         </div>
 

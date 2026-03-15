@@ -942,6 +942,10 @@ td {
     margin-bottom: 35px;
 }
 
+.teachers-hub-actions {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .hub-action-card {
     background: white;
     border: 2px solid #e0e0e0;
@@ -1791,6 +1795,10 @@ td {
     .hub-actions {
         grid-template-columns: 1fr;
     }
+
+    .teachers-hub-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
     
     .hub-grid {
         grid-template-columns: 1fr;
@@ -1880,6 +1888,10 @@ td {
     }
     
     .hub-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .teachers-hub-actions {
         grid-template-columns: 1fr;
     }
     

@@ -525,7 +525,7 @@ main .container .alert {
 
 /* Dashboard Content */
 .dashboard-content {
-    padding: 30px 40px 30px 0 !important;
+    padding: 30px 40px 30px 28px !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
     max-width: 100%;
@@ -536,12 +536,11 @@ main .container .alert {
 /* Ensure no left spacing on any dashboard elements */
 .dashboard-content > * {
     margin-left: 0 !important;
-    padding-left: 0 !important;
 }
 
 /* Page Content Area */
 .page-content {
-    padding: 30px 40px 30px 0 !important;
+    padding: 30px 40px 30px 28px !important;
     margin-left: 0 !important;
     max-width: 100%;
     width: 100%;
@@ -929,6 +928,112 @@ main .container .alert {
     border: 2px solid transparent;
 }
 
+.mb-25 {
+    margin-bottom: 25px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.mr-10 {
+    margin-right: 10px;
+}
+
+.card-body-pad-20 {
+    padding: 20px;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.analytics-footer-actions {
+    border-top: 1px solid #e9ecef;
+    padding-top: 20px;
+}
+
+.min-w-150 {
+    min-width: 150px;
+}
+
+.grade-scale-box {
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.grade-a {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.grade-b {
+    background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+}
+
+.grade-c {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.grade-d {
+    background: linear-gradient(135deg, #fdbb2d 0%, #ee9b37 100%);
+}
+
+.grade-f {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.grade-letter {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.grade-range {
+    color: white;
+    opacity: 0.9;
+}
+
+.field-help-text {
+    display: block;
+    margin-top: 8px;
+    color: #6c757d;
+}
+
+.transcript-note-wrap {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.transcript-note-text {
+    margin: 0;
+    color: #6c757d;
+}
+
+.inline-logo-sm {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.inline-logo-md {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.student-filter-message {
+    display: block;
+    margin-top: 8px;
+    color: #6c757d;
+}
+
+.student-filter-message.is-error {
+    color: #dc3545;
+}
+
 .filter-tab-btn:hover {
     background: #e9ecef;
     color: #667eea;
@@ -1075,7 +1180,7 @@ main .container .alert {
     
     .dashboard-content,
     .page-content {
-        padding: 20px 20px 20px 0 !important;
+        padding: 20px 20px 20px 18px !important;
         margin-left: 0 !important;
     }
 }
@@ -1083,7 +1188,7 @@ main .container .alert {
 @media (max-width: 576px) {
     .dashboard-content,
     .page-content {
-        padding: 15px 15px 15px 0 !important;
+        padding: 15px 15px 15px 14px !important;
         margin-left: 0 !important;
     }
     
@@ -1152,7 +1257,7 @@ main .container .alert {
     
     .dashboard-content,
     .page-content {
-        padding: 20px 20px 20px 0 !important;
+        padding: 20px 20px 20px 18px !important;
         margin-left: 0 !important;
     }
     

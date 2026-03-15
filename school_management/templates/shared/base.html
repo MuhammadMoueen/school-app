@@ -425,13 +425,13 @@
                     {% endif %}
                     {% if user.is_authenticated %}
                         
-                        <!-- Notification Icon for Teacher and Student -->
-                        {% if user.role in 'teacher,student' %}
+                        <!-- Notification Icon for Admin, Teacher and Student -->
+                        {% if user.role == 'admin' or user.role == 'teacher' or user.role == 'student' %}
                             <li class="nav-item" style="position: relative;">
                                 <div class="notification-icon" id="notificationIcon">
                                     <i class="fas fa-bell" style="font-size: 1.3rem; color: white;"></i>
-                                    {% if unread_notification_count > 0 %}
-                                        <span class="notification-badge">{{ unread_notification_count }}</span>
+                                    {% if notification_count > 0 %}
+                                        <span class="notification-badge">{{ notification_count }}</span>
                                     {% endif %}
                                 </div>
                                 
@@ -439,7 +439,7 @@
                                 <div class="notification-dropdown" id="notificationDropdown">
                                     <div class="notification-header">
                                         <span><i class="fas fa-bell"></i> Notifications</span>
-                                        <span style="font-size: 0.9rem;">{{ unread_notification_count }} unread</span>
+                                        <span style="font-size: 0.9rem;">{{ notification_count }} unread</span>
                                     </div>
                                     <div class="notification-list" id="notificationList">
                                         <div class="notification-empty">
@@ -551,8 +551,8 @@
     </script>
     {% endif %}
     
-    <!-- Notification Dropdown Script - For Teachers and Students Only -->
-    {% if user.is_authenticated and user.role in 'teacher,student' %}
+    <!-- Notification Dropdown Script -->
+    {% if user.is_authenticated and user.role == 'admin' or user.is_authenticated and user.role == 'teacher' or user.is_authenticated and user.role == 'student' %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const notificationIcon = document.getElementById('notificationIcon');

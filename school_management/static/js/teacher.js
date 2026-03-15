@@ -228,6 +228,29 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error marking notification as read:', error);
         });
     }
+
+    document.querySelectorAll('.js-auto-submit').forEach(function(element) {
+        element.addEventListener('change', function() {
+            if (this.form) {
+                this.form.submit();
+            }
+        });
+    });
+
+    document.querySelectorAll('.js-confirm').forEach(function(element) {
+        element.addEventListener('click', function(event) {
+            const message = this.dataset.confirmMessage || 'Are you sure?';
+            if (!window.confirm(message)) {
+                event.preventDefault();
+            }
+        });
+    });
+
+    document.querySelectorAll('.js-progress-width').forEach(function(element) {
+        const widthValue = parseFloat(element.dataset.progressWidth || '0');
+        const safeWidth = Math.max(0, Math.min(100, widthValue));
+        element.style.width = safeWidth + '%';
+    });
 });
 
 /**

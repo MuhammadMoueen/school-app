@@ -1,0 +1,90 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block page_title %}Assignment Submissions{% endblock %}
+{% block topbar_title %}Submissions - {{ assignment.title }}{% endblock %}
+
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title"><i class="fas fa-inbox"></i> {{ assignment.title }}</h2>
+        <p class="page-subtitle">{{ assignment.course.code }} - {{ assignment.course.name }} | Deadline: {{ assignment.deadline|date:"M d, Y h:i A" }}</p>
+    </div>
+</div>
+
+<div class="dashboard-cards mb-25">
+    <div class="dashboard-card"><h2 class="card-value">{{ total_students }}</h2><p class="card-label">Total Students</p></div>
+    <div class="dashboard-card"><h2 class="card-value">{{ submitted_count }}</h2><p class="card-label">Submitted</p></div>
+    <div class="dashboard-card"><h2 class="card-value">{{ pending_count }}</h2><p class="card-label">Pending</p></div>
+    <div class="dashboard-card"><h2 class="card-value">{{ late_count }}</h2><p class="card-label">Late</p></div>
+</div>
+
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title"><i class="fas fa-table"></i> Student Submissions</h3>
+        <a href="{% url 'main:manage_assignments' %}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th class="text-center">Submission Time</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Grade</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>
+                            <strong>{{ row.student.get_full_name|default:row.student.username }}</strong>
+                            {% if row.student.roll_number %}<small class="text-muted d-block">Roll: {{ row.student.roll_number }}</small>{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.submission %}
+                                {{ row.submission.submitted_at|date:"M d, Y h:i A" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.status == 'Submitted' %}
+                                <span class="badge badge-success">Submitted</span>
+                            {% elif row.status == 'Late' %}
+                                <span class="badge badge-warning">Late</span>
+                                {% if row.late_text %}<small class="text-danger d-block">{{ row.late_text }}</small>{% endif %}
+                            {% elif row.status == 'Missing' %}
+                                <span class="badge badge-danger">Missing</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.submission and row.submission.score != None %}
+                                {{ row.submission.score }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.submission %}
+                            <div class="action-buttons">
+                                <a href="{{ row.submission.submission_file.url }}" target="_blank" class="btn btn-sm btn-primary" title="View"><i class="fas fa-eye"></i></a>
+                                <a href="{{ row.submission.submission_file.url }}" class="btn btn-sm btn-info" title="Download"><i class="fas fa-download"></i></a>
+                                <a href="{% url 'main:grade_assignment_submission' row.submission.id %}" class="btn btn-sm btn-edit" title="Grade"><i class="fas fa-star"></i></a>
+                            </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

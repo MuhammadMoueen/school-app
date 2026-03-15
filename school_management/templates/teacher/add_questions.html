@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
 {% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/teacher.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="teacher-layout">
     {% include 'teacher/sidebar.html' %}
@@ -88,7 +92,7 @@
                         </small>
                         <div class="mt-2">
                             <a href="{% url 'main:edit_question' question.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                            <a href="{% url 'main:delete_question' question.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?');">Delete</a>
+                            <a href="{% url 'main:delete_question' question.id %}" class="btn btn-sm btn-outline-danger js-confirm" data-confirm-message="Delete?">Delete</a>
                         </div>
                     </div>
                     {% empty %}

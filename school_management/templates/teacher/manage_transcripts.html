@@ -18,7 +18,7 @@
 <div class="content-card">
     <div class="card-header-section">
         <h3 class="card-section-title">
-            <img src="{% static 'images/school-logo.png' %}" alt="School Logo" style="width: 20px; height: 20px; object-fit: contain; vertical-align: middle;"> Student Enrollments & Transcripts
+            <img src="{% static 'images/school-logo.png' %}" alt="School Logo" class="inline-logo-sm"> Student Enrollments & Transcripts
         </h3>
         <div class="card-header-actions">
             <span class="badge badge-info">{{ enrollments|length }} Total</span>
@@ -77,8 +77,8 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="{% url 'main:delete_transcript' enrollment.transcript.id %}" 
-                                               class="btn btn-sm btn-delete" 
-                                               onclick="return confirm('Are you sure you want to delete this transcript? This action cannot be undone.')"
+                                                              class="btn btn-sm btn-delete js-confirm"
+                                                              data-confirm-message="Are you sure you want to delete this transcript? This action cannot be undone."
                                                title="Delete Transcript">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>

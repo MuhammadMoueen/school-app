@@ -17,7 +17,7 @@
 </div>
 
 <!-- Current Information Card -->
-<div class="content-card" style="margin-bottom: 25px;">
+<div class="content-card mb-25">
     <div class="card-header-section">
         <h3 class="card-section-title">
             <i class="fas fa-info-circle"></i> Current Transcript
@@ -54,8 +54,8 @@
                 </div>
             </div>
         </div>
-        <div class="text-center" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef;">
-            <p style="margin: 0; color: #6c757d;">
+        <div class="text-center transcript-note-wrap">
+            <p class="transcript-note-text">
                 <i class="fas fa-lightbulb"></i> <strong>Note:</strong> Grade will be auto-calculated based on the percentage (85-100=A, 70-84=B, 55-69=C, 40-54=D, &lt;40=F)
             </p>
         </div>
@@ -103,7 +103,7 @@
                 {% if form.grade.errors %}
                     <div class="form-error">{{ form.grade.errors.0 }}</div>
                 {% endif %}
-                <small style="display: block; margin-top: 8px; color: #6c757d;">
+                <small class="field-help-text">
                     <i class="fas fa-info-circle"></i> This field is automatically calculated as you enter marks
                 </small>
             </div>

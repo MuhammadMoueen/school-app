@@ -16,30 +16,47 @@
 
 <!-- Filter and Upload Section -->
 <div class="content-card">
-    <div class="card-body" style="padding: 20px;">
-        <div class="row align-items-end">
+    <div class="card-body card-body-pad-20">
+        <form method="get" class="row align-items-end g-3">
             <div class="col-md-4">
-                <form method="get">
-                    <label for="courseFilter" class="form-label">
-                        <i class="fas fa-filter"></i> Filter by Course
-                    </label>
-                    <select name="course" id="courseFilter" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Courses</option>
-                        {% for course in courses %}
-                        <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
-                            {{ course.code }} - {{ course.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </form>
+                <label for="courseFilter" class="form-label">
+                    <i class="fas fa-filter"></i> Course
+                </label>
+                <select name="course" id="courseFilter" class="form-select">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="col-md-8 text-end">
-                <label class="form-label d-block">&nbsp;</label>
-                <a href="{% url 'main:create_lecture' %}" class="btn-action">
-                    <i class="fas fa-plus"></i> Upload New Lecture
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">
+                    <i class="fas fa-eye"></i> Visibility
+                </label>
+                <select name="status" id="statusFilter" class="form-select">
+                    <option value="">All</option>
+                    <option value="publish_now" {% if selected_status == 'publish_now' %}selected{% endif %}>Published</option>
+                    <option value="schedule_later" {% if selected_status == 'schedule_later' %}selected{% endif %}>Scheduled</option>
+                    <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="lectureSearch" class="form-label">
+                    <i class="fas fa-search"></i> Search
+                </label>
+                <input type="text" id="lectureSearch" name="q" class="form-control" value="{{ search_query }}" placeholder="Title, description, course...">
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="submit" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-filter"></i> Apply
+                </button>
+                <a href="{% url 'main:create_lecture' %}" class="btn-action w-100 text-center d-inline-block">
+                    <i class="fas fa-plus"></i> New
                 </a>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -65,6 +82,8 @@
                             <th class="text-center">Order</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Date</th>
+                            <th class="text-center">Views</th>
+                            <th class="text-center">Downloads</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -74,14 +93,14 @@
                             <td class="font-weight-bold">
                                 {% if lecture.file_type == 'video' %}
                                     <i class="fas fa-file-video text-primary"></i>
-                                {% elif lecture.file_type == 'pdf' %}
-                                    <i class="fas fa-file-pdf text-danger"></i>
-                                {% elif lecture.file_type == 'doc' %}
-                                    <i class="fas fa-file-word text-info"></i>
+                                {% elif lecture.file_type == 'document' %}
+                                    <i class="fas fa-file-alt text-danger"></i>
                                 {% elif lecture.file_type == 'image' %}
                                     <i class="fas fa-file-image text-success"></i>
                                 {% elif lecture.file_type == 'audio' %}
                                     <i class="fas fa-file-audio text-warning"></i>
+                                {% elif lecture.file_type == 'link' %}
+                                    <i class="fas fa-link text-info"></i>
                                 {% else %}
                                     <i class="fas fa-file"></i>
                                 {% endif %}
@@ -96,9 +115,13 @@
                                 <span class="badge badge-secondary">{{ lecture.order }}</span>
                             </td>
                             <td class="text-center">
-                                {% if lecture.is_published %}
+                                {% if lecture.visibility_status == 'publish_now' and lecture.is_published %}
                                     <span class="badge badge-success">
                                         <i class="fas fa-check-circle"></i> Published
+                                    </span>
+                                {% elif lecture.visibility_status == 'schedule_later' %}
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-clock"></i> Scheduled
                                     </span>
                                 {% else %}
                                     <span class="badge badge-warning">
@@ -106,22 +129,28 @@
                                     </span>
                                 {% endif %}
                             </td>
-                            <td class="text-center text-muted">{{ lecture.created_at|date:"M d, Y" }}</td>
+                            <td class="text-center text-muted">{{ lecture.lecture_date|date:"M d, Y" }}</td>
+                            <td class="text-center"><span class="badge badge-secondary">{{ lecture.views_count }}</span></td>
+                            <td class="text-center"><span class="badge badge-secondary">{{ lecture.downloads_count }}</span></td>
                             <td class="text-center">
                                 <div class="action-buttons">
-                                    <a href="{{ lecture.file.url }}" target="_blank" 
-                                       class="btn btn-sm btn-primary" 
-                                       title="Download">
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                                    {% if lecture.file %}
+                                        <a href="{{ lecture.file.url }}" target="_blank" class="btn btn-sm btn-primary" title="Open file">
+                                            <i class="fas fa-file-download"></i>
+                                        </a>
+                                    {% elif lecture.external_link %}
+                                        <a href="{{ lecture.external_link }}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" title="Open external link">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    {% endif %}
                                     <a href="{% url 'main:edit_lecture' lecture.id %}" 
                                        class="btn btn-sm btn-edit" 
                                        title="Edit Lecture">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'main:delete_lecture' lecture.id %}" 
-                                       class="btn btn-sm btn-delete" 
-                                       onclick="return confirm('Are you sure you want to delete this lecture?');"
+                                                    class="btn btn-sm btn-delete js-confirm"
+                                                    data-confirm-message="Are you sure you want to delete this lecture?"
                                        title="Delete Lecture">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>

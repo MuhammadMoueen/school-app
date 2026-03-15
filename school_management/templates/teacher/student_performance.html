@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
 {% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/teacher.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="teacher-layout">
     {% include 'teacher/sidebar.html' %}
@@ -36,7 +40,7 @@
                                 <td>{{ perf.student.get_full_name }}</td>
                                 <td>
                                     <div class="progress">
-                                        <div class="progress-bar" style="width: {{ perf.lecture_progress }}%">
+                                        <div class="progress-bar js-progress-width" data-progress-width="{{ perf.lecture_progress }}">
                                             {{ perf.completed_lectures }}/{{ perf.total_lectures }}
                                         </div>
                                     </div>

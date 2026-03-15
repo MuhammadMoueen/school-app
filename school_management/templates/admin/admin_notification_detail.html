@@ -1,0 +1,228 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Notification Detail - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+    .detail-layout {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 20px;
+    }
+
+    .detail-card {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        padding: 24px;
+    }
+
+    .detail-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 14px;
+    }
+
+    .detail-meta {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .meta-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+
+    .meta-item .label {
+        display: block;
+        font-size: 0.78rem;
+        color: #7f8c8d;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        margin-bottom: 4px;
+    }
+
+    .meta-item .value {
+        font-size: 0.95rem;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .activity-description {
+        background: #eef3ff;
+        border-left: 4px solid #667eea;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+        line-height: 1.5;
+    }
+
+    .status-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 30px;
+        padding: 6px 14px;
+        font-weight: 700;
+        font-size: 0.82rem;
+    }
+
+    .status-line.unread {
+        background: #ffe8ec;
+        color: #d63031;
+    }
+
+    .status-line.seen {
+        background: #e9f8ef;
+        color: #1e8449;
+    }
+
+    .response-list {
+        margin-top: 16px;
+    }
+
+    .response-item {
+        border: 1px solid #e7eaf3;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fafcff;
+    }
+
+    .response-item .response-head {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 0.88rem;
+        margin-bottom: 4px;
+    }
+
+    .response-item .response-time {
+        color: #7f8c8d;
+        font-size: 0.77rem;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 992px) {
+        .detail-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="page-header">
+        <h1><i class="fas fa-bell"></i> Notification Detail</h1>
+        <div class="header-actions">
+            <a href="{% url 'main:admin_teacher_activity_logs' %}" class="btn-back">
+                <i class="fas fa-list"></i> Activity Logs
+            </a>
+            <a href="{% url 'main:dashboard' %}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="detail-layout">
+        <div class="detail-card">
+            <h2 class="detail-title">Teacher Activity Information</h2>
+
+            {% if notification_item.is_seen %}
+                <div class="status-line seen"><i class="fas fa-check-circle"></i> Seen</div>
+            {% else %}
+                <div class="status-line unread"><i class="fas fa-circle"></i> Unread</div>
+            {% endif %}
+
+            <div class="detail-meta mt-3">
+                <div class="meta-item">
+                    <span class="label">Teacher</span>
+                    <span class="value">{{ activity.teacher_name }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Action</span>
+                    <span class="value">{{ activity.get_action_type_display }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Course / Class</span>
+                    <span class="value">
+                        {% if activity.course %}
+                            {{ activity.course.name }} ({{ activity.student_class }}{{ activity.section }})
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Timestamp</span>
+                    <span class="value">{{ activity.timestamp|date:"M d, Y - H:i:s" }}</span>
+                </div>
+            </div>
+
+            <div class="activity-description">
+                {{ activity.description }}
+            </div>
+
+            <form method="post" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_seen">
+                <button type="submit" class="btn-add" {% if notification_item.is_seen %}disabled{% endif %}>
+                    <i class="fas fa-check"></i> Mark as Seen
+                </button>
+            </form>
+
+            <h3 style="font-size:1.05rem; font-weight:700; color:#2c3e50;">Admin Responses</h3>
+            <div class="response-list">
+                {% if responses %}
+                    {% for response in responses %}
+                        <div class="response-item">
+                            <div class="response-head">{{ response.get_response_type_display }} by {{ response.admin.get_full_name|default:response.admin.username }}</div>
+                            <div class="response-time">{{ response.created_at|date:"M d, Y - H:i" }}</div>
+                            <div>{{ response.message }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state" style="margin:0;">
+                        <i class="fas fa-comment-slash"></i>
+                        <p>No messages or questions submitted yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <h2 class="detail-title">Send Message / Raise Question</h2>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_response">
+
+                <div class="mb-3">
+                    <label class="form-label" for="id_response_type">Action</label>
+                    {{ response_form.response_type }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="id_message">Message</label>
+                    {{ response_form.message }}
+                </div>
+
+                <button type="submit" class="btn-add w-100">
+                    <i class="fas fa-paper-plane"></i> Submit
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

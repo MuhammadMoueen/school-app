@@ -1,0 +1,84 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block page_title %}Create Assignment{% endblock %}
+{% block topbar_title %}The City School - Create Assignment{% endblock %}
+
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title"><i class="fas fa-file-signature"></i> Create Assignment</h2>
+        <p class="page-subtitle">Publish assignment tasks for enrolled students</p>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.course.id_for_label }}">Select Course</label>
+                {{ form.course }}
+                {% if form.course.errors %}<div class="text-danger mt-1">{{ form.course.errors }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.title.id_for_label }}">Assignment Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}<div class="text-danger mt-1">{{ form.title.errors }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.instructions.id_for_label }}">Assignment Instructions</label>
+                {{ form.instructions }}
+                {% if form.instructions.errors %}<div class="text-danger mt-1">{{ form.instructions.errors }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.attachments.id_for_label }}">Assignment Attachments</label>
+                {{ form.attachments }}
+                <small class="text-muted d-block mt-1">Supported: PDF, DOCX, PPT/PPTX, PNG, JPG</small>
+                {% if form.attachments.errors %}<div class="text-danger mt-1">{{ form.attachments.errors }}</div>{% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.deadline.id_for_label }}">Submission Deadline</label>
+                    {{ form.deadline }}
+                    {% if form.deadline.errors %}<div class="text-danger mt-1">{{ form.deadline.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.status.id_for_label }}">Assignment Status</label>
+                    {{ form.status }}
+                    {% if form.status.errors %}<div class="text-danger mt-1">{{ form.status.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        {{ form.allow_resubmission }}
+                        <label class="form-check-label" for="{{ form.allow_resubmission.id_for_label }}">Allow resubmission</label>
+                    </div>
+                    {% if form.allow_resubmission.errors %}<div class="text-danger mt-1">{{ form.allow_resubmission.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="{{ form.max_attempts.id_for_label }}">Maximum Attempts</label>
+                    {{ form.max_attempts }}
+                    {% if form.max_attempts.errors %}<div class="text-danger mt-1">{{ form.max_attempts.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'main:manage_assignments' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

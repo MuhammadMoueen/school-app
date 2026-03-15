@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
 {% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/teacher.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="teacher-layout">
     {% include 'teacher/sidebar.html' %}
@@ -24,7 +28,7 @@
                         <div class="row">
                             <div class="col-md-5">
                                 <label class="form-label">Select Course</label>
-                                <select name="course" class="form-select" required onchange="this.form.submit()">
+                                <select name="course" class="form-select js-auto-submit" required>
                                     <option value="">Choose a course...</option>
                                     {% for course in courses %}
                                     <option value="{{ course.id }}" {% if selected_course and selected_course.id == course.id %}selected{% endif %}>
@@ -35,7 +39,7 @@
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">Select Date</label>
-                                <input type="date" name="date" class="form-control" value="{{ selected_date }}" required onchange="this.form.submit()">
+                                <input type="date" name="date" class="form-control js-auto-submit" value="{{ selected_date }}" required>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">&nbsp;</label>

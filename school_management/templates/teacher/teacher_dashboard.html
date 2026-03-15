@@ -38,6 +38,10 @@
                 <i class="fas fa-file-video nav-icon"></i>
                 <span class="nav-text">Lectures</span>
             </a>
+            <a href="{% url 'main:manage_assignments' %}" class="nav-item">
+                <i class="fas fa-file-signature nav-icon"></i>
+                <span class="nav-text">Assignments</span>
+            </a>
             <a href="{% url 'main:manage_attendance' %}" class="nav-item">
                 <i class="fas fa-calendar-check nav-icon"></i>
                 <span class="nav-text">Attendance</span>
@@ -195,6 +199,10 @@
                 <a href="{% url 'main:manage_courses' %}" class="action-card">
                     <i class="fas fa-book-open"></i>
                     <span>Manage Courses</span>
+                </a>
+                <a href="{% url 'main:manage_assignments' %}" class="action-card">
+                    <i class="fas fa-file-signature"></i>
+                    <span>Manage Assignments</span>
                 </a>
                 <a href="{% url 'main:manage_enrollments' %}" class="action-card">
                     <i class="fas fa-user-check"></i>

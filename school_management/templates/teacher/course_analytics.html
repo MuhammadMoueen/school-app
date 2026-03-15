@@ -17,14 +17,14 @@
 <!-- Analytics Cards -->
 {% if course_stats %}
     {% for stat in course_stats %}
-    <div class="content-card" style="margin-bottom: 25px;">
+    <div class="content-card mb-25">
         <div class="card-header-section">
             <h3 class="card-section-title">
                 <i class="fas fa-book"></i> {{ stat.course.code }} - {{ stat.course.name }}
             </h3>
         </div>
         <div class="card-body">
-            <div class="row text-center" style="margin-bottom: 20px;">
+            <div class="row text-center mb-20">
                 <div class="col-md-3">
                     <div class="stat-box-analytics">
                         <i class="fas fa-users stat-icon text-primary"></i>
@@ -54,8 +54,8 @@
                     </div>
                 </div>
             </div>
-            <div class="text-center" style="border-top: 1px solid #e9ecef; padding-top: 20px;">
-                <a href="{% url 'main:student_performance' stat.course.id %}" class="btn-action" style="margin-right: 10px;">
+            <div class="text-center analytics-footer-actions">
+                <a href="{% url 'main:student_performance' stat.course.id %}" class="btn-action mr-10">
                     <i class="fas fa-chart-bar"></i> View Student Performance
                 </a>
                 <a href="{% url 'main:attendance_report' stat.course.id %}" class="btn-action btn-secondary">
