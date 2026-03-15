@@ -5,14 +5,20 @@ from django.contrib import messages
 from django.db.models import Q, Count, F, Avg
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+from django.urls import reverse
+from django.utils import timezone
 import json
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignEmailForm, CourseForm, EnrollmentForm, TranscriptForm,
                    MarksReportForm, ReportReplyForm, AdminCreateStudentForm, ProfileEditForm,
                    LectureForm, AttendanceForm, BulkAttendanceForm, QuizForm, QuestionForm,
-                   DiscussionThreadForm, DiscussionReplyForm)
+                   DiscussionThreadForm, DiscussionReplyForm, TeacherActivityResponseForm,
+                   AssignmentForm, AssignmentSubmissionForm, AssignmentGradingForm)
 from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, Lecture,
-                    Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply)
+                    Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply,
+                    TeacherActivityLog, TeacherActivityNotification, TeacherActivityResponse,
+                    LectureAttachment, LectureView, LectureDownload, LectureNotification,
+                    Assignment, AssignmentAttachment, AssignmentSubmission)
 
 def home(request):
     """Home page view"""
@@ -321,6 +327,7 @@ def teacher_dashboard(request):
     # Statistics
     total_students = User.objects.filter(role='student').count()  # All students in the system
     total_enrollments = Enrollment.objects.filter(course__teacher=teacher).count()
+    total_assignments = Assignment.objects.filter(created_by=teacher).count()
     
     context = {
         'teacher': teacher,
@@ -330,9 +337,32 @@ def teacher_dashboard(request):
         'total_students': total_students,
         'total_courses': courses.count(),
         'total_enrollments': total_enrollments,
+        'total_assignments': total_assignments,
     }
     
     return render(request, 'teacher/teacher_dashboard.html', context)
+
+
+def log_teacher_activity(teacher, action_type, description, course=None):
+    """Create a persistent teacher activity log and unread notifications for all admins."""
+    teacher_name = teacher.get_full_name() or teacher.username
+    activity = TeacherActivityLog.objects.create(
+        teacher=teacher,
+        teacher_name=teacher_name,
+        action_type=action_type,
+        course=course,
+        student_class=course.student_class if course else '',
+        section=course.section if course else '',
+        description=description,
+    )
+
+    admins = User.objects.filter(role='admin', is_active=True)
+    TeacherActivityNotification.objects.bulk_create([
+        TeacherActivityNotification(admin=admin, activity=activity)
+        for admin in admins
+    ])
+
+    return activity
 
 
 @login_required
@@ -354,6 +384,13 @@ def manage_courses(request):
             course = form.save(commit=False)
             course.teacher = request.user
             course.save()
+            teacher_name = request.user.get_full_name() or request.user.username
+            log_teacher_activity(
+                teacher=request.user,
+                action_type='create_course',
+                description=f'Teacher {teacher_name} created a new course: {course.name} (Class {course.student_class}{course.section})',
+                course=course,
+            )
             messages.success(request, f'Subject "{course.name}" created successfully!')
             return redirect('main:manage_courses')
     else:
@@ -378,6 +415,13 @@ def edit_course(request, course_id):
         form = CourseForm(request.POST, instance=course)
         if form.is_valid():
             form.save()
+            teacher_name = request.user.get_full_name() or request.user.username
+            log_teacher_activity(
+                teacher=request.user,
+                action_type='edit_course',
+                description=f'Teacher {teacher_name} edited course details: {course.name} (Class {course.student_class}{course.section})',
+                course=course,
+            )
             messages.success(request, f'Subject "{course.name}" updated successfully!')
             return redirect('main:manage_courses')
     else:
@@ -401,6 +445,33 @@ def delete_course(request, course_id):
 
 # ==================== LECTURE MANAGEMENT VIEWS ====================
 
+def _publish_due_scheduled_lectures():
+    """Auto-publish any lecture that reached its scheduled publish datetime."""
+    Lecture.objects.filter(
+        visibility_status='schedule_later',
+        is_published=False,
+        scheduled_publish_at__isnull=False,
+        scheduled_publish_at__lte=timezone.now(),
+    ).update(is_published=True)
+
+
+def _student_can_access_lecture(student, lecture):
+    """Check enrollment + class/section eligibility for student lecture access."""
+    if student.role != 'student':
+        return False
+
+    is_enrolled = Enrollment.objects.filter(student=student, course=lecture.course).exists()
+    if not is_enrolled:
+        return False
+
+    # Enforce class/section when the student profile contains these fields.
+    if student.student_class and student.student_class != lecture.course.student_class:
+        return False
+    if student.section and student.section != lecture.course.section:
+        return False
+
+    return True
+
 @login_required
 def manage_lectures(request):
     """View and manage all lectures/materials"""
@@ -409,16 +480,32 @@ def manage_lectures(request):
         return redirect('main:home')
     
     teacher = request.user
+    _publish_due_scheduled_lectures()
+
     course_filter = request.GET.get('course', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('q', '').strip()
     
     # Get all lectures for this teacher's courses
     lectures = Lecture.objects.filter(
         course__teacher=teacher
-    ).select_related('course').order_by('course', 'order', '-created_at')
+    ).select_related('course').annotate(
+        views_count=Count('views', distinct=True),
+        downloads_count=Count('downloads', distinct=True),
+    ).order_by('course', 'order', '-created_at')
     
     # Filter by course if specified
     if course_filter:
         lectures = lectures.filter(course_id=course_filter)
+    if status_filter:
+        lectures = lectures.filter(visibility_status=status_filter)
+    if search_query:
+        lectures = lectures.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(course__name__icontains=search_query) |
+            Q(course__code__icontains=search_query)
+        )
     
     # Get teacher's courses for filter dropdown
     courses = Course.objects.filter(teacher=teacher)
@@ -427,6 +514,8 @@ def manage_lectures(request):
         'lectures': lectures,
         'courses': courses,
         'selected_course': course_filter,
+        'selected_status': status_filter,
+        'search_query': search_query,
     }
     
     return render(request, 'teacher/manage_lectures.html', context)
@@ -447,6 +536,21 @@ def create_lecture(request):
             lecture = form.save(commit=False)
             lecture.uploaded_by = teacher
             lecture.save()
+
+            for uploaded_file in request.FILES.getlist('attachments'):
+                LectureAttachment.objects.create(
+                    lecture=lecture,
+                    title=uploaded_file.name,
+                    file=uploaded_file,
+                )
+
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='upload_lecture',
+                description=f'Teacher {teacher_name} uploaded a new lecture for {lecture.course.name} (Class {lecture.course.student_class}{lecture.course.section}): {lecture.title}',
+                course=lecture.course,
+            )
             messages.success(
                 request, 
                 f'Lecture "{lecture.title}" uploaded successfully for {lecture.course.name}!'
@@ -479,7 +583,22 @@ def edit_lecture(request, lecture_id):
     if request.method == 'POST':
         form = LectureForm(request.POST, request.FILES, instance=lecture, teacher=teacher)
         if form.is_valid():
-            form.save()
+            lecture = form.save()
+
+            for uploaded_file in request.FILES.getlist('attachments'):
+                LectureAttachment.objects.create(
+                    lecture=lecture,
+                    title=uploaded_file.name,
+                    file=uploaded_file,
+                )
+
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='upload_lecture',
+                description=f'Teacher {teacher_name} updated lecture content for {lecture.course.name} (Class {lecture.course.student_class}{lecture.course.section}): {lecture.title}',
+                course=lecture.course,
+            )
             messages.success(request, f'Lecture "{lecture.title}" updated successfully!')
             return redirect('main:manage_lectures')
     else:
@@ -488,6 +607,7 @@ def edit_lecture(request, lecture_id):
     context = {
         'form': form,
         'lecture': lecture,
+        'attachments': lecture.attachments.all(),
     }
     
     return render(request, 'teacher/edit_lecture.html', context)
@@ -510,9 +630,12 @@ def delete_lecture(request, lecture_id):
     lecture_title = lecture.title
     course_name = lecture.course.name
     
-    # Delete the file from storage
+    # Delete lecture and attachment files from storage
     if lecture.file:
         lecture.file.delete()
+    for attachment in lecture.attachments.all():
+        if attachment.file:
+            attachment.file.delete()
     
     lecture.delete()
     
@@ -542,6 +665,497 @@ def view_course_lectures(request, course_id):
     }
     
     return render(request, 'teacher/course_lectures.html', context)
+
+
+@login_required
+def delete_lecture_attachment(request, lecture_id, attachment_id):
+    """Delete an attachment from a lecture (teacher only)."""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    lecture = get_object_or_404(Lecture, id=lecture_id, course__teacher=request.user)
+    attachment = get_object_or_404(LectureAttachment, id=attachment_id, lecture=lecture)
+
+    if attachment.file:
+        attachment.file.delete()
+    attachment.delete()
+
+    messages.success(request, 'Attachment deleted successfully.')
+    return redirect('main:edit_lecture', lecture_id=lecture.id)
+
+
+@login_required
+def student_lecture_detail(request, lecture_id):
+    """Student lecture detail page with access check and engagement tracking."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:dashboard')
+
+    _publish_due_scheduled_lectures()
+    lecture = get_object_or_404(Lecture.objects.select_related('course', 'course__teacher'), id=lecture_id)
+
+    if not lecture.is_published:
+        messages.error(request, 'This lecture is not available yet.')
+        return redirect('main:dashboard')
+
+    if not _student_can_access_lecture(request.user, lecture):
+        messages.error(request, 'Access denied. This lecture is not assigned to your class/section.')
+        return redirect('main:dashboard')
+
+    LectureView.objects.get_or_create(lecture=lecture, student=request.user)
+
+    threads = DiscussionThread.objects.filter(lecture=lecture).select_related('author').order_by('-created_at')[:10]
+
+    context = {
+        'lecture': lecture,
+        'threads': threads,
+        'attachments': lecture.attachments.all(),
+    }
+    return render(request, 'student/student_lecture_detail.html', context)
+
+
+@login_required
+def student_download_lecture_file(request, lecture_id):
+    """Track student lecture file downloads and redirect to file URL."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:dashboard')
+
+    lecture = get_object_or_404(Lecture, id=lecture_id, is_published=True)
+    if not _student_can_access_lecture(request.user, lecture):
+        messages.error(request, 'Access denied.')
+        return redirect('main:dashboard')
+
+    if not lecture.file:
+        messages.error(request, 'No primary file available for this lecture.')
+        return redirect('main:student_lecture_detail', lecture_id=lecture.id)
+
+    download, _ = LectureDownload.objects.get_or_create(
+        lecture=lecture,
+        attachment=None,
+        student=request.user,
+    )
+    download.download_count += 1
+    download.save(update_fields=['download_count', 'last_downloaded_at'])
+
+    return redirect(lecture.file.url)
+
+
+@login_required
+def student_download_lecture_attachment(request, lecture_id, attachment_id):
+    """Track student attachment downloads and redirect to file URL."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:dashboard')
+
+    lecture = get_object_or_404(Lecture, id=lecture_id, is_published=True)
+    attachment = get_object_or_404(LectureAttachment, id=attachment_id, lecture=lecture)
+
+    if not _student_can_access_lecture(request.user, lecture):
+        messages.error(request, 'Access denied.')
+        return redirect('main:dashboard')
+
+    download, _ = LectureDownload.objects.get_or_create(
+        lecture=lecture,
+        attachment=attachment,
+        student=request.user,
+    )
+    download.download_count += 1
+    download.save(update_fields=['download_count', 'last_downloaded_at'])
+
+    return redirect(attachment.file.url)
+
+
+# ==================== ASSIGNMENT MANAGEMENT VIEWS ====================
+
+def _student_can_access_assignment(student, assignment):
+    if student.role != 'student':
+        return False
+
+    is_enrolled = Enrollment.objects.filter(student=student, course=assignment.course).exists()
+    if not is_enrolled:
+        return False
+
+    if student.student_class and student.student_class != assignment.student_class:
+        return False
+    if student.section and student.section != assignment.section:
+        return False
+
+    return True
+
+
+def _late_duration_text(duration):
+    if not duration:
+        return ''
+
+    total_seconds = int(duration.total_seconds())
+    days = total_seconds // 86400
+    hours = (total_seconds % 86400) // 3600
+    minutes = (total_seconds % 3600) // 60
+
+    if days > 0:
+        return f"Late by {days} day{'s' if days != 1 else ''}"
+    if hours > 0:
+        return f"Late by {hours} hour{'s' if hours != 1 else ''}"
+    return f"Late by {max(minutes, 1)} minute{'s' if minutes != 1 else ''}"
+
+
+@login_required
+def manage_assignments(request):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    teacher = request.user
+    course_filter = request.GET.get('course', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('q', '').strip()
+
+    assignments = Assignment.objects.filter(created_by=teacher).select_related('course').order_by('-created_at')
+
+    if course_filter:
+        assignments = assignments.filter(course_id=course_filter)
+    if status_filter:
+        assignments = assignments.filter(status=status_filter)
+    if search_query:
+        assignments = assignments.filter(
+            Q(title__icontains=search_query) |
+            Q(instructions__icontains=search_query) |
+            Q(course__name__icontains=search_query) |
+            Q(course__code__icontains=search_query)
+        )
+
+    context = {
+        'assignments': assignments,
+        'courses': Course.objects.filter(teacher=teacher).order_by('code', 'name'),
+        'selected_course': course_filter,
+        'selected_status': status_filter,
+        'search_query': search_query,
+    }
+    return render(request, 'teacher/manage_assignments.html', context)
+
+
+@login_required
+def create_assignment(request):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    teacher = request.user
+
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, request.FILES, teacher=teacher)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.created_by = teacher
+            assignment.save()
+
+            for uploaded_file in request.FILES.getlist('attachments'):
+                AssignmentAttachment.objects.create(
+                    assignment=assignment,
+                    title=uploaded_file.name,
+                    file=uploaded_file,
+                )
+
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='create_assessment',
+                description=f'Teacher {teacher_name} created assignment for {assignment.course.name} (Class {assignment.student_class}{assignment.section}): {assignment.title}',
+                course=assignment.course,
+            )
+
+            messages.success(request, f'Assignment "{assignment.title}" created successfully.')
+            return redirect('main:manage_assignments')
+    else:
+        form = AssignmentForm(teacher=teacher)
+
+    return render(request, 'teacher/create_assignment.html', {'form': form})
+
+
+@login_required
+def edit_assignment(request, assignment_id):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    teacher = request.user
+    assignment = get_object_or_404(Assignment, id=assignment_id, created_by=teacher)
+
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, request.FILES, instance=assignment, teacher=teacher)
+        if form.is_valid():
+            assignment = form.save()
+
+            for uploaded_file in request.FILES.getlist('attachments'):
+                AssignmentAttachment.objects.create(
+                    assignment=assignment,
+                    title=uploaded_file.name,
+                    file=uploaded_file,
+                )
+
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='create_assessment',
+                description=f'Teacher {teacher_name} updated assignment for {assignment.course.name} (Class {assignment.student_class}{assignment.section}): {assignment.title}',
+                course=assignment.course,
+            )
+
+            messages.success(request, f'Assignment "{assignment.title}" updated successfully.')
+            return redirect('main:manage_assignments')
+    else:
+        form = AssignmentForm(instance=assignment, teacher=teacher)
+
+    context = {
+        'form': form,
+        'assignment': assignment,
+        'attachments': assignment.attachments.all(),
+    }
+    return render(request, 'teacher/edit_assignment.html', context)
+
+
+@login_required
+def delete_assignment(request, assignment_id):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    assignment = get_object_or_404(Assignment, id=assignment_id, created_by=request.user)
+    assignment_title = assignment.title
+
+    for attachment in assignment.attachments.all():
+        if attachment.file:
+            attachment.file.delete()
+
+    for submission in assignment.submissions.all():
+        if submission.submission_file:
+            submission.submission_file.delete()
+
+    assignment.delete()
+    messages.success(request, f'Assignment "{assignment_title}" deleted successfully.')
+    return redirect('main:manage_assignments')
+
+
+@login_required
+def delete_assignment_attachment(request, assignment_id, attachment_id):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    assignment = get_object_or_404(Assignment, id=assignment_id, created_by=request.user)
+    attachment = get_object_or_404(AssignmentAttachment, id=attachment_id, assignment=assignment)
+
+    if attachment.file:
+        attachment.file.delete()
+    attachment.delete()
+
+    messages.success(request, 'Attachment deleted successfully.')
+    return redirect('main:edit_assignment', assignment_id=assignment.id)
+
+
+@login_required
+def assignment_submissions(request, assignment_id):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    assignment = get_object_or_404(
+        Assignment.objects.select_related('course', 'created_by'),
+        id=assignment_id,
+        created_by=request.user,
+    )
+
+    enrollments = Enrollment.objects.filter(course=assignment.course).select_related('student').order_by('student__first_name', 'student__last_name', 'student__username')
+    submission_qs = AssignmentSubmission.objects.filter(assignment=assignment).select_related('student', 'graded_by').order_by('student_id', '-attempt_number', '-submitted_at')
+
+    latest_submission_by_student = {}
+    for submission in submission_qs:
+        if submission.student_id not in latest_submission_by_student:
+            latest_submission_by_student[submission.student_id] = submission
+
+    rows = []
+    submitted_count = 0
+    late_count = 0
+    pending_count = 0
+    missing_count = 0
+    deadline_passed = timezone.now() > assignment.deadline
+
+    for enrollment in enrollments:
+        student = enrollment.student
+        submission = latest_submission_by_student.get(student.id)
+
+        if submission:
+            if submission.is_late:
+                row_status = 'Late'
+                late_count += 1
+            else:
+                row_status = 'Submitted'
+                submitted_count += 1
+            late_text = submission.late_by_text
+        else:
+            if deadline_passed:
+                row_status = 'Missing'
+                missing_count += 1
+            else:
+                row_status = 'Pending'
+                pending_count += 1
+            late_text = ''
+
+        rows.append({
+            'student': student,
+            'submission': submission,
+            'status': row_status,
+            'late_text': late_text,
+        })
+
+    context = {
+        'assignment': assignment,
+        'rows': rows,
+        'total_students': enrollments.count(),
+        'submitted_count': submitted_count,
+        'late_count': late_count,
+        'pending_count': pending_count,
+        'missing_count': missing_count,
+    }
+    return render(request, 'teacher/assignment_submissions.html', context)
+
+
+@login_required
+def grade_assignment_submission(request, submission_id):
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    submission = get_object_or_404(
+        AssignmentSubmission.objects.select_related('assignment', 'assignment__course', 'student'),
+        id=submission_id,
+        assignment__created_by=request.user,
+    )
+
+    if request.method == 'POST':
+        form = AssignmentGradingForm(request.POST, instance=submission)
+        if form.is_valid():
+            graded_submission = form.save(commit=False)
+            graded_submission.graded_by = request.user
+            graded_submission.graded_at = timezone.now()
+            graded_submission.save()
+            messages.success(request, 'Submission graded successfully.')
+            return redirect('main:assignment_submissions', assignment_id=submission.assignment.id)
+    else:
+        form = AssignmentGradingForm(instance=submission)
+
+    return render(request, 'teacher/grade_assignment_submission.html', {
+        'form': form,
+        'submission': submission,
+    })
+
+
+@login_required
+def student_my_assignments(request):
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:home')
+
+    student = request.user
+    enrolled_course_ids = Enrollment.objects.filter(student=student).values_list('course_id', flat=True)
+    assignments = Assignment.objects.filter(
+        course_id__in=enrolled_course_ids,
+    ).exclude(status='draft').select_related('course').order_by('deadline', '-created_at')
+
+    assignment_rows = []
+    for assignment in assignments:
+        latest_submission = AssignmentSubmission.objects.filter(
+            assignment=assignment,
+            student=student,
+        ).order_by('-attempt_number', '-submitted_at').first()
+
+        if latest_submission:
+            if latest_submission.is_late:
+                status = 'Late'
+                late_text = latest_submission.late_by_text
+            else:
+                status = 'Submitted'
+                late_text = ''
+        else:
+            if timezone.now() > assignment.deadline:
+                status = 'Missing'
+            else:
+                status = 'Pending'
+            late_text = ''
+
+        assignment_rows.append({
+            'assignment': assignment,
+            'submission': latest_submission,
+            'status': status,
+            'late_text': late_text,
+        })
+
+    return render(request, 'student/my_assignments.html', {
+        'assignment_rows': assignment_rows,
+    })
+
+
+@login_required
+def submit_assignment(request, assignment_id):
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:home')
+
+    assignment = get_object_or_404(Assignment.objects.select_related('course', 'created_by'), id=assignment_id)
+    student = request.user
+
+    if assignment.status == 'draft':
+        messages.error(request, 'This assignment is not published yet.')
+        return redirect('main:student_my_assignments')
+
+    if assignment.status == 'closed':
+        messages.error(request, 'This assignment is closed and no longer accepts submissions.')
+        return redirect('main:student_my_assignments')
+
+    if not _student_can_access_assignment(student, assignment):
+        messages.error(request, 'Access denied. You are not enrolled in this assignment course.')
+        return redirect('main:student_my_assignments')
+
+    previous_submissions = AssignmentSubmission.objects.filter(assignment=assignment, student=student).order_by('-attempt_number')
+    attempts_used = previous_submissions.count()
+    attempts_left = max(assignment.max_attempts - attempts_used, 0)
+
+    if request.method == 'POST':
+        if attempts_left <= 0:
+            messages.error(request, 'You have reached the maximum number of submission attempts for this assignment.')
+            return redirect('main:student_my_assignments')
+
+        if attempts_used > 0 and not assignment.allow_resubmission:
+            messages.error(request, 'Resubmission is not allowed for this assignment.')
+            return redirect('main:student_my_assignments')
+
+        form = AssignmentSubmissionForm(request.POST, request.FILES)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.assignment = assignment
+            submission.student = student
+            submission.attempt_number = attempts_used + 1
+            submission.is_late = timezone.now() > assignment.deadline
+            if submission.is_late:
+                submission.late_duration = timezone.now() - assignment.deadline
+            submission.save()
+
+            if submission.is_late:
+                messages.warning(request, f'Submission received. {submission.late_by_text}.')
+            else:
+                messages.success(request, 'Assignment submitted successfully.')
+            return redirect('main:student_my_assignments')
+    else:
+        form = AssignmentSubmissionForm()
+
+    return render(request, 'student/submit_assignment.html', {
+        'form': form,
+        'assignment': assignment,
+        'attempts_used': attempts_used,
+        'attempts_left': attempts_left,
+    })
 
 
 # ==================== ATTENDANCE VIEWS ====================
@@ -613,6 +1227,14 @@ def mark_attendance(request):
                     'marked_by': teacher
                 }
             )
+
+        teacher_name = teacher.get_full_name() or teacher.username
+        log_teacher_activity(
+            teacher=teacher,
+            action_type='mark_attendance',
+            description=f'Teacher {teacher_name} marked attendance for {course.name} (Class {course.student_class}{course.section}) on {date}',
+            course=course,
+        )
         
         messages.success(request, f'Attendance marked successfully for {course.name} on {date}')
         return redirect('main:manage_attendance')
@@ -726,6 +1348,13 @@ def create_quiz(request):
             quiz = form.save(commit=False)
             quiz.created_by = teacher
             quiz.save()
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='create_assessment',
+                description=f'Teacher {teacher_name} created a quiz for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
+                course=quiz.course,
+            )
             messages.success(request, f'Quiz "{quiz.title}" created successfully! Now add questions.')
             return redirect('main:add_questions', quiz_id=quiz.id)
     else:
@@ -798,6 +1427,13 @@ def add_questions(request, quiz_id):
             question = form.save(commit=False)
             question.quiz = quiz
             question.save()
+            teacher_name = teacher.get_full_name() or teacher.username
+            log_teacher_activity(
+                teacher=teacher,
+                action_type='create_assessment',
+                description=f'Teacher {teacher_name} added quiz questions for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
+                course=quiz.course,
+            )
             messages.success(request, 'Question added successfully!')
             return redirect('main:add_questions', quiz_id=quiz.id)
     else:
@@ -1037,6 +1673,18 @@ def lecture_discussions(request, lecture_id):
             thread.lecture = lecture
             thread.author = request.user
             thread.save()
+
+            if request.user.role == 'student' and lecture.course.teacher != request.user:
+                actor_name = request.user.get_full_name() or request.user.username
+                LectureNotification.objects.create(
+                    recipient=lecture.course.teacher,
+                    actor=request.user,
+                    lecture=lecture,
+                    thread=thread,
+                    notification_type='student_comment',
+                    message=f'{actor_name} commented on "{lecture.title}" in {lecture.course.name}.',
+                )
+
             messages.success(request, 'Discussion thread created successfully!')
             return redirect('main:lecture_discussions', lecture_id=lecture.id)
     else:
@@ -1047,8 +1695,9 @@ def lecture_discussions(request, lecture_id):
         'threads': threads,
         'form': form,
     }
-    
-    return render(request, 'teacher/lecture_discussions.html', context)
+
+    template_name = 'teacher/lecture_discussions.html' if request.user.role == 'teacher' else 'student/lecture_discussions.html'
+    return render(request, template_name, context)
 
 
 @login_required
@@ -1076,6 +1725,30 @@ def discussion_detail(request, thread_id):
             reply.thread = thread
             reply.author = request.user
             reply.save()
+
+            if request.user.role == 'teacher' and thread.author.role == 'student':
+                actor_name = request.user.get_full_name() or request.user.username
+                LectureNotification.objects.create(
+                    recipient=thread.author,
+                    actor=request.user,
+                    lecture=lecture,
+                    thread=thread,
+                    reply=reply,
+                    notification_type='teacher_reply',
+                    message=f'{actor_name} replied to your lecture discussion on "{lecture.title}".',
+                )
+            elif request.user.role == 'student' and lecture.course.teacher != request.user:
+                actor_name = request.user.get_full_name() or request.user.username
+                LectureNotification.objects.create(
+                    recipient=lecture.course.teacher,
+                    actor=request.user,
+                    lecture=lecture,
+                    thread=thread,
+                    reply=reply,
+                    notification_type='student_comment',
+                    message=f'{actor_name} replied in lecture discussion "{thread.title}".',
+                )
+
             messages.success(request, 'Reply posted successfully!')
             return redirect('main:discussion_detail', thread_id=thread.id)
     else:
@@ -1087,8 +1760,9 @@ def discussion_detail(request, thread_id):
         'replies': replies,
         'form': form,
     }
-    
-    return render(request, 'teacher/discussion_detail.html', context)
+
+    template_name = 'teacher/discussion_detail.html' if request.user.role == 'teacher' else 'student/discussion_detail.html'
+    return render(request, template_name, context)
 
 
 @login_required
@@ -1131,6 +1805,13 @@ def manage_enrollments(request):
             course = form.cleaned_data['course']
 
             if created_enrollments:
+                teacher_name = request.user.get_full_name() or request.user.username
+                log_teacher_activity(
+                    teacher=request.user,
+                    action_type='enroll_students',
+                    description=f'Teacher {teacher_name} enrolled {len(created_enrollments)} student(s) in {course.name} (Class {course.student_class}{course.section})',
+                    course=course,
+                )
                 messages.success(
                     request,
                     f'{len(created_enrollments)} student(s) enrolled in {course.name} ({course.student_class}{course.section}).'
@@ -1245,6 +1926,14 @@ def create_transcript(request, enrollment_id):
             )
             
             transcript.save()
+            teacher_name = request.user.get_full_name() or request.user.username
+            course = enrollment.course
+            log_teacher_activity(
+                teacher=request.user,
+                action_type='upload_transcript',
+                description=f'Teacher {teacher_name} uploaded student transcript for {course.name} (Class {course.student_class}{course.section}) - Student: {enrollment.student.get_full_name() or enrollment.student.username}',
+                course=course,
+            )
             messages.success(request, f'Transcript created for {enrollment.student.get_full_name()}!')
             return redirect('main:manage_transcripts')
     else:
@@ -1277,6 +1966,15 @@ def edit_transcript(request, transcript_id):
             )
             
             transcript.save()
+            teacher_name = request.user.get_full_name() or request.user.username
+            course = transcript.enrollment.course
+            student_name = transcript.enrollment.student.get_full_name() or transcript.enrollment.student.username
+            log_teacher_activity(
+                teacher=request.user,
+                action_type='update_grades',
+                description=f'Teacher {teacher_name} updated student grades for {course.name} (Class {course.student_class}{course.section}) - Student: {student_name}',
+                course=course,
+            )
             messages.success(request, 'Transcript updated successfully!')
             return redirect('main:manage_transcripts')
     else:
@@ -1338,6 +2036,15 @@ def report_detail(request, report_id):
             reply.report = report
             reply.sender = request.user
             reply.save()
+
+            teacher_name = request.user.get_full_name() or request.user.username
+            course = report.transcript.enrollment.course
+            log_teacher_activity(
+                teacher=request.user,
+                action_type='post_report',
+                description=f'Teacher {teacher_name} posted a report reply for {course.name} (Class {course.student_class}{course.section})',
+                course=course,
+            )
             
             # Update report status
             report.status = 'replied'
@@ -1366,6 +2073,7 @@ def student_dashboard(request):
         return redirect('main:home')
     
     student = request.user
+    _publish_due_scheduled_lectures()
     
     # Get student's enrollments and transcripts
     enrollments = Enrollment.objects.filter(student=student).select_related(
@@ -1376,11 +2084,47 @@ def student_dashboard(request):
     reports = MarksReport.objects.filter(student=student).select_related(
         'transcript__enrollment__course'
     ).prefetch_related('replies')
+
+    enrolled_course_ids = enrollments.values_list('course_id', flat=True)
+    lectures = Lecture.objects.filter(
+        course_id__in=enrolled_course_ids,
+        is_published=True,
+    ).select_related('course', 'course__teacher').prefetch_related('attachments').order_by('-lecture_date', '-created_at')[:10]
+
+    assignments = Assignment.objects.filter(
+        course_id__in=enrolled_course_ids,
+    ).exclude(status='draft').select_related('course').order_by('deadline', '-created_at')
+
+    assignment_rows = []
+    for assignment in assignments[:8]:
+        latest_submission = AssignmentSubmission.objects.filter(
+            assignment=assignment,
+            student=student,
+        ).order_by('-attempt_number', '-submitted_at').first()
+
+        if latest_submission:
+            status = 'Late' if latest_submission.is_late else 'Submitted'
+            late_text = latest_submission.late_by_text
+        else:
+            status = 'Missing' if timezone.now() > assignment.deadline else 'Pending'
+            late_text = ''
+
+        assignment_rows.append({
+            'assignment': assignment,
+            'submission': latest_submission,
+            'status': status,
+            'late_text': late_text,
+        })
+
+    pending_assignments_count = sum(1 for row in assignment_rows if row['status'] == 'Pending')
     
     context = {
         'student': student,
         'enrollments': enrollments,
         'reports': reports,
+        'recent_lectures': lectures,
+        'assignment_rows': assignment_rows,
+        'pending_assignments_count': pending_assignments_count,
         'total_courses': enrollments.count(),
     }
     
@@ -1449,17 +2193,43 @@ def student_report_detail(request, report_id):
 
 # ==================== Notification Views ====================
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-import json
-from django.utils import timezone
-from datetime import datetime
+def _relative_time_text(reference_time):
+    """Return a compact human-readable relative timestamp."""
+    time_diff = timezone.now() - reference_time
+    if time_diff.days > 0:
+        return f"{time_diff.days} day{'s' if time_diff.days > 1 else ''} ago"
+    if time_diff.seconds >= 3600:
+        hours = time_diff.seconds // 3600
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    if time_diff.seconds >= 60:
+        minutes = time_diff.seconds // 60
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+    return "Just now"
 
 @login_required
 @require_http_methods(["GET"])
 def get_notifications(request):
     """Get notifications for current user"""
     notifications = []
+
+    if request.user.role == 'admin':
+        admin_notifications = TeacherActivityNotification.objects.filter(
+            admin=request.user
+        ).select_related('activity', 'activity__course').order_by('-created_at')[:20]
+
+        for notif in admin_notifications:
+            activity = notif.activity
+            notifications.append({
+                'id': notif.id,
+                'type': 'teacher_activity',
+                'sender': activity.teacher_name,
+                'message': activity.description,
+                'time': _relative_time_text(activity.timestamp),
+                'is_read': notif.is_seen,
+                'url': reverse('main:admin_notification_detail', args=[notif.id]),
+                'icon': 'fa-chalkboard-teacher'
+            })
+        return JsonResponse({'notifications': notifications})
     
     if request.user.role == 'teacher':
         # Get unread student reports for teacher
@@ -1468,27 +2238,47 @@ def get_notifications(request):
         ).select_related('student', 'transcript__enrollment__course').order_by('-created_at')[:20]
         
         for report in reports:
-            time_diff = timezone.now() - report.created_at
-            if time_diff.days > 0:
-                time_str = f"{time_diff.days} day{'s' if time_diff.days > 1 else ''} ago"
-            elif time_diff.seconds >= 3600:
-                hours = time_diff.seconds // 3600
-                time_str = f"{hours} hour{'s' if hours > 1 else ''} ago"
-            elif time_diff.seconds >= 60:
-                minutes = time_diff.seconds // 60
-                time_str = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
-            else:
-                time_str = "Just now"
-            
             notifications.append({
                 'id': report.id,
                 'type': 'report',
                 'sender': report.student.get_full_name(),
                 'message': f"Report about {report.transcript.enrollment.course.name}: {report.message[:50]}...",
-                'time': time_str,
+                'time': _relative_time_text(report.created_at),
                 'is_read': report.is_read_by_teacher,
                 'url': f"/teacher/report/{report.id}/",
                 'icon': 'fa-user-graduate'
+            })
+
+        admin_responses = TeacherActivityResponse.objects.filter(
+            notification__activity__teacher=request.user
+        ).select_related('admin', 'notification__activity').order_by('-created_at')[:20]
+
+        for response in admin_responses:
+            notifications.append({
+                'id': response.id,
+                'type': 'admin_message',
+                'sender': response.admin.get_full_name() or response.admin.username,
+                'message': response.message,
+                'time': _relative_time_text(response.created_at),
+                'is_read': response.is_read_by_teacher,
+                'url': reverse('main:dashboard'),
+                'icon': 'fa-user-shield'
+            })
+
+        lecture_notifications = LectureNotification.objects.filter(
+            recipient=request.user,
+        ).select_related('actor', 'lecture').order_by('-created_at')[:20]
+
+        for notif in lecture_notifications:
+            notifications.append({
+                'id': notif.id,
+                'type': 'lecture_notification',
+                'sender': (notif.actor.get_full_name() or notif.actor.username) if notif.actor else 'System',
+                'message': notif.message,
+                'time': _relative_time_text(notif.created_at),
+                'is_read': notif.is_read,
+                'url': reverse('main:lecture_discussions', args=[notif.lecture.id]),
+                'icon': 'fa-comments'
             })
     
     elif request.user.role == 'student':
@@ -1499,27 +2289,31 @@ def get_notifications(request):
         ).exclude(sender=request.user).select_related('sender', 'report').order_by('-created_at')[:20]
         
         for reply in replies:
-            time_diff = timezone.now() - reply.created_at
-            if time_diff.days > 0:
-                time_str = f"{time_diff.days} day{'s' if time_diff.days > 1 else ''} ago"
-            elif time_diff.seconds >= 3600:
-                hours = time_diff.seconds // 3600
-                time_str = f"{hours} hour{'s' if hours > 1 else ''} ago"
-            elif time_diff.seconds >= 60:
-                minutes = time_diff.seconds // 60
-                time_str = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
-            else:
-                time_str = "Just now"
-            
             notifications.append({
                 'id': reply.id,
                 'type': 'reply',
                 'sender': reply.sender.get_full_name(),
                 'message': f"Reply to your report: {reply.message[:50]}...",
-                'time': time_str,
+                'time': _relative_time_text(reply.created_at),
                 'is_read': reply.is_read_by_student,
                 'url': f"/student/report/{reply.report.id}/",
                 'icon': 'fa-chalkboard-teacher'
+            })
+
+        lecture_notifications = LectureNotification.objects.filter(
+            recipient=request.user,
+        ).select_related('actor', 'lecture').order_by('-created_at')[:20]
+
+        for notif in lecture_notifications:
+            notifications.append({
+                'id': notif.id,
+                'type': 'lecture_notification',
+                'sender': (notif.actor.get_full_name() or notif.actor.username) if notif.actor else 'System',
+                'message': notif.message,
+                'time': _relative_time_text(notif.created_at),
+                'is_read': notif.is_read,
+                'url': reverse('main:student_lecture_detail', args=[notif.lecture.id]),
+                'icon': 'fa-comments'
             })
     
     return JsonResponse({'notifications': notifications})
@@ -1534,10 +2328,22 @@ def mark_notification_read(request):
         notif_id = data.get('id')
         notif_type = data.get('type')
         
-        if notif_type == 'report' and request.user.role == 'teacher':
+        if notif_type == 'teacher_activity' and request.user.role == 'admin':
+            TeacherActivityNotification.objects.filter(
+                id=notif_id,
+                admin=request.user,
+            ).update(is_seen=True, seen_at=timezone.now())
+        elif notif_type == 'report' and request.user.role == 'teacher':
             MarksReport.objects.filter(id=notif_id, teacher=request.user).update(is_read_by_teacher=True)
+        elif notif_type == 'admin_message' and request.user.role == 'teacher':
+            TeacherActivityResponse.objects.filter(
+                id=notif_id,
+                notification__activity__teacher=request.user,
+            ).update(is_read_by_teacher=True)
         elif notif_type == 'reply' and request.user.role == 'student':
-            ReportReply.objects.filter(id=notif_id).update(is_read_by_student=True)
+            ReportReply.objects.filter(id=notif_id, report__student=request.user).update(is_read_by_student=True)
+        elif notif_type == 'lecture_notification' and request.user.role in ['teacher', 'student']:
+            LectureNotification.objects.filter(id=notif_id, recipient=request.user).update(is_read=True)
         
         return JsonResponse({'success': True})
     except Exception as e:
@@ -2068,6 +2874,104 @@ def admin_statistics(request):
         'grade_counts': grade_counts,
     }
     return render(request, 'admin/admin_statistics.html', context)
+
+
+@login_required
+def admin_teacher_activity_logs(request):
+    """Admin page to review all teacher academic activity with filters."""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('main:home')
+
+    teacher_id = request.GET.get('teacher', '').strip()
+    course_id = request.GET.get('course', '').strip()
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+    search_query = request.GET.get('q', '').strip()
+
+    activities = TeacherActivityLog.objects.select_related('teacher', 'course').all()
+
+    if teacher_id:
+        activities = activities.filter(teacher_id=teacher_id)
+    if course_id:
+        activities = activities.filter(course_id=course_id)
+    if start_date:
+        activities = activities.filter(timestamp__date__gte=start_date)
+    if end_date:
+        activities = activities.filter(timestamp__date__lte=end_date)
+    if search_query:
+        activities = activities.filter(
+            Q(teacher_name__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(course__name__icontains=search_query)
+        )
+
+    context = {
+        'activities': activities,
+        'teachers': User.objects.filter(role='teacher').order_by('first_name', 'last_name', 'username'),
+        'courses': Course.objects.select_related('teacher').order_by('name'),
+        'selected_teacher': teacher_id,
+        'selected_course': course_id,
+        'start_date': start_date,
+        'end_date': end_date,
+        'search_query': search_query,
+    }
+    return render(request, 'admin/admin_teacher_activity_logs.html', context)
+
+
+@login_required
+def admin_notification_detail(request, notification_id):
+    """Detailed view for a teacher activity notification."""
+    if request.user.role != 'admin':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('main:home')
+
+    notification = get_object_or_404(
+        TeacherActivityNotification.objects.select_related('activity', 'activity__teacher', 'activity__course'),
+        id=notification_id,
+        admin=request.user,
+    )
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'mark_seen':
+            notification.is_seen = True
+            notification.seen_at = timezone.now()
+            notification.save(update_fields=['is_seen', 'seen_at'])
+            messages.success(request, 'Notification marked as seen.')
+            return redirect('main:admin_notification_detail', notification_id=notification.id)
+
+        if action == 'save_response':
+            form = TeacherActivityResponseForm(request.POST)
+            if form.is_valid():
+                response = form.save(commit=False)
+                response.notification = notification
+                response.admin = request.user
+                response.save()
+
+                if not notification.is_seen:
+                    notification.is_seen = True
+                    notification.seen_at = timezone.now()
+                    notification.save(update_fields=['is_seen', 'seen_at'])
+
+                if response.response_type == 'message':
+                    messages.success(request, 'Message sent and activity recorded.')
+                else:
+                    messages.success(request, 'Question/report submitted and activity recorded.')
+                return redirect('main:admin_notification_detail', notification_id=notification.id)
+        else:
+            form = TeacherActivityResponseForm()
+    else:
+        form = TeacherActivityResponseForm()
+
+    context = {
+        'notification_item': notification,
+        'activity': notification.activity,
+        'responses': notification.responses.select_related('admin').all(),
+        'response_form': form,
+    }
+    return render(request, 'admin/admin_notification_detail.html', context)
 
 
 # ==================== ADMIN HUB VIEWS ====================

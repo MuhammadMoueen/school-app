@@ -97,18 +97,27 @@ class Course(models.Model):
 class Lecture(models.Model):
     FILE_TYPE_CHOICES = (
         ('video', 'Video'),
-        ('pdf', 'PDF Document'),
-        ('doc', 'Word Document'),
-        ('image', 'Image'),
         ('audio', 'Audio'),
-        ('other', 'Other'),
+        ('document', 'PDF / Document'),
+        ('image', 'Image'),
+        ('link', 'External Link'),
+    )
+
+    VISIBILITY_CHOICES = (
+        ('publish_now', 'Publish Now'),
+        ('schedule_later', 'Schedule Later'),
+        ('draft', 'Draft'),
     )
     
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lectures')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    file = models.FileField(upload_to='lectures/%Y/%m/')
-    file_type = models.CharField(max_length=20, choices=FILE_TYPE_CHOICES, default='other')
+    file = models.FileField(upload_to='lectures/%Y/%m/', blank=True, null=True)
+    file_type = models.CharField(max_length=20, choices=FILE_TYPE_CHOICES, default='document')
+    external_link = models.URLField(blank=True)
+    visibility_status = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default='publish_now')
+    lecture_date = models.DateField(default=timezone.localdate)
+    scheduled_publish_at = models.DateTimeField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0, help_text='Display order of the lecture')
     is_published = models.BooleanField(default=True, help_text='Whether students can view this lecture')
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_lectures')
@@ -128,31 +137,45 @@ class Lecture(models.Model):
     
     def detect_file_type(self):
         """Auto-detect file type based on extension"""
+        if not self.file:
+            return self.file_type
+
         ext = self.get_file_extension()
         
         video_exts = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm']
         pdf_exts = ['.pdf']
-        doc_exts = ['.doc', '.docx', '.txt', '.rtf']
+        doc_exts = ['.doc', '.docx', '.txt', '.rtf', '.ppt', '.pptx']
         image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp']
         audio_exts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac']
         
         if ext in video_exts:
             return 'video'
-        elif ext in pdf_exts:
-            return 'pdf'
-        elif ext in doc_exts:
-            return 'doc'
+        elif ext in pdf_exts or ext in doc_exts:
+            return 'document'
         elif ext in image_exts:
             return 'image'
         elif ext in audio_exts:
             return 'audio'
         else:
-            return 'other'
+            return 'document'
     
     def save(self, *args, **kwargs):
         """Auto-detect file type on save if not set"""
-        if not self.file_type or self.file_type == 'other':
+        if self.file and self.file_type != 'link':
             self.file_type = self.detect_file_type()
+
+        if self.visibility_status == 'publish_now':
+            self.is_published = True
+            self.scheduled_publish_at = None
+        elif self.visibility_status == 'draft':
+            self.is_published = False
+            self.scheduled_publish_at = None
+        else:
+            if self.scheduled_publish_at and self.scheduled_publish_at <= timezone.now():
+                self.is_published = True
+            else:
+                self.is_published = False
+
         super().save(*args, **kwargs)
     
     @property
@@ -165,6 +188,156 @@ class Lecture(models.Model):
                     return f"{size:.1f} {unit}"
                 size /= 1024.0
         return "0 B"
+
+
+class LectureAttachment(models.Model):
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='attachments')
+    title = models.CharField(max_length=200, blank=True)
+    file = models.FileField(upload_to='lecture_attachments/%Y/%m/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title or self.file.name
+
+
+class LectureView(models.Model):
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='views')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lecture_views', limit_choices_to={'role': 'student'})
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['lecture', 'student']
+        ordering = ['-viewed_at']
+
+
+class LectureDownload(models.Model):
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='downloads')
+    attachment = models.ForeignKey(LectureAttachment, on_delete=models.SET_NULL, null=True, blank=True, related_name='downloads')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lecture_downloads', limit_choices_to={'role': 'student'})
+    download_count = models.PositiveIntegerField(default=0)
+    last_downloaded_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['lecture', 'attachment', 'student']
+
+
+class LectureNotification(models.Model):
+    TYPE_CHOICES = (
+        ('student_comment', 'Student Comment'),
+        ('teacher_reply', 'Teacher Reply'),
+    )
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lecture_notifications')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lecture_notifications_sent')
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='notifications')
+    thread = models.ForeignKey('DiscussionThread', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    reply = models.ForeignKey('DiscussionReply', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class Assignment(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+        ('closed', 'Closed'),
+    )
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments')
+    title = models.CharField(max_length=200)
+    instructions = models.TextField()
+    deadline = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    allow_resubmission = models.BooleanField(default=False)
+    max_attempts = models.PositiveIntegerField(default=1)
+    student_class = models.CharField(max_length=20, blank=True)
+    section = models.CharField(max_length=10, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_assignments')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.course.code} - {self.title}"
+
+    @property
+    def is_deadline_passed(self):
+        return timezone.now() > self.deadline
+
+    @property
+    def is_closed(self):
+        return self.status == 'closed'
+
+    def save(self, *args, **kwargs):
+        if self.course_id:
+            self.student_class = self.course.student_class
+            self.section = self.course.section
+        if self.max_attempts < 1:
+            self.max_attempts = 1
+        if not self.allow_resubmission:
+            self.max_attempts = 1
+        super().save(*args, **kwargs)
+
+
+class AssignmentAttachment(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='attachments')
+    title = models.CharField(max_length=200, blank=True)
+    file = models.FileField(upload_to='assignment_attachments/%Y/%m/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title or self.file.name
+
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assignment_submissions', limit_choices_to={'role': 'student'})
+    attempt_number = models.PositiveIntegerField(default=1)
+    submission_file = models.FileField(upload_to='assignment_submissions/%Y/%m/')
+    comment = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    is_late = models.BooleanField(default=False)
+    late_duration = models.DurationField(null=True, blank=True)
+    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    feedback = models.TextField(blank=True)
+    graded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='graded_assignment_submissions')
+    graded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ['assignment', 'student', 'attempt_number']
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.student.username} - {self.assignment.title} (Attempt {self.attempt_number})"
+
+    @property
+    def late_by_text(self):
+        if not self.is_late or not self.late_duration:
+            return ''
+
+        total_seconds = int(self.late_duration.total_seconds())
+        days = total_seconds // 86400
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+
+        if days > 0:
+            return f"Late by {days} day{'s' if days != 1 else ''}"
+        if hours > 0:
+            return f"Late by {hours} hour{'s' if hours != 1 else ''}"
+        return f"Late by {max(minutes, 1)} minute{'s' if minutes != 1 else ''}"
 
 
 # Enrollment model - links students to courses
@@ -467,3 +640,68 @@ class AuditLog(models.Model):
     
     def __str__(self):
         return f"{self.admin.username} - {self.get_action_display()} at {self.created_at}"
+
+
+class TeacherActivityLog(models.Model):
+    ACTION_CHOICES = (
+        ('create_course', 'Created Course'),
+        ('edit_course', 'Edited Course'),
+        ('enroll_students', 'Enrolled Students'),
+        ('upload_lecture', 'Uploaded Lecture'),
+        ('create_assessment', 'Created Quiz/Test'),
+        ('upload_transcript', 'Uploaded Transcript/Grade'),
+        ('update_grades', 'Updated Student Grades'),
+        ('post_report', 'Posted Report/Reply'),
+        ('mark_attendance', 'Marked Attendance'),
+        ('other', 'Other Academic Action'),
+    )
+
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_activity_logs')
+    teacher_name = models.CharField(max_length=255)
+    action_type = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='teacher_activity_logs')
+    student_class = models.CharField(max_length=20, blank=True)
+    section = models.CharField(max_length=10, blank=True)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.teacher_name} - {self.get_action_type_display()}"
+
+
+class TeacherActivityNotification(models.Model):
+    admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_activity_notifications')
+    activity = models.ForeignKey(TeacherActivityLog, on_delete=models.CASCADE, related_name='notifications')
+    is_seen = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    seen_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['admin', 'activity']
+
+    def __str__(self):
+        return f"Notification for {self.admin.username}: {self.activity.teacher_name}"
+
+
+class TeacherActivityResponse(models.Model):
+    RESPONSE_CHOICES = (
+        ('message', 'Message to Teacher'),
+        ('report_question', 'Report/Question Activity'),
+    )
+
+    notification = models.ForeignKey(TeacherActivityNotification, on_delete=models.CASCADE, related_name='responses')
+    admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher_activity_responses')
+    response_type = models.CharField(max_length=30, choices=RESPONSE_CHOICES)
+    message = models.TextField()
+    is_read_by_teacher = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.admin.username} - {self.get_response_type_display()}"

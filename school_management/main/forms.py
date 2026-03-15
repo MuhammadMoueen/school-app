@@ -2,12 +2,24 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, AuditLog, Lecture, Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply
+from .models import User, PreassignedEmail, Course, Enrollment, Transcript, MarksReport, ReportReply, AuditLog, Lecture, Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply, TeacherActivityResponse, Assignment, AssignmentSubmission
 from django.utils import timezone
 import csv
 import io
 import random
 import re
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(item, initial) for item in data]
+        return single_file_clean(data, initial)
 
 
 class TeacherSignupForm(UserCreationForm):
@@ -377,6 +389,23 @@ class ReportReplyForm(forms.ModelForm):
                 'placeholder': 'Type your reply...',
                 'class': 'form-control',
                 'rows': 3
+            })
+        }
+
+
+class TeacherActivityResponseForm(forms.ModelForm):
+    """Form used by admin to message or question a teacher activity"""
+    class Meta:
+        model = TeacherActivityResponse
+        fields = ['response_type', 'message']
+        widgets = {
+            'response_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'message': forms.Textarea(attrs={
+                'placeholder': 'Write your message or question to the teacher...',
+                'class': 'form-control',
+                'rows': 4
             })
         }
 
@@ -764,10 +793,30 @@ class AdminCourseForm(forms.ModelForm):
 
 class LectureForm(forms.ModelForm):
     """Form for teachers to upload course materials/lectures"""
+    attachments = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'multiple': True,
+            'accept': '.mp4,.mp3,.pdf,.docx,.ppt,.pptx,.png,.jpg,.jpeg'
+        }),
+        help_text='Optional: upload multiple attachments (video, notes, slides, assignments).'
+    )
     
     class Meta:
         model = Lecture
-        fields = ['course', 'title', 'description', 'file', 'order', 'is_published']
+        fields = [
+            'course',
+            'title',
+            'description',
+            'file_type',
+            'file',
+            'external_link',
+            'visibility_status',
+            'lecture_date',
+            'scheduled_publish_at',
+            'order',
+        ]
         widgets = {
             'course': forms.Select(attrs={
                 'class': 'form-control'
@@ -781,17 +830,32 @@ class LectureForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 4
             }),
+            'file_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
             'file': forms.FileInput(attrs={
                 'class': 'form-control',
-                'accept': 'video/*,audio/*,image/*,.pdf,.doc,.docx'
+                'accept': '.mp4,.mp3,.pdf,.docx,.ppt,.pptx,.png,.jpg,.jpeg'
+            }),
+            'external_link': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://youtube.com/lecture123'
+            }),
+            'visibility_status': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'lecture_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'scheduled_publish_at': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
             }),
             'order': forms.NumberInput(attrs={
                 'placeholder': 'Display Order (e.g., 1, 2, 3...)',
                 'class': 'form-control',
                 'min': 0
-            }),
-            'is_published': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
             })
         }
     
@@ -800,10 +864,14 @@ class LectureForm(forms.ModelForm):
         # Filter courses to only show courses taught by this teacher
         if teacher:
             self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+            self.fields['course'].label_from_instance = (
+                lambda c: f"{c.code} - {c.name} (Class {c.student_class}{c.section})"
+            )
         # Set order field default value
         self.fields['order'].initial = 0
-        # is_published default to True
-        self.fields['is_published'].initial = True
+        self.fields['lecture_date'].initial = timezone.localdate()
+        self.fields['visibility_status'].initial = 'publish_now'
+        self.fields['scheduled_publish_at'].required = False
     
     def clean_file(self):
         """Validate uploaded file size and type"""
@@ -817,10 +885,10 @@ class LectureForm(forms.ModelForm):
             file_extension = file.name.lower().split('.')[-1]
             
             # Allowed extensions
-            video_exts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm']
-            audio_exts = ['mp3', 'wav', 'ogg', 'm4a', 'flac']
-            doc_exts = ['pdf', 'doc', 'docx', 'txt', 'rtf']
-            image_exts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']
+            video_exts = ['mp4']
+            audio_exts = ['mp3']
+            doc_exts = ['pdf', 'docx', 'ppt', 'pptx']
+            image_exts = ['jpg', 'jpeg', 'png']
             
             all_allowed = video_exts + audio_exts + doc_exts + image_exts
             
@@ -843,14 +911,152 @@ class LectureForm(forms.ModelForm):
                 )
         
         return file
-    
+
+    def clean(self):
+        cleaned_data = super().clean()
+        lecture_type = cleaned_data.get('file_type')
+        file = cleaned_data.get('file')
+        external_link = cleaned_data.get('external_link')
+        visibility = cleaned_data.get('visibility_status')
+        scheduled_publish_at = cleaned_data.get('scheduled_publish_at')
+
+        if lecture_type == 'link' and not external_link:
+            self.add_error('external_link', 'External link is required when lecture type is External Link.')
+
+        if lecture_type != 'link' and not file and not self.instance.pk:
+            self.add_error('file', 'Upload a lecture file for this lecture type.')
+
+        if visibility == 'schedule_later' and not scheduled_publish_at:
+            self.add_error('scheduled_publish_at', 'Scheduled publish date/time is required for Schedule Later.')
+
+        return cleaned_data
+
+
+class AssignmentForm(forms.ModelForm):
+    """Teacher assignment create/edit form."""
+    attachments = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'multiple': True,
+            'accept': '.pdf,.docx,.ppt,.pptx,.png,.jpg,.jpeg'
+        }),
+        help_text='Optional: upload multiple assignment resources.'
+    )
+
     class Meta:
-        model = Course
-        fields = ['name', 'code', 'description', 'teacher']
+        model = Assignment
+        fields = [
+            'course',
+            'title',
+            'instructions',
+            'deadline',
+            'status',
+            'allow_resubmission',
+            'max_attempts',
+        ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Course Name'}),
-            'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Course Code'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Description', 'rows': 3}),
+            'course': forms.Select(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Assignment title'}),
+            'instructions': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Assignment instructions'}),
+            'deadline': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'allow_resubmission': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'max_attempts': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+        }
+
+    def __init__(self, *args, teacher=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if teacher:
+            self.fields['course'].queryset = Course.objects.filter(teacher=teacher).order_by('code', 'name')
+            self.fields['course'].label_from_instance = (
+                lambda c: f"{c.code} - {c.name} (Class {c.student_class}{c.section})"
+            )
+
+        if self.instance.pk and self.instance.deadline:
+            self.initial['deadline'] = self.instance.deadline.strftime('%Y-%m-%dT%H:%M')
+
+        self.fields['status'].initial = self.fields['status'].initial or 'draft'
+
+    def clean_attachments(self):
+        files = self.files.getlist('attachments')
+        allowed_exts = {'pdf', 'docx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg'}
+        max_size = 15 * 1024 * 1024
+        for file_obj in files:
+            ext = file_obj.name.lower().split('.')[-1]
+            if ext not in allowed_exts:
+                raise ValidationError('Only PDF, DOCX, PPT/PPTX, PNG, JPG, and JPEG files are allowed.')
+            if file_obj.size > max_size:
+                raise ValidationError('Each attachment must be less than 15MB.')
+        return files
+
+    def clean(self):
+        cleaned_data = super().clean()
+        allow_resubmission = cleaned_data.get('allow_resubmission')
+        max_attempts = cleaned_data.get('max_attempts')
+        deadline = cleaned_data.get('deadline')
+
+        if not allow_resubmission:
+            cleaned_data['max_attempts'] = 1
+        elif max_attempts is not None and max_attempts < 2:
+            self.add_error('max_attempts', 'Set attempts to at least 2 when resubmission is enabled.')
+
+        if deadline and deadline.year < 2000:
+            self.add_error('deadline', 'Please provide a valid deadline date/time.')
+
+        return cleaned_data
+
+
+class AssignmentSubmissionForm(forms.ModelForm):
+    """Student assignment submission form."""
+    class Meta:
+        model = AssignmentSubmission
+        fields = ['submission_file', 'comment']
+        widgets = {
+            'submission_file': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx,.png,.jpg,.jpeg,.zip'
+            }),
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Optional message to your teacher'
+            })
+        }
+
+    def clean_submission_file(self):
+        file_obj = self.cleaned_data.get('submission_file')
+        if not file_obj:
+            return file_obj
+
+        allowed_exts = {'pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'zip'}
+        ext = file_obj.name.lower().split('.')[-1]
+        if ext not in allowed_exts:
+            raise ValidationError('Only PDF, DOC/DOCX, PNG/JPG/JPEG, and ZIP files are supported.')
+
+        if file_obj.size > 30 * 1024 * 1024:
+            raise ValidationError('Submission file must be less than 30MB.')
+
+        return file_obj
+
+
+class AssignmentGradingForm(forms.ModelForm):
+    """Teacher grading form for assignment submissions."""
+    class Meta:
+        model = AssignmentSubmission
+        fields = ['score', 'feedback']
+        widgets = {
+            'score': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': 0,
+                'placeholder': 'Score (e.g., 8 or 8.5)'
+            }),
+            'feedback': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Feedback for student'
+            })
         }
 
 

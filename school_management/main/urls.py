@@ -34,6 +34,8 @@ urlpatterns = [
     path('panel/courses/<int:course_id>/edit/', views.admin_edit_course, name='admin_edit_course'),
     path('panel/courses/<int:course_id>/delete/', views.admin_delete_course, name='admin_delete_course'),
     path('panel/statistics/', views.admin_statistics, name='admin_statistics'),
+    path('panel/teachers/activity-logs/', views.admin_teacher_activity_logs, name='admin_teacher_activity_logs'),
+    path('panel/notifications/<int:notification_id>/', views.admin_notification_detail, name='admin_notification_detail'),
 
     # Admin Hub Pages
     path('panel/students-hub/', views.admin_students_hub, name='admin_students_hub'),
@@ -52,7 +54,17 @@ urlpatterns = [
     path('teacher/lectures/create/', views.create_lecture, name='create_lecture'),
     path('teacher/lectures/<int:lecture_id>/edit/', views.edit_lecture, name='edit_lecture'),
     path('teacher/lectures/<int:lecture_id>/delete/', views.delete_lecture, name='delete_lecture'),
+    path('teacher/lectures/<int:lecture_id>/attachments/<int:attachment_id>/delete/', views.delete_lecture_attachment, name='delete_lecture_attachment'),
     path('teacher/courses/<int:course_id>/lectures/', views.view_course_lectures, name='view_course_lectures'),
+
+    # Assignment Management URLs
+    path('teacher/assignments/', views.manage_assignments, name='manage_assignments'),
+    path('teacher/assignments/create/', views.create_assignment, name='create_assignment'),
+    path('teacher/assignments/<int:assignment_id>/edit/', views.edit_assignment, name='edit_assignment'),
+    path('teacher/assignments/<int:assignment_id>/delete/', views.delete_assignment, name='delete_assignment'),
+    path('teacher/assignments/<int:assignment_id>/attachments/<int:attachment_id>/delete/', views.delete_assignment_attachment, name='delete_assignment_attachment'),
+    path('teacher/assignments/<int:assignment_id>/submissions/', views.assignment_submissions, name='assignment_submissions'),
+    path('teacher/assignment-submissions/<int:submission_id>/grade/', views.grade_assignment_submission, name='grade_assignment_submission'),
     
     # Attendance Management URLs
     path('teacher/attendance/', views.manage_attendance, name='manage_attendance'),
@@ -91,6 +103,11 @@ urlpatterns = [
     # Student URLs
     path('student/report/<int:transcript_id>/', views.submit_marks_report, name='submit_marks_report'),
     path('student/reports/<int:report_id>/', views.student_report_detail, name='student_report_detail'),
+    path('student/lectures/<int:lecture_id>/', views.student_lecture_detail, name='student_lecture_detail'),
+    path('student/lectures/<int:lecture_id>/download/', views.student_download_lecture_file, name='student_download_lecture_file'),
+    path('student/lectures/<int:lecture_id>/attachments/<int:attachment_id>/download/', views.student_download_lecture_attachment, name='student_download_lecture_attachment'),
+    path('student/assignments/', views.student_my_assignments, name='student_my_assignments'),
+    path('student/assignments/<int:assignment_id>/submit/', views.submit_assignment, name='submit_assignment'),
     
     # Notification URLs
     path('notifications/get/', views.get_notifications, name='get_notifications'),

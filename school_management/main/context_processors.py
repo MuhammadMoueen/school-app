@@ -10,30 +10,59 @@ def notification_count(request):
     """
     if request.user.is_authenticated:
         try:
-            from .models import Notification
-            unread_count = Notification.objects.filter(
-                user=request.user,
-                is_read=False
-            ).count()
-            
-            # Get recent notifications
-            recent_notifications = Notification.objects.filter(
-                user=request.user
-            ).order_by('-created_at')[:5]
-            
+            from .models import TeacherActivityNotification, TeacherActivityResponse, MarksReport, ReportReply, LectureNotification
+
+            unread_count = 0
+            recent_notifications = []
+
+            if request.user.role == 'admin':
+                unread_count = TeacherActivityNotification.objects.filter(
+                    admin=request.user,
+                    is_seen=False,
+                ).count()
+                recent_notifications = TeacherActivityNotification.objects.filter(
+                    admin=request.user,
+                ).select_related('activity').order_by('-created_at')[:5]
+            elif request.user.role == 'teacher':
+                unread_reports = MarksReport.objects.filter(
+                    teacher=request.user,
+                    is_read_by_teacher=False,
+                ).count()
+                unread_admin_responses = TeacherActivityResponse.objects.filter(
+                    notification__activity__teacher=request.user,
+                    is_read_by_teacher=False,
+                ).count()
+                unread_lecture_notifications = LectureNotification.objects.filter(
+                    recipient=request.user,
+                    is_read=False,
+                ).count()
+                unread_count = unread_reports + unread_admin_responses + unread_lecture_notifications
+            elif request.user.role == 'student':
+                unread_report_replies = ReportReply.objects.filter(
+                    report__student=request.user,
+                    is_read_by_student=False,
+                ).exclude(sender=request.user).count()
+                unread_lecture_notifications = LectureNotification.objects.filter(
+                    recipient=request.user,
+                    is_read=False,
+                ).count()
+                unread_count = unread_report_replies + unread_lecture_notifications
+
             return {
                 'notification_count': unread_count,
+                'unread_notification_count': unread_count,
                 'recent_notifications': recent_notifications,
             }
         except Exception:
-            # If Notification model doesn't exist or any error occurs
             return {
                 'notification_count': 0,
+                'unread_notification_count': 0,
                 'recent_notifications': [],
             }
     
     return {
         'notification_count': 0,
+        'unread_notification_count': 0,
         'recent_notifications': [],
     }
 
