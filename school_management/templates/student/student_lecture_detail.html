@@ -1,0 +1,102 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Lecture Detail - Student{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid student-container-pad-top">
+    <div class="dashboard-wrapper">
+        <div class="dashboard-header mb-4">
+            <div class="header-left">
+                <div class="header-content">
+                    <h1><i class="fas fa-file-video"></i> {{ lecture.title }}</h1>
+                    <p>{{ lecture.course.code }} - {{ lecture.course.name }} | Teacher: {{ lecture.course.teacher.get_full_name }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="report-card mb-4">
+            <div class="report-header">
+                <div>
+                    <h4>Lecture Information</h4>
+                    <p class="report-date"><i class="fas fa-calendar-day"></i> {{ lecture.lecture_date|date:"M d, Y" }}</p>
+                </div>
+                <span class="status-badge graded">{{ lecture.get_file_type_display }}</span>
+            </div>
+            <div class="report-content">
+                <p class="message">{{ lecture.description|default:'No description available for this lecture.' }}</p>
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                    {% if lecture.file %}
+                    <a href="{% url 'main:student_download_lecture_file' lecture.id %}" class="btn-view">
+                        <i class="fas fa-download"></i> Download Main File
+                    </a>
+                    {% endif %}
+                    {% if lecture.external_link %}
+                    <a href="{{ lecture.external_link }}" target="_blank" rel="noopener" class="btn-report">
+                        <i class="fas fa-external-link-alt"></i> Open External Link
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'main:lecture_discussions' lecture.id %}" class="btn-report">
+                        <i class="fas fa-comments"></i> Open Discussion Board
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="report-card mb-4">
+            <div class="report-header">
+                <div>
+                    <h4>Attachments</h4>
+                    <p class="report-date"><i class="fas fa-paperclip"></i> {{ attachments|length }} file(s)</p>
+                </div>
+            </div>
+            <div class="report-content">
+                {% if attachments %}
+                    <div class="list-group">
+                        {% for attachment in attachments %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ attachment.title|default:attachment.file.name }}</strong>
+                            </div>
+                            <a href="{% url 'main:student_download_lecture_attachment' lecture.id attachment.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No additional attachments available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="report-card">
+            <div class="report-header">
+                <div>
+                    <h4>Recent Discussion Threads</h4>
+                    <p class="report-date"><i class="fas fa-comments"></i> {{ threads|length }} thread(s)</p>
+                </div>
+            </div>
+            <div class="report-content">
+                {% if threads %}
+                    {% for thread in threads %}
+                    <div class="reply-item mb-2">
+                        <div class="reply-header">
+                            <strong>{{ thread.title }}</strong>
+                            <span class="reply-time">{{ thread.created_at|timesince }} ago</span>
+                        </div>
+                        <p>{{ thread.content|truncatechars:160 }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No discussion threads yet. Be the first to start one.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

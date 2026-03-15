@@ -4,494 +4,11 @@
 {% block title %}Student Dashboard - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
 
 {% block extra_css %}
-<style>
-    .dashboard-wrapper {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        overflow: hidden;
-        margin-bottom: 30px;
-    }
-    
-    .dashboard-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-    
-    .header-left {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        flex: 1;
-    }
-    
-    .profile-btn {
-        background: rgba(255,255,255,0.2);
-        border: 2px solid rgba(255,255,255,0.3);
-        color: white;
-        padding: 12px 25px;
-        border-radius: 30px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .profile-btn:hover {
-        background: rgba(255,255,255,0.3);
-        transform: translateY(-2px);
-        color: white;
-    }
-    
-    .profile-picture {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid rgba(255,255,255,0.5);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    
-    .no-profile-picture {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 3px solid rgba(255,255,255,0.5);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    
-    .no-profile-picture i {
-        font-size: 2.5rem;
-        color: white;
-        opacity: 0.8;
-    }
-    
-    .header-content h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 0 0 10px 0;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .header-content p {
-        margin: 0;
-        opacity: 0.9;
-        font-size: 1.1rem;
-    }
-    
-    .stats-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 25px;
-        padding: 30px;
-    }
-    
-    .stat-card {
-        padding: 25px;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        transition: all 0.3s;
-        border: 2px solid transparent;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    }
-    
-    .stat-card.primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .stat-card.success {
-        background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-        color: white;
-    }
-    
-    .stat-card.info {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-    }
-    
-    .stat-icon {
-        font-size: 3rem;
-        opacity: 0.9;
-    }
-    
-    .stat-details h3 {
-        font-size: 2.5rem;
-        margin: 0 0 5px 0;
-        font-weight: 700;
-    }
-    
-    .stat-details p {
-        margin: 0;
-        font-size: 1rem;
-        opacity: 0.9;
-    }
-    
-    .section-divider {
-        padding: 0 30px;
-    }
-    
-    .section-divider hr {
-        border: none;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #667eea, transparent);
-        margin: 20px 0;
-    }
-    
-    .subjects-section {
-        padding: 30px;
-    }
-    
-    .subjects-section h2 {
-        color: #2c3e50;
-        font-weight: 700;
-        margin-bottom: 25px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .subject-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
-        gap: 25px;
-    }
-    
-    .subject-card {
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 15px;
-        overflow: hidden;
-        transition: all 0.3s;
-    }
-    
-    .subject-card:hover {
-        border-color: #667eea;
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
-        transform: translateY(-5px);
-    }
-    
-    .subject-header {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 20%);
-        padding: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-    
-    .subject-info h3 {
-        margin: 0 0 10px 0;
-        color: #2c3e50;
-        font-size: 1.4rem;
-        font-weight: 700;
-    }
-    
-    .subject-code {
-        background: #667eea;
-        color: white;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        display: inline-block;
-        margin-bottom: 10px;
-    }
-    
-    .teacher-info {
-        color: #7f8c8d;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .status-badge {
-        padding: 8px 20px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .status-badge.graded {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .status-badge.pending {
-        background: #fff3cd;
-        color: #856404;
-    }
-    
-    .transcript-details {
-        padding: 25px;
-    }
-    
-    .transcript-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .marks-item {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: all 0.3s;
-    }
-    
-    .marks-item:hover {
-        background: #e9ecef;
-    }
-    
-    .marks-item.grade-box {
-        grid-column: 1 / -1;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .marks-label {
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-    
-    .marks-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-    }
-    
-    .marks-item.grade-box .marks-value {
-        color: white;
-        font-size: 2rem;
-    }
-    
-    .remarks-box {
-        background: #fff3cd;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 4px solid #f2c94c;
-        margin-bottom: 15px;
-    }
-    
-    .remarks-box strong {
-        display: block;
-        margin-bottom: 8px;
-        color: #856404;
-    }
-    
-    .remarks-box p {
-        margin: 0;
-        color: #856404;
-    }
-    
-    .no-transcript {
-        padding: 40px;
-        text-align: center;
-        background: #f8f9fa;
-        border-radius: 10px;
-        color: #7f8c8d;
-    }
-    
-    .no-transcript i {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        opacity: 0.5;
-    }
-    
-    .btn-report {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 25px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        transition: all 0.3s;
-        border: none;
-        cursor: pointer;
-    }
-    
-    .btn-report:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 60px 30px;
-        color: #95a5a6;
-    }
-    
-    .empty-state i {
-        font-size: 5rem;
-        margin-bottom: 20px;
-        opacity: 0.5;
-    }
-    
-    .empty-state p {
-        font-size: 1.1rem;
-        margin: 10px 0;
-    }
-    
-    .reports-section {
-        padding: 30px;
-    }
-    
-    .reports-section h2 {
-        color: #2c3e50;
-        font-weight: 700;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .section-desc {
-        color: #7f8c8d;
-        margin-bottom: 25px;
-    }
-    
-    .report-card {
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        transition: all 0.3s;
-    }
-    
-    .report-card:hover {
-        border-color: #667eea;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 15px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #f0f0f0;
-    }
-    
-    .report-header h4 {
-        margin: 0 0 8px 0;
-        color: #2c3e50;
-        font-weight: 700;
-    }
-    
-    .report-date {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-    
-    .report-content {
-        margin-bottom: 15px;
-    }
-    
-    .message {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        color: #2c3e50;
-    }
-    
-    .replies-section {
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 2px solid #f0f0f0;
-    }
-    
-    .reply-item {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        border-left: 4px solid #667eea;
-    }
-    
-    .reply-item.teacher-reply {
-        border-left-color: #27ae60;
-        background: #e8f5e9;
-    }
-    
-    .reply-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-    }
-    
-    .reply-time {
-        color: #7f8c8d;
-        font-size: 0.85rem;
-    }
-    
-    .btn-view {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 600;
-        display: inline-block;
-        transition: all 0.3s;
-    }
-    
-    .btn-view:hover {
-        transform: scale(1.05);
-        color: white;
-    }
-    
-    @media (max-width: 768px) {
-        .stats-container {
-            grid-template-columns: 1fr;
-        }
-        
-        .subject-cards {
-            grid-template-columns: 1fr;
-        }
-        
-        .transcript-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid" style="padding-top: 20px;">
+<div class="container-fluid student-container-pad-top">
     <div class="dashboard-wrapper">
         <!-- Header -->
         <div class="dashboard-header">
@@ -538,10 +55,100 @@
     </div>
     
     <div class="section-divider"><hr></div>
+
+    <div class="reports-section">
+        <h2><i class="fas fa-file-signature"></i> My Assignments</h2>
+        <p class="section-desc">Track assignment deadlines, submissions, grades, and teacher feedback</p>
+
+        {% if assignment_rows %}
+            {% for row in assignment_rows %}
+                <div class="report-card">
+                    <div class="report-header">
+                        <div>
+                            <h4>{{ row.assignment.title }}</h4>
+                            <p class="report-date"><i class="fas fa-book"></i> {{ row.assignment.course.code }} - {{ row.assignment.course.name }}</p>
+                        </div>
+                        <span class="status-badge {% if row.status == 'Submitted' %}graded{% elif row.status == 'Late' or row.status == 'Missing' %}pending{% else %}pending{% endif %}">
+                            {{ row.status }}
+                        </span>
+                    </div>
+
+                    <div class="report-content">
+                        <p class="message">{{ row.assignment.instructions|truncatechars:220 }}</p>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-clock"></i> Deadline: {{ row.assignment.deadline|date:"M d, Y h:i A" }}
+                            {% if row.late_text %}
+                                <span class="ms-3 text-danger"><i class="fas fa-exclamation-triangle"></i> {{ row.late_text }}</span>
+                            {% endif %}
+                        </p>
+                        {% if row.submission and row.submission.score != None %}
+                            <p class="mb-1"><strong>Score:</strong> {{ row.submission.score }}</p>
+                        {% endif %}
+                        {% if row.submission and row.submission.feedback %}
+                            <p class="mb-0"><strong>Feedback:</strong> {{ row.submission.feedback }}</p>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'main:submit_assignment' row.assignment.id %}" class="btn-view">
+                        <i class="fas fa-upload"></i> {% if row.submission and row.assignment.allow_resubmission %}Resubmit{% elif row.submission %}View Submission{% else %}Submit Assignment{% endif %}
+                    </a>
+                </div>
+            {% endfor %}
+
+            <a href="{% url 'main:student_my_assignments' %}" class="btn-report">
+                <i class="fas fa-table"></i> Open Full Assignment Dashboard
+            </a>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-signature"></i>
+                <p>No assignments available yet</p>
+                <p class="empty-state-note">Assignments from your enrolled courses will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="reports-section">
+        <h2><i class="fas fa-file-video"></i> My Lectures</h2>
+        <p class="section-desc">Recent lectures published for your enrolled courses</p>
+
+        {% if recent_lectures %}
+            {% for lecture in recent_lectures %}
+                <div class="report-card">
+                    <div class="report-header">
+                        <div>
+                            <h4>{{ lecture.title }}</h4>
+                            <p class="report-date">
+                                <i class="fas fa-book"></i> {{ lecture.course.code }} - {{ lecture.course.name }}
+                            </p>
+                        </div>
+                        <span class="status-badge graded">{{ lecture.get_file_type_display }}</span>
+                    </div>
+
+                    <div class="report-content">
+                        <p class="message">{{ lecture.description|default:'No description available.'|truncatechars:180 }}</p>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-calendar-day"></i> {{ lecture.lecture_date|date:"M d, Y" }}
+                            <span class="ms-3"><i class="fas fa-paperclip"></i> {{ lecture.attachments.count }} attachment(s)</span>
+                        </p>
+                    </div>
+
+                    <a href="{% url 'main:student_lecture_detail' lecture.id %}" class="btn-view">
+                        <i class="fas fa-eye"></i> Open Lecture
+                    </a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-video"></i>
+                <p>No published lectures available yet</p>
+                <p class="empty-state-note">Check back later for new lecture content from your teachers.</p>
+            </div>
+        {% endif %}
+    </div>
     
     <!-- Subjects & Transcripts -->
     <div class="subjects-section">
-        <h2><img src="{% static 'images/school-logo.png' %}" alt="School Logo" style="width: 24px; height: 24px; object-fit: contain; vertical-align: middle;"> My Subjects & Transcripts</h2>
+        <h2><img src="{% static 'images/school-logo.png' %}" alt="School Logo" class="inline-logo-student"> My Subjects & Transcripts</h2>
         
         {% if enrollments %}
             <div class="subject-cards">
@@ -608,7 +215,7 @@
                             <div class="no-transcript">
                                 <i class="fas fa-hourglass-half"></i>
                                 <p>Transcript not available yet</p>
-                                <p style="font-size: 0.9rem;">Please wait for your teacher to add your marks</p>
+                                <p class="no-transcript-note">Please wait for your teacher to add your marks</p>
                             </div>
                         {% endif %}
                     </div>
@@ -618,7 +225,7 @@
             <div class="empty-state">
                 <i class="fas fa-book-reader"></i>
                 <p>You are not enrolled in any subjects yet</p>
-                <p style="font-size: 0.95rem;">Please contact your teacher to be enrolled in subjects</p>
+                <p class="empty-state-note">Please contact your teacher to be enrolled in subjects</p>
             </div>
         {% endif %}
     </div>

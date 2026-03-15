@@ -1,0 +1,706 @@
+/* Student dashboard styles */
+.dashboard-wrapper {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.profile-btn {
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.profile-picture {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.no-profile-picture {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.no-profile-picture i {
+    font-size: 2.5rem;
+    color: white;
+    opacity: 0.8;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-content p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    padding: 30px;
+}
+
+.stat-card {
+    padding: 25px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+    color: white;
+}
+
+.stat-card.info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.stat-icon {
+    font-size: 3rem;
+    opacity: 0.9;
+}
+
+.stat-details h3 {
+    font-size: 2.5rem;
+    margin: 0 0 5px 0;
+    font-weight: 700;
+}
+
+.stat-details p {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.section-divider {
+    padding: 0 30px;
+}
+
+.section-divider hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #667eea, transparent);
+    margin: 20px 0;
+}
+
+.subjects-section,
+.reports-section {
+    padding: 30px;
+}
+
+.subjects-section h2,
+.reports-section h2 {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.subject-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+    gap: 25px;
+}
+
+.subject-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.subject-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+    transform: translateY(-5px);
+}
+
+.subject-header {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 20%);
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.subject-info h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.subject-code {
+    background: #667eea;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.teacher-info {
+    color: #7f8c8d;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge.graded,
+.status-badge.resolved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.replied {
+    background: #fef5e7;
+    color: #f39c12;
+}
+
+.transcript-details {
+    padding: 25px;
+}
+
+.transcript-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.marks-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.marks-item:hover {
+    background: #e9ecef;
+}
+
+.marks-item.grade-box {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.marks-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.marks-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.marks-item.grade-box .marks-value {
+    color: white;
+    font-size: 2rem;
+}
+
+.remarks-box {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #f2c94c;
+    margin-bottom: 15px;
+}
+
+.remarks-box strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #856404;
+}
+
+.remarks-box p {
+    margin: 0;
+    color: #856404;
+}
+
+.no-transcript {
+    padding: 40px;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 10px;
+    color: #7f8c8d;
+}
+
+.no-transcript i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.no-transcript-note {
+    font-size: 0.9rem;
+}
+
+.btn-report,
+.btn-view {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-report:hover,
+.btn-view:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 30px;
+    color: #95a5a6;
+}
+
+.empty-state i {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    margin: 10px 0;
+}
+
+.empty-state-note {
+    font-size: 0.95rem;
+}
+
+.section-desc {
+    color: #7f8c8d;
+    margin-bottom: 25px;
+}
+
+.report-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+
+.report-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.report-header h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.report-date,
+.reply-time,
+.message-time,
+.message-timestamp {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.message {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    color: #2c3e50;
+}
+
+.replies-section,
+.reply-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.reply-item,
+.message-bubble {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    border-left: 4px solid #667eea;
+}
+
+.reply-item.teacher-reply,
+.message-bubble.teacher {
+    border-left-color: #27ae60;
+    background: #e8f5e9;
+}
+
+.reply-header,
+.message-sender {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.report-form-container,
+.report-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.report-form-box,
+.report-main,
+.conversation-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #3498db;
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: #2980b9;
+}
+
+.transcript-info-box,
+.transcript-details {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.transcript-info-box {
+    border-left: 4px solid #3498db;
+}
+
+.info-grid,
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.info-item,
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label,
+.detail-label {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-bottom: 0.25rem;
+}
+
+.info-value,
+.detail-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1.5rem;
+}
+
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.form-field textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #ecf0f1;
+    border-radius: 8px;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 100px;
+    transition: border-color 0.3s;
+}
+
+.form-field textarea:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #ecf0f1;
+    color: #7f8c8d;
+}
+
+.btn-secondary:hover {
+    background: #bdc3c7;
+}
+
+.report-btn-primary {
+    background: #e74c3c;
+}
+
+.report-btn-primary:hover {
+    background: #c0392b;
+}
+
+.your-message {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 1.5rem;
+    border-radius: 5px;
+    margin-bottom: 2rem;
+}
+
+.your-message h4 {
+    margin: 0 0 0.5rem 0;
+    color: #856404;
+}
+
+.your-message p {
+    margin: 0;
+    color: #664d03;
+    line-height: 1.6;
+}
+
+.conversation-thread {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+    padding-right: 0.5rem;
+}
+
+.conversation-thread::-webkit-scrollbar {
+    width: 8px;
+}
+
+.conversation-thread::-webkit-scrollbar-thumb {
+    background: #bdc3c7;
+    border-radius: 4px;
+}
+
+.message-bubble {
+    max-width: 80%;
+    border-radius: 15px;
+}
+
+.message-bubble.student {
+    background: #e3f2fd;
+    margin-right: auto;
+    border-bottom-left-radius: 5px;
+}
+
+.message-bubble.teacher {
+    margin-left: auto;
+    border-bottom-right-radius: 5px;
+}
+
+.message-bubble.student .message-sender {
+    color: #1976d2;
+}
+
+.message-bubble.teacher .message-sender {
+    color: #689f38;
+}
+
+.message-text {
+    color: #34495e;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.empty-conversation {
+    text-align: center;
+    padding: 2rem;
+    color: #95a5a6;
+}
+
+.resolved-message {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.student-container-pad-top {
+    padding-top: 20px;
+}
+
+.inline-logo-student {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .stats-container,
+    .subject-cards,
+    .transcript-grid {
+        grid-template-columns: 1fr;
+    }
+}

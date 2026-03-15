@@ -1,0 +1,67 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Submit Assignment{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid student-container-pad-top">
+    <div class="report-form-container">
+        <a href="{% url 'main:student_my_assignments' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to My Assignments</a>
+
+        <div class="report-form-box">
+            <h2><i class="fas fa-upload"></i> {{ assignment.title }}</h2>
+
+            <div class="transcript-info-box">
+                <h4>Assignment Details</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Course</span>
+                        <span class="info-value">{{ assignment.course.code }} - {{ assignment.course.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Deadline</span>
+                        <span class="info-value">{{ assignment.deadline|date:"M d, Y h:i A" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Attempts Used</span>
+                        <span class="info-value">{{ attempts_used }} / {{ assignment.max_attempts }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Attempts Left</span>
+                        <span class="info-value">{{ attempts_left }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert-info">
+                <strong>Instructions:</strong> {{ assignment.instructions }}
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-field">
+                    <label for="{{ form.submission_file.id_for_label }}">Upload File</label>
+                    {{ form.submission_file }}
+                    <small class="text-muted d-block mt-1">Supported: PDF, DOC/DOCX, PNG/JPG, ZIP</small>
+                    {% if form.submission_file.errors %}<div class="text-danger mt-1">{{ form.submission_file.errors }}</div>{% endif %}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.comment.id_for_label }}">Comment/Message to Teacher</label>
+                    {{ form.comment }}
+                    {% if form.comment.errors %}<div class="text-danger mt-1">{{ form.comment.errors }}</div>{% endif %}
+                </div>
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

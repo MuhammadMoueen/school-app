@@ -1,0 +1,55 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Lecture Discussions{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid student-container-pad-top">
+    <div class="dashboard-wrapper">
+        <div class="reports-section">
+            <h2><i class="fas fa-comments"></i> Discussions: {{ lecture.title }}</h2>
+            <p class="section-desc">Ask questions and discuss lecture topics with your teacher.</p>
+        </div>
+
+        <div class="report-card mb-4">
+            <div class="report-header"><h4>Start New Discussion</h4></div>
+            <div class="report-content">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        {{ form.title }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Question/Discussion</label>
+                        {{ form.content }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Post Discussion</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="report-card">
+            <div class="report-header"><h4>All Discussions</h4></div>
+            <div class="report-content">
+                {% for thread in threads %}
+                <div class="reply-item mb-3">
+                    <div class="reply-header">
+                        <strong><a href="{% url 'main:discussion_detail' thread.id %}">{{ thread.title }}</a></strong>
+                        <span class="reply-time">{{ thread.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <p class="mb-1">By {{ thread.author.get_full_name }} | {{ thread.reply_count }} replies</p>
+                    {% if thread.is_resolved %}<span class="status-badge graded">Resolved</span>{% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">No discussions yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

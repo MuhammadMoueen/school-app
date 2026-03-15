@@ -1,0 +1,64 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}My Assignments{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid student-container-pad-top">
+    <div class="dashboard-wrapper">
+        <div class="reports-section">
+            <h2><i class="fas fa-file-signature"></i> My Assignments</h2>
+            <p class="section-desc">Submit your work online and track grades/feedback</p>
+        </div>
+
+        {% if assignment_rows %}
+        <div class="reports-section pt-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Assignment Title</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>Grade</th>
+                            <th>Feedback</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in assignment_rows %}
+                        <tr>
+                            <td>{{ row.assignment.course.name }}</td>
+                            <td>{{ row.assignment.title }}</td>
+                            <td>{{ row.assignment.deadline|date:"M d, Y h:i A" }}</td>
+                            <td>
+                                <strong>{{ row.status }}</strong>
+                                {% if row.late_text %}<small class="text-danger d-block">{{ row.late_text }}</small>{% endif %}
+                            </td>
+                            <td>{% if row.submission and row.submission.score != None %}{{ row.submission.score }}{% else %}-{% endif %}</td>
+                            <td>{% if row.submission and row.submission.feedback %}{{ row.submission.feedback }}{% else %}-{% endif %}</td>
+                            <td>
+                                <a href="{% url 'main:submit_assignment' row.assignment.id %}" class="btn btn-sm btn-primary">
+                                    {% if row.submission and row.assignment.allow_resubmission %}Resubmit{% elif row.submission %}View{% else %}Submit{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-file-signature"></i>
+            <p>No assignments available right now</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
