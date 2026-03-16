@@ -4,6 +4,11 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    if (window.__teacherDashboardEventsBound) {
+        return;
+    }
+    window.__teacherDashboardEventsBound = true;
+
     const sidebar = document.getElementById('teacherSidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
@@ -368,6 +373,11 @@ function confirmDeleteLecture(lectureTitle) {
  * Call this on DOMContentLoaded
  */
 document.addEventListener('DOMContentLoaded', function() {
+    if (window.__teacherUtilitiesInitialized) {
+        return;
+    }
+    window.__teacherUtilitiesInitialized = true;
+
     // Initialize lecture file preview if on lecture upload/edit page
     initLectureFilePreview();
     
