@@ -56,12 +56,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Profile + Notification dropdowns
-    const notificationIcon = document.getElementById('notificationIcon');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    const profileDropdown = document.getElementById('profileDropdown');
-    const profileToggleBtn = document.getElementById('profileToggleBtn');
-    const profileIcon = document.getElementById('profileIcon');
+    // Profile + Notification dropdowns (scoped to teacher topbar to avoid duplicate IDs)
+    const teacherTopbar = document.querySelector('.teacher-topbar');
+    const topbarNotificationSection = teacherTopbar ? teacherTopbar.querySelector('.notification-section') : null;
+    const topbarProfileSection = teacherTopbar ? teacherTopbar.querySelector('.profile-section') : null;
+
+    const notificationIcon = topbarNotificationSection
+        ? topbarNotificationSection.querySelector('.notification-icon')
+        : document.getElementById('notificationIcon');
+    const notificationDropdown = topbarNotificationSection
+        ? topbarNotificationSection.querySelector('.notification-dropdown')
+        : document.getElementById('notificationDropdown');
+    const profileToggleBtn = topbarProfileSection
+        ? topbarProfileSection.querySelector('.profile-trigger')
+        : document.getElementById('profileToggleBtn');
+    const profileDropdown = topbarProfileSection
+        ? topbarProfileSection.querySelector('.profile-dropdown')
+        : document.getElementById('profileDropdown');
+    const profileIcon = topbarProfileSection
+        ? topbarProfileSection.querySelector('.profile-icon-circle')
+        : document.getElementById('profileIcon');
     const profileTrigger = profileToggleBtn || profileIcon;
 
     function closeDropdown(dropdown) {
@@ -114,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (shouldShow) {
                 notificationDropdown.classList.add('show');
-                loadNotifications();
+                loadNotifications(notificationDropdown);
             }
         });
     }
@@ -148,8 +162,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Load notifications via AJAX
-    function loadNotifications() {
-        const notificationList = document.getElementById('notificationList');
+    function loadNotifications(dropdownElement) {
+        const notificationList = dropdownElement
+            ? dropdownElement.querySelector('.notification-list')
+            : document.getElementById('notificationList');
         if (!notificationList) return;
         
         // Show loading state
