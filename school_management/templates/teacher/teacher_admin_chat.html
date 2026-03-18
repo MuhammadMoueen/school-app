@@ -12,14 +12,18 @@
 <div class="dashboard-content chat-page-wrap chat-app" data-chat-app data-chat-endpoint="{{ chat_endpoint }}" data-chat-target-id="{{ chat_target_id }}" data-empty-text="Start conversation with Admin">
     <div class="chat-header-card">
         <div class="chat-header-main">
-            <h2 class="chat-peer-title"><i class="fas fa-headset"></i> Admin</h2>
+            <h2 class="chat-peer-title"><i class="fas fa-headset"></i> {{ chat_title }}</h2>
             <div class="chat-presence-row">
                 <span class="presence-dot {% if admin_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
                 <span class="presence-text" data-chat-status-text>{{ admin_status_text|default:'Offline' }}</span>
             </div>
         </div>
-        <div class="chat-header-avatar" title="Admin">
+        <div class="chat-header-avatar" title="{{ chat_title }}">
+            {% if chat_peer_avatar_url %}
+            <img src="{{ chat_peer_avatar_url }}" alt="{{ chat_title }}">
+            {% else %}
             <i class="fas fa-user-shield"></i>
+            {% endif %}
         </div>
     </div>
 

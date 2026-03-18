@@ -483,6 +483,8 @@ def teacher_admin_chat(request):
 
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
+    admin_queryset = User.objects.filter(role='admin', is_active=True).order_by('id')
+
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -494,11 +496,16 @@ def teacher_admin_chat(request):
                     action_type='other',
                     description=f"Teacher message to admin: {message_text}",
                 )
-                admin_ids = list(User.objects.filter(role='admin', is_active=True).values_list('id', flat=True))
-                admin_online = any(_is_user_online(admin_id) for admin_id in admin_ids)
+
+                latest_admin_response = TeacherActivityResponse.objects.filter(
+                    notification__activity__teacher=request.user,
+                ).select_related('admin').order_by('-created_at').first()
+                target_admin = latest_admin_response.admin if latest_admin_response else admin_queryset.first()
+                target_presence = _presence_payload(target_admin.id) if target_admin else {'online': False, 'status_text': 'Offline'}
+
                 tick_data = _build_tick_data(
                     is_read=activity.notifications.filter(is_seen=True).exists(),
-                    recipient_online=admin_online,
+                    recipient_online=target_presence['online'],
                 )
 
                 if is_ajax_request:
@@ -515,7 +522,7 @@ def teacher_admin_chat(request):
                             'tick_icon': tick_data['icon'],
                             'tick_label': tick_data['label'],
                         },
-                        'presence': _presence_payload(admin_ids[0]) if admin_ids else {'online': False, 'status_text': 'Offline'},
+                        'presence': target_presence,
                     })
                 messages.success(request, 'Message sent to admin successfully.')
                 return redirect('main:teacher_admin_chat')
@@ -529,9 +536,6 @@ def teacher_admin_chat(request):
         is_read_by_teacher=False,
     ).update(is_read_by_teacher=True)
 
-    admin_ids = list(User.objects.filter(role='admin', is_active=True).values_list('id', flat=True))
-    admin_online = any(_is_user_online(admin_id) for admin_id in admin_ids)
-
     teacher_messages = TeacherActivityLog.objects.filter(
         teacher=request.user,
         action_type='other',
@@ -541,6 +545,15 @@ def teacher_admin_chat(request):
     admin_responses = TeacherActivityResponse.objects.filter(
         notification__activity__teacher=request.user,
     ).select_related('admin', 'notification__activity').order_by('-created_at')[:40]
+
+    latest_admin_response = admin_responses.first()
+    selected_admin = latest_admin_response.admin if latest_admin_response else admin_queryset.first()
+    presence_info = _presence_payload(selected_admin.id) if selected_admin else {
+        'online': False,
+        'status_text': 'Offline',
+        'last_seen': None,
+    }
+    admin_online = presence_info['online']
 
     chat_messages = []
 
@@ -573,7 +586,6 @@ def teacher_admin_chat(request):
     chat_messages = chat_messages[-50:]
 
     serialized_messages = [_serialize_teacher_admin_message(item) for item in chat_messages]
-    presence_info = _presence_payload(admin_ids[0]) if admin_ids else {'online': False, 'status_text': 'Offline', 'last_seen': None}
 
     if request.GET.get('chat_ajax') == '1':
         return JsonResponse({
@@ -589,8 +601,9 @@ def teacher_admin_chat(request):
         'admin_online': admin_online,
         'admin_status_text': presence_info['status_text'],
         'chat_endpoint': reverse('main:teacher_admin_chat'),
-        'chat_target_id': admin_ids[0] if admin_ids else '',
-        'chat_title': 'Admin Chat',
+        'chat_target_id': selected_admin.id if selected_admin else '',
+        'chat_title': selected_admin.get_full_name() if selected_admin and selected_admin.get_full_name() else (selected_admin.username if selected_admin else 'Admin'),
+        'chat_peer_avatar_url': selected_admin.profile_picture.url if selected_admin and selected_admin.profile_picture else '',
     }
     return render(request, 'teacher/teacher_admin_chat.html', context)
 
@@ -4082,6 +4095,7 @@ def admin_notification_detail(request, notification_id):
         'chat_endpoint': reverse('main:admin_notification_detail', args=[notification.id]),
         'chat_target_id': notification.activity.teacher_id,
         'chat_title': notification.activity.teacher_name,
+        'chat_peer_avatar_url': notification.activity.teacher.profile_picture.url if notification.activity.teacher.profile_picture else '',
     }
     return render(request, 'admin/admin_notification_detail.html', context)
 

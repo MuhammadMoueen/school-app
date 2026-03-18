@@ -62,9 +62,16 @@
     border-radius: 999px;
     display: grid;
     place-items: center;
+    overflow: hidden;
     background: linear-gradient(140deg, #667eea 0%, #7b56cc 100%);
     color: #fff;
     font-size: 0.9rem;
+}
+
+.chat-header-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .chat-shell {
