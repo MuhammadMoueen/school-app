@@ -2542,6 +2542,54 @@ def mark_notification_read(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+@login_required
+@require_http_methods(["POST"])
+def mark_all_notifications_read(request):
+    """Mark all unread notifications as read for current user."""
+    try:
+        now = timezone.now()
+
+        if request.user.role == 'admin':
+            TeacherActivityNotification.objects.filter(
+                admin=request.user,
+                is_seen=False,
+            ).update(is_seen=True, seen_at=now)
+
+        elif request.user.role == 'teacher':
+            MarksReport.objects.filter(teacher=request.user, is_read_by_teacher=False).update(is_read_by_teacher=True)
+
+            TeacherActivityResponse.objects.filter(
+                notification__activity__teacher=request.user,
+                is_read_by_teacher=False,
+            ).update(is_read_by_teacher=True)
+
+            AuditLog.objects.filter(
+                target_user=request.user,
+                is_seen_by_target=False,
+            ).update(is_seen_by_target=True, seen_by_target_at=now)
+
+            LectureNotification.objects.filter(
+                recipient=request.user,
+                is_read=False,
+            ).update(is_read=True)
+
+        elif request.user.role == 'student':
+            ReportReply.objects.filter(
+                report__student=request.user,
+                is_read_by_student=False,
+            ).update(is_read_by_student=True)
+
+            LectureNotification.objects.filter(
+                recipient=request.user,
+                is_read=False,
+            ).update(is_read=True)
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
 # ==================== COMPREHENSIVE ADMIN VIEWS ====================
 
 @login_required

@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/global-loader.css' %}">
+    <link rel="stylesheet" href="{% static 'css/flash-messages.css' %}">
     <style>
         * {
             margin: 0;
@@ -409,6 +410,30 @@
         </div>
     </div>
 
+    {% if messages %}
+        <div class="flash-stack" id="flashStack" aria-live="polite" aria-atomic="true">
+            {% for message in messages %}
+                <div class="flash-message {{ message.tags }}" role="alert">
+                    <div class="flash-icon" aria-hidden="true">
+                        {% if 'success' in message.tags %}
+                            <i class="fas fa-circle-check"></i>
+                        {% elif 'error' in message.tags or 'danger' in message.tags %}
+                            <i class="fas fa-circle-xmark"></i>
+                        {% elif 'warning' in message.tags %}
+                            <i class="fas fa-triangle-exclamation"></i>
+                        {% else %}
+                            <i class="fas fa-circle-info"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flash-content">{{ message }}</div>
+                    <button type="button" class="flash-close" aria-label="Dismiss message">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- Professional Navbar -->
     <nav class="navbar navbar-expand-lg top-navbar">
         <div class="container">
@@ -449,7 +474,13 @@
                                 <div class="notification-dropdown" id="notificationDropdown">
                                     <div class="notification-header">
                                         <span><i class="fas fa-bell"></i> Notifications</span>
-                                        <span style="font-size: 0.9rem;">{{ notification_count }} unread</span>
+                                        <button
+                                            type="button"
+                                            id="markAllNotificationsBtn"
+                                            style="font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.45); border-radius: 6px; background: rgba(255,255,255,0.16); color: white; padding: 4px 8px;"
+                                        >
+                                            Mark all as read
+                                        </button>
                                     </div>
                                     <div class="notification-list" id="notificationList">
                                         <div class="notification-empty">
@@ -509,15 +540,6 @@
 
     <main>
         <div class="{% block main_container_class %}container{% endblock %}">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-            
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -568,6 +590,7 @@
             const notificationIcon = document.getElementById('notificationIcon');
             const notificationDropdown = document.getElementById('notificationDropdown');
             const profileDropdown = document.getElementById('profileDropdown');
+            const markAllNotificationsBtn = document.getElementById('markAllNotificationsBtn');
             
             // Toggle notification dropdown
             if (notificationIcon) {
@@ -652,11 +675,45 @@
                     })
                 });
             };
+
+            // Mark all notifications as read
+            if (markAllNotificationsBtn) {
+                markAllNotificationsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    fetch('{% url "main:mark_all_notifications_read" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ mark_all: true })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            return;
+                        }
+
+                        // Remove badge when everything is marked as read.
+                        const badge = notificationIcon ? notificationIcon.querySelector('.notification-badge') : null;
+                        if (badge) {
+                            badge.remove();
+                        }
+
+                        loadNotifications();
+                    })
+                    .catch(error => {
+                        console.error('Error marking all notifications as read:', error);
+                    });
+                });
+            }
         });
     </script>
     {% endif %}
     
     <script src="{% static 'js/global-loader.js' %}"></script>
+    <script src="{% static 'js/flash-messages.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
