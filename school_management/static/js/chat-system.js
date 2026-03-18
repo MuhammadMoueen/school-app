@@ -104,7 +104,7 @@
 
         statusDot.classList.remove('online', 'offline');
         statusDot.classList.add(presence.online ? 'online' : 'offline');
-        statusText.textContent = toSafeText(presence.status_text || (presence.online ? 'Online' : 'Offline'));
+        statusText.textContent = presence.online ? 'Online' : '';
     };
 
     const fetchUpdates = (smooth) => {

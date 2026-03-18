@@ -14,7 +14,7 @@
         <div class="chat-header-main">
             <h2 class="chat-peer-title"><i class="fas fa-headset"></i> {{ chat_title }}</h2>
             <div class="chat-presence-row">
-                <span class="presence-text" data-chat-status-text>{{ admin_status_text|default:'Offline' }}</span>
+                <span class="presence-text" data-chat-status-text>{% if admin_online %}Online{% endif %}</span>
             </div>
         </div>
         <div class="chat-header-avatar-wrap" title="{{ chat_title }}">
