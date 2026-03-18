@@ -178,7 +178,7 @@
             <form method="post" class="mb-3">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="mark_seen">
-                <button type="submit" class="btn-add" {% if notification_item.is_seen %}disabled{% endif %}>
+                <button type="submit" class="btn btn-primary" {% if notification_item.is_seen %}disabled{% endif %}>
                     <i class="fas fa-check"></i> Mark as Seen
                 </button>
             </form>
@@ -218,8 +218,8 @@
                     {{ response_form.message }}
                 </div>
 
-                <button type="submit" class="btn-add w-100">
-                    <i class="fas fa-paper-plane"></i> Submit
+                <button type="submit" class="btn btn-primary w-100 justify-content-center">
+                    <i class="fas fa-paper-plane"></i> Send Message
                 </button>
             </form>
         </div>
