@@ -4,99 +4,65 @@
 {% block page_title %}Admin Chat{% endblock %}
 {% block topbar_title %}Admin Chat - {{ user.get_full_name|default:user.username }}{% endblock %}
 
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'css/teacher_admin_chat.css' %}">
+{% endblock %}
+
 {% block page_content %}
-<div class="dashboard-content">
-    <div class="section-header">
+<div class="dashboard-content chat-page-wrap">
+    <div class="section-header chat-page-header">
         <h2 class="section-title">
             <i class="fas fa-headset"></i> Chat With Admin
         </h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_admin_messages_read">
+            <button type="submit" class="chat-mark-btn">
+                <i class="fas fa-check-double"></i> Mark Admin Messages
+            </button>
+        </form>
     </div>
 
-    <div class="content-grid" style="grid-template-columns: 1fr 1fr;">
-        <div class="content-card">
-            <div class="content-card-header">
-                <h3 class="content-card-title">
-                    <i class="fas fa-paper-plane"></i> Send Message
-                </h3>
-            </div>
-
-            <form method="post" class="mt-2">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="send_message">
-                <div class="form-group">
-                    <label for="id_message" class="mb-2"><strong>Your Message</strong></label>
-                    <textarea id="id_message" name="message" class="form-control" rows="5" placeholder="Write your message to admin..." required></textarea>
-                </div>
-                <div class="btn-container" style="margin-top: 14px;">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Send to Admin
-                    </button>
-                </div>
-            </form>
-
-            <div class="content-card-header" style="margin-top: 24px;">
-                <h3 class="content-card-title">
-                    <i class="fas fa-user-edit"></i> Your Recent Messages
-                </h3>
-            </div>
-
-            {% if teacher_messages %}
-                <div class="list-items">
-                    {% for msg in teacher_messages %}
-                        <div class="list-item">
-                            <div class="item-details">
-                                <h4>{{ msg.timestamp|date:"M d, Y - H:i" }}</h4>
-                                <p>{{ msg.description|cut:"Teacher message to admin: " }}</p>
+    <div class="chat-shell">
+        <div class="chat-thread" id="chatThread">
+            {% if chat_messages %}
+                {% for item in chat_messages %}
+                    <div class="chat-row {% if item.sender == 'teacher' %}mine{% else %}theirs{% endif %}">
+                        <div class="chat-bubble {% if item.sender == 'teacher' %}mine{% else %}theirs{% endif %}">
+                            <div class="chat-meta">
+                                <span class="chat-name">{{ item.name }}</span>
+                                {% if item.is_unread %}
+                                    <span class="chat-unread">New</span>
+                                {% endif %}
                             </div>
+                            <p class="chat-message-text">{{ item.message }}</p>
+                            <div class="chat-time">{{ item.created_at|date:"M d, Y - H:i" }}</div>
                         </div>
-                    {% endfor %}
-                </div>
+                    </div>
+                {% endfor %}
             {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-comment-slash"></i>
-                    <p>No messages sent to admin yet.</p>
+                <div class="empty-state chat-empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>No messages yet. Start a conversation with admin.</p>
                 </div>
             {% endif %}
         </div>
 
-        <div class="content-card">
-            <div class="content-card-header">
-                <h3 class="content-card-title">
-                    <i class="fas fa-envelope-open-text"></i> Admin Replies
-                </h3>
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="mark_admin_messages_read">
-                    <button type="submit" class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.82rem;">
-                        <i class="fas fa-check-double"></i> Mark Messages
-                    </button>
-                </form>
-            </div>
-
-            {% if admin_responses %}
-                <div class="list-items">
-                    {% for response in admin_responses %}
-                        <div class="list-item {% if not response.is_read_by_teacher %}pending{% endif %}">
-                            <div class="item-details">
-                                <h4>
-                                    {{ response.admin.get_full_name|default:response.admin.username }}
-                                    {% if not response.is_read_by_teacher %}
-                                        <span class="badge badge-danger" style="margin-left: 8px;">New</span>
-                                    {% endif %}
-                                </h4>
-                                <p>{{ response.message }}</p>
-                                <p class="small">{{ response.created_at|date:"M d, Y - H:i" }}</p>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>No admin replies yet.</p>
-                </div>
-            {% endif %}
-        </div>
+        <form method="post" class="chat-compose-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_message">
+            <textarea
+                id="id_message"
+                name="message"
+                class="chat-compose-input"
+                rows="3"
+                placeholder="Write your message to admin..."
+                required
+            ></textarea>
+            <button type="submit" class="chat-send-btn">
+                <i class="fas fa-paper-plane"></i> Send Message
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}

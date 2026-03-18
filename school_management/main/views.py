@@ -379,15 +379,39 @@ def teacher_admin_chat(request):
         teacher=request.user,
         action_type='other',
         description__startswith='Teacher message to admin:',
-    ).order_by('-timestamp')[:20]
+    ).order_by('-timestamp')[:40]
 
     admin_responses = TeacherActivityResponse.objects.filter(
         notification__activity__teacher=request.user,
-    ).select_related('admin', 'notification__activity').order_by('-created_at')[:20]
+    ).select_related('admin', 'notification__activity').order_by('-created_at')[:40]
+
+    chat_messages = []
+
+    for msg in teacher_messages:
+        chat_messages.append({
+            'sender': 'teacher',
+            'name': request.user.get_full_name() or request.user.username,
+            'message': msg.description.replace('Teacher message to admin:', '', 1).strip(),
+            'created_at': msg.timestamp,
+            'is_unread': False,
+        })
+
+    for response in admin_responses:
+        chat_messages.append({
+            'sender': 'admin',
+            'name': response.admin.get_full_name() or response.admin.username,
+            'message': response.message,
+            'created_at': response.created_at,
+            'is_unread': not response.is_read_by_teacher,
+        })
+
+    chat_messages.sort(key=lambda item: item['created_at'])
+    chat_messages = chat_messages[-50:]
 
     context = {
         'teacher_messages': teacher_messages,
         'admin_responses': admin_responses,
+        'chat_messages': chat_messages,
     }
     return render(request, 'teacher/teacher_admin_chat.html', context)
 
