@@ -69,6 +69,10 @@
                 <i class="fas fa-chart-bar nav-icon"></i>
                 <span class="nav-text">Course Analytics</span>
             </a>
+            <a href="{% url 'main:teacher_admin_chat' %}" class="nav-item">
+                <i class="fas fa-headset nav-icon"></i>
+                <span class="nav-text">Admin Chat</span>
+            </a>
         </nav>
     </aside>
     
@@ -98,7 +102,11 @@
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <span><i class="fas fa-bell"></i> Notifications</span>
-                            <span class="notification-unread-count">{{ unread_notification_count|default:0 }} unread</span>
+                            <div class="notification-header-tools">
+                                <span class="notification-unread-count" id="notificationUnreadCount">{{ unread_notification_count|default:0 }} unread</span>
+                                <button type="button" class="notification-header-action" id="markAllNotificationsBtn">Mark All</button>
+                                <a href="{% url 'main:teacher_admin_chat' %}" class="notification-header-action">Chat Admin</a>
+                            </div>
                         </div>
                         <div class="notification-list" id="notificationList">
                             <div class="notification-empty">
@@ -211,10 +219,6 @@
                 <a href="{% url 'main:manage_transcripts' %}" class="action-card">
                     <i class="fas fa-clipboard-list"></i>
                     <span>Manage Grades</span>
-                </a>
-                <a href="{% url 'main:view_reports' %}" class="action-card">
-                    <i class="fas fa-comments"></i>
-                    <span>View Reports</span>
                 </a>
             </div>
             

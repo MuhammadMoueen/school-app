@@ -83,6 +83,7 @@ urlpatterns = [
     
     # Analytics & Performance URLs
     path('teacher/analytics/', views.course_analytics, name='course_analytics'),
+    path('teacher/admin-chat/', views.teacher_admin_chat, name='teacher_admin_chat'),
     path('teacher/performance/<int:course_id>/', views.student_performance, name='student_performance'),
     
     # Discussion Forum URLs

@@ -345,6 +345,53 @@ def teacher_dashboard(request):
     return render(request, 'teacher/teacher_dashboard.html', context)
 
 
+@login_required
+def teacher_admin_chat(request):
+    """Teacher page to send messages to admins and view admin replies."""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teacher only.')
+        return redirect('main:dashboard')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'send_message':
+            message_text = (request.POST.get('message') or '').strip()
+            if message_text:
+                log_teacher_activity(
+                    teacher=request.user,
+                    action_type='other',
+                    description=f"Teacher message to admin: {message_text}",
+                )
+                messages.success(request, 'Message sent to admin successfully.')
+                return redirect('main:teacher_admin_chat')
+            messages.error(request, 'Please write a message before sending.')
+
+        elif action == 'mark_admin_messages_read':
+            TeacherActivityResponse.objects.filter(
+                notification__activity__teacher=request.user,
+                is_read_by_teacher=False,
+            ).update(is_read_by_teacher=True)
+            messages.success(request, 'Admin messages marked as read.')
+            return redirect('main:teacher_admin_chat')
+
+    teacher_messages = TeacherActivityLog.objects.filter(
+        teacher=request.user,
+        action_type='other',
+        description__startswith='Teacher message to admin:',
+    ).order_by('-timestamp')[:20]
+
+    admin_responses = TeacherActivityResponse.objects.filter(
+        notification__activity__teacher=request.user,
+    ).select_related('admin', 'notification__activity').order_by('-created_at')[:20]
+
+    context = {
+        'teacher_messages': teacher_messages,
+        'admin_responses': admin_responses,
+    }
+    return render(request, 'teacher/teacher_admin_chat.html', context)
+
+
 def log_teacher_activity(teacher, action_type, description, course=None):
     """Create a persistent teacher activity log and unread notifications for all admins."""
     teacher_name = teacher.get_full_name() or teacher.username

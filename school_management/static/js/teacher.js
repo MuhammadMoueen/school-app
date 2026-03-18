@@ -76,6 +76,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileIcon = topbarProfileSection
         ? topbarProfileSection.querySelector('.profile-icon-circle')
         : document.getElementById('profileIcon');
+    const markAllNotificationsBtn = topbarNotificationSection
+        ? topbarNotificationSection.querySelector('#markAllNotificationsBtn')
+        : document.getElementById('markAllNotificationsBtn');
+    const notificationUnreadCount = topbarNotificationSection
+        ? topbarNotificationSection.querySelector('#notificationUnreadCount')
+        : document.getElementById('notificationUnreadCount');
     const profileTrigger = profileToggleBtn || profileIcon;
 
     function closeDropdown(dropdown) {
@@ -181,6 +187,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.notifications && data.notifications.length > 0) {
+                    const unreadCount = data.notifications.filter(notif => !notif.is_read).length;
+                    if (notificationUnreadCount) {
+                        notificationUnreadCount.textContent = `${unreadCount} unread`;
+                    }
+
                     notificationList.innerHTML = data.notifications.map(notif => `
                         <a href="${notif.url}" class="notification-item ${notif.is_read ? '' : 'unread'}" data-id="${notif.id}" data-type="${notif.type}">
                             <div class="notification-sender">
@@ -206,6 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p>No notifications yet</p>
                         </div>
                     `;
+
+                    if (notificationUnreadCount) {
+                        notificationUnreadCount.textContent = '0 unread';
+                    }
                 }
             })
             .catch(error => {
@@ -247,6 +262,49 @@ document.addEventListener('DOMContentLoaded', function() {
             })
         }).catch(error => {
             console.error('Error marking notification as read:', error);
+        });
+    }
+
+    function markAllAsRead() {
+        fetch('/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ mark_all: true })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    return;
+                }
+
+                if (notificationIcon) {
+                    const badge = notificationIcon.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+
+                if (notificationUnreadCount) {
+                    notificationUnreadCount.textContent = '0 unread';
+                }
+
+                if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+                    loadNotifications(notificationDropdown);
+                }
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+            });
+    }
+
+    if (markAllNotificationsBtn) {
+        markAllNotificationsBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            markAllAsRead();
         });
     }
 

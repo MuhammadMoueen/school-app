@@ -523,6 +523,30 @@ main .container .alert {
     font-size: 0.9rem;
 }
 
+.notification-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-header-action {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.notification-header-action:hover {
+    background: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+}
+
 /* Dashboard Content */
 .dashboard-content {
     padding: 30px 40px 30px 28px !important;
