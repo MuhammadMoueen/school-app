@@ -1,0 +1,113 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Take Quiz{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
+<style>
+.quiz-timer {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f3a68;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid student-container-pad-top">
+    <div class="report-container">
+        <a href="{% url 'main:student_my_quizzes' %}" class="back-link">← Back to Quizzes</a>
+
+        <div class="report-main">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h3>{{ quiz.title }}</h3>
+                    <p class="mb-0 text-muted">{{ quiz.course.code }} - {{ quiz.course.name }} | Duration: {{ quiz.duration_minutes }} minutes</p>
+                </div>
+                <div class="quiz-timer">Time Left: <span id="quizTimer">--:--</span></div>
+            </div>
+        </div>
+
+        <div class="conversation-section">
+            <form method="post" id="quizForm">
+                {% csrf_token %}
+                {% for question in questions %}
+                <div class="report-card mb-3">
+                    <div class="report-header">
+                        <h4>Q{{ question.order }}. {{ question.question_text }}</h4>
+                        <span class="status-badge graded">{{ question.marks }} marks</span>
+                    </div>
+
+                    {% if question.question_type == 'subjective' %}
+                    <div class="form-field">
+                        <label>Your Answer</label>
+                        <textarea name="question_{{ question.id }}" class="form-control" rows="4" placeholder="Write your detailed answer..."></textarea>
+                    </div>
+                    {% else %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="q{{ question.id }}A" value="A">
+                        <label class="form-check-label" for="q{{ question.id }}A">A. {{ question.option_a }}</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="q{{ question.id }}B" value="B">
+                        <label class="form-check-label" for="q{{ question.id }}B">B. {{ question.option_b }}</label>
+                    </div>
+                    {% if question.option_c %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="q{{ question.id }}C" value="C">
+                        <label class="form-check-label" for="q{{ question.id }}C">C. {{ question.option_c }}</label>
+                    </div>
+                    {% endif %}
+                    {% if question.option_d %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="q{{ question.id }}D" value="D">
+                        <label class="form-check-label" for="q{{ question.id }}D">D. {{ question.option_d }}</label>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-primary" id="submitQuizBtn">
+                        <i class="fas fa-paper-plane"></i> Submit Quiz
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var secondsLeft = {{ remaining_seconds|default:0 }};
+    var timerEl = document.getElementById('quizTimer');
+    var formEl = document.getElementById('quizForm');
+    var submitBtn = document.getElementById('submitQuizBtn');
+
+    function renderTimer() {
+        var mins = Math.floor(secondsLeft / 60);
+        var secs = secondsLeft % 60;
+        timerEl.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    }
+
+    function tick() {
+        renderTimer();
+        if (secondsLeft <= 0) {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+            formEl.submit();
+            return;
+        }
+        secondsLeft -= 1;
+        setTimeout(tick, 1000);
+    }
+
+    tick();
+})();
+</script>
+{% endblock %}

@@ -418,16 +418,17 @@ class Question(models.Model):
     QUESTION_TYPE_CHOICES = (
         ('mcq', 'Multiple Choice'),
         ('true_false', 'True/False'),
+        ('subjective', 'Subjective'),
     )
     
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='mcq')
-    option_a = models.CharField(max_length=500)
-    option_b = models.CharField(max_length=500)
+    option_a = models.CharField(max_length=500, blank=True)
+    option_b = models.CharField(max_length=500, blank=True)
     option_c = models.CharField(max_length=500, blank=True)
     option_d = models.CharField(max_length=500, blank=True)
-    correct_answer = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
+    correct_answer = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')], blank=True)
     marks = models.DecimalField(max_digits=5, decimal_places=2, default=1)
     order = models.PositiveIntegerField(default=0)
     
@@ -465,8 +466,20 @@ class QuizAttempt(models.Model):
 class QuizAnswer(models.Model):
     attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='answers')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='student_answers')
-    selected_answer = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
+    selected_answer = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')], blank=True)
+    answer_text = models.TextField(blank=True)
     is_correct = models.BooleanField(default=False)
+    manual_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    is_manually_checked = models.BooleanField(default=False)
+    checked_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='checked_quiz_answers',
+        limit_choices_to={'role': 'teacher'},
+    )
+    checked_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         unique_together = ['attempt', 'question']
@@ -578,6 +591,25 @@ class Transcript(models.Model):
         if self.total_marks > 0:
             return (self.marks_obtained / self.total_marks) * 100
         return 0
+
+
+class TranscriptQuizMark(models.Model):
+    """Per-quiz marks linked to a student's course transcript context."""
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='quiz_marks')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='transcript_marks')
+    attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='transcript_mark')
+    obtained_marks = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    total_marks = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    attempt_date = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['enrollment', 'quiz']
+        ordering = ['-attempt_date']
+
+    def __str__(self):
+        return f"{self.enrollment.student.username} - {self.quiz.title}: {self.obtained_marks}/{self.total_marks}"
 
 
 # Marks Report model - for student-teacher communication about marks

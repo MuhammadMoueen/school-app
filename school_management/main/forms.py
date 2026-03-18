@@ -1214,6 +1214,28 @@ class QuestionForm(forms.ModelForm):
             })
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        question_type = cleaned_data.get('question_type')
+        option_a = (cleaned_data.get('option_a') or '').strip()
+        option_b = (cleaned_data.get('option_b') or '').strip()
+        correct_answer = (cleaned_data.get('correct_answer') or '').strip()
+
+        if question_type in {'mcq', 'true_false'}:
+            if not option_a or not option_b:
+                raise forms.ValidationError('Option A and Option B are required for objective questions.')
+            if not correct_answer:
+                raise forms.ValidationError('Correct answer is required for objective questions.')
+
+        if question_type == 'subjective':
+            cleaned_data['correct_answer'] = ''
+            cleaned_data['option_a'] = ''
+            cleaned_data['option_b'] = ''
+            cleaned_data['option_c'] = ''
+            cleaned_data['option_d'] = ''
+
+        return cleaned_data
+
 
 # ==================== DISCUSSION FORMS ====================
 

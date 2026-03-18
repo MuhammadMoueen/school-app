@@ -1,0 +1,120 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block title %}Quiz Result{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid student-container-pad-top">
+    <div class="report-container">
+        <a href="{% url 'main:student_my_quizzes' %}" class="back-link">← Back to Quizzes</a>
+
+        <div class="report-main">
+            <h3><i class="fas fa-poll"></i> Quiz Result - {{ quiz.title }}</h3>
+            <div class="details-grid mt-3">
+                <div class="detail-item">
+                    <span class="detail-label">Score</span>
+                    <span class="detail-value">{{ attempt.score }}/{{ quiz.total_marks }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Percentage</span>
+                    <span class="detail-value">{{ attempt.percentage|floatformat:2 }}%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value">
+                        {% if has_pending_manual %}
+                            Pending Manual Check
+                        {% elif attempt.is_passed %}
+                            Passed
+                        {% else %}
+                            Failed
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Attempt Date</span>
+                    <span class="detail-value">{{ attempt.submitted_at|date:"M d, Y H:i" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="conversation-section mb-3">
+            <h4>Result Components (Prepared for Final Formula)</h4>
+            <div class="details-grid mt-3">
+                <div class="detail-item">
+                    <span class="detail-label">Quiz Component</span>
+                    <span class="detail-value">{{ result_components.quiz_component }}%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Assignment Component</span>
+                    <span class="detail-value">{{ result_components.assignment_component }}%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Exam Component</span>
+                    <span class="detail-value">{{ result_components.exam_component }}%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Weighted Final Preview</span>
+                    <span class="detail-value">{{ result_components.weighted_final_preview }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="conversation-section">
+            <h4>Answer Review</h4>
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Type</th>
+                            <th>Your Answer</th>
+                            <th>Correct Answer</th>
+                            <th class="text-center">Marks</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in answer_rows %}
+                        <tr>
+                            <td>{{ row.question.question_text }}</td>
+                            <td>{{ row.question.get_question_type_display }}</td>
+                            <td>
+                                {% if row.question.question_type == 'subjective' %}
+                                    {{ row.answer.answer_text|default:'(No answer submitted)' }}
+                                {% else %}
+                                    {{ row.selected_option|default:'-' }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.question.question_type == 'subjective' %}
+                                    N/A
+                                {% else %}
+                                    {{ row.correct_option|default:'-' }}
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ row.obtained_marks }}</td>
+                            <td class="text-center">
+                                {% if row.pending_manual %}
+                                    <span class="badge bg-warning text-dark">Pending Manual Check</span>
+                                {% elif row.status_label == 'Correct' %}
+                                    <span class="badge bg-success">Correct</span>
+                                {% elif row.status_label == 'Wrong' %}
+                                    <span class="badge bg-danger">Wrong</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">Checked</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

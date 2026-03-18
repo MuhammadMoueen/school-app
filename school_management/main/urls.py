@@ -80,6 +80,7 @@ urlpatterns = [
     path('teacher/questions/<int:question_id>/edit/', views.edit_question, name='edit_question'),
     path('teacher/questions/<int:question_id>/delete/', views.delete_question, name='delete_question'),
     path('teacher/quizzes/<int:quiz_id>/results/', views.quiz_results, name='quiz_results'),
+    path('teacher/quiz-attempts/<int:attempt_id>/grade/', views.grade_quiz_attempt, name='grade_quiz_attempt'),
     
     # Analytics & Performance URLs
     path('teacher/analytics/', views.course_analytics, name='course_analytics'),
@@ -109,6 +110,9 @@ urlpatterns = [
     path('student/lectures/<int:lecture_id>/attachments/<int:attachment_id>/download/', views.student_download_lecture_attachment, name='student_download_lecture_attachment'),
     path('student/assignments/', views.student_my_assignments, name='student_my_assignments'),
     path('student/assignments/<int:assignment_id>/submit/', views.submit_assignment, name='submit_assignment'),
+    path('student/quizzes/', views.student_my_quizzes, name='student_my_quizzes'),
+    path('student/quizzes/<int:quiz_id>/take/', views.take_quiz, name='take_quiz'),
+    path('student/quiz-attempts/<int:attempt_id>/result/', views.student_quiz_result, name='student_quiz_result'),
     
     # Notification URLs
     path('presence/ping/', views.presence_ping, name='presence_ping'),

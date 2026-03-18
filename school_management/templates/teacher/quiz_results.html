@@ -10,14 +10,13 @@
 {% block content %}
 <div class="teacher-layout">
     {% include 'teacher/sidebar.html' %}
-    
+
     <div class="teacher-content">
         <header class="teacher-topbar">
             <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
             <div class="topbar-left"><h1 class="page-title">Quiz Results: {{ quiz.title }}</h1></div>
-
         </header>
-        
+
         <main class="page-content">
             <div class="card">
                 <div class="card-body">
@@ -27,12 +26,15 @@
                                 <th>Student</th>
                                 <th>Score</th>
                                 <th>Percentage</th>
-                                <th>Status</th>
+                                <th>Result</th>
+                                <th>Grading</th>
                                 <th>Submitted At</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for attempt in attempts %}
+                            {% for row in attempt_rows %}
+                            {% with attempt=row.attempt %}
                             <tr>
                                 <td>{{ attempt.student.get_full_name }}</td>
                                 <td>{{ attempt.score }}/{{ quiz.total_marks }}</td>
@@ -42,11 +44,26 @@
                                         {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
                                     </span>
                                 </td>
+                                <td>
+                                    <span class="badge bg-{% if row.pending_subjective > 0 %}warning text-dark{% else %}success{% endif %}">
+                                        {{ row.grading_status }}
+                                    </span>
+                                </td>
                                 <td>{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if row.pending_subjective > 0 %}
+                                    <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">
+                                        Manual Check
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">Completed</span>
+                                    {% endif %}
+                                </td>
                             </tr>
+                            {% endwith %}
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">No attempts yet</td>
+                                <td colspan="7" class="text-center">No attempts yet</td>
                             </tr>
                             {% endfor %}
                         </tbody>

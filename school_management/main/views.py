@@ -8,7 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.core.cache import cache
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import csv
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
@@ -22,7 +22,7 @@ from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, Mar
                     AuditLog,
                     TeacherActivityLog, TeacherActivityNotification, TeacherActivityResponse,
                     LectureAttachment, LectureView, LectureDownload, LectureNotification,
-                    Assignment, AssignmentAttachment, AssignmentSubmission)
+                    Assignment, AssignmentAttachment, AssignmentSubmission, TranscriptQuizMark)
 
 ONLINE_PRESENCE_WINDOW_SECONDS = 90
 ONLINE_PRESENCE_KEY_PREFIX = 'presence:user:'
@@ -1329,6 +1329,11 @@ def student_my_assignments(request):
         course_id__in=enrolled_course_ids,
     ).exclude(status='draft').select_related('course').order_by('deadline', '-created_at')
 
+    quizzes = Quiz.objects.filter(
+        course_id__in=enrolled_course_ids,
+        is_published=True,
+    ).select_related('course').order_by('-created_at')
+
     assignment_rows = []
     for assignment in assignments:
         latest_submission = AssignmentSubmission.objects.filter(
@@ -2025,6 +2030,88 @@ def attendance_report(request, course_id):
 
 # ==================== QUIZ VIEWS ====================
 
+def _sync_quiz_attempt_to_transcript(attempt):
+    """Persist per-quiz marks under transcript context for later aggregate calculations."""
+    enrollment = Enrollment.objects.filter(
+        course=attempt.quiz.course,
+        student=attempt.student,
+    ).first()
+    if not enrollment:
+        return
+
+    TranscriptQuizMark.objects.update_or_create(
+        enrollment=enrollment,
+        quiz=attempt.quiz,
+        defaults={
+            'attempt': attempt,
+            'obtained_marks': attempt.score,
+            'total_marks': attempt.quiz.total_marks,
+            'attempt_date': attempt.submitted_at or timezone.now(),
+        },
+    )
+
+
+def _calculate_attempt_score(attempt):
+    """Recalculate attempt score from objective correctness and subjective manual marks."""
+    total_score = 0
+    pending_manual = False
+
+    answers = attempt.answers.select_related('question').all()
+    for answer in answers:
+        question = answer.question
+        if question.question_type == 'subjective':
+            if answer.is_manually_checked:
+                total_score += float(answer.manual_marks or 0)
+            else:
+                pending_manual = True
+        elif answer.is_correct:
+            total_score += float(question.marks)
+
+    attempt.score = round(total_score, 2)
+    attempt.is_passed = attempt.score >= float(attempt.quiz.passing_marks)
+    attempt.save(update_fields=['score', 'is_passed'])
+    return pending_manual
+
+
+def _build_course_result_components(student, course):
+    """Prepare weighted final-result components (quiz + assignments + exams)."""
+    enrollment = Enrollment.objects.filter(student=student, course=course).first()
+
+    quiz_component = 0
+    if enrollment:
+        quiz_marks = TranscriptQuizMark.objects.filter(enrollment=enrollment)
+        if quiz_marks.exists():
+            quiz_component = sum(
+                (float(item.obtained_marks) / float(item.total_marks) * 100) if float(item.total_marks) > 0 else 0
+                for item in quiz_marks
+            ) / quiz_marks.count()
+
+    assignment_component = 0
+    assignment_submissions = AssignmentSubmission.objects.filter(
+        student=student,
+        assignment__course=course,
+        score__isnull=False,
+    )
+    if assignment_submissions.exists():
+        assignment_component = sum(
+            (float(sub.score) / float(sub.assignment.total_points) * 100)
+            if float(sub.assignment.total_points) > 0 else 0
+            for sub in assignment_submissions
+        ) / assignment_submissions.count()
+
+    exam_component = 0
+    if enrollment and hasattr(enrollment, 'transcript') and enrollment.transcript:
+        exam_component = float(enrollment.transcript.percentage)
+
+    weighted_final_preview = round((quiz_component * 0.30) + (assignment_component * 0.20) + (exam_component * 0.50), 2)
+
+    return {
+        'quiz_component': round(quiz_component, 2),
+        'assignment_component': round(assignment_component, 2),
+        'exam_component': round(exam_component, 2),
+        'weighted_final_preview': weighted_final_preview,
+    }
+
 @login_required
 def manage_quizzes(request):
     """View and manage all quizzes"""
@@ -2034,9 +2121,25 @@ def manage_quizzes(request):
     
     teacher = request.user
     quizzes = Quiz.objects.filter(created_by=teacher).select_related('course').order_by('-created_at')
+
+    quiz_rows = []
+    for quiz in quizzes:
+        completed_attempts = QuizAttempt.objects.filter(quiz=quiz, is_completed=True)
+        pending_manual = QuizAnswer.objects.filter(
+            attempt__in=completed_attempts,
+            question__question_type='subjective',
+            is_manually_checked=False,
+        ).count()
+
+        quiz_rows.append({
+            'quiz': quiz,
+            'attempt_count': completed_attempts.count(),
+            'pending_manual_count': pending_manual,
+        })
     
     context = {
         'quizzes': quizzes,
+        'quiz_rows': quiz_rows,
     }
     
     return render(request, 'teacher/manage_quizzes.html', context)
@@ -2217,13 +2320,289 @@ def quiz_results(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
     
     attempts = QuizAttempt.objects.filter(quiz=quiz, is_completed=True).select_related('student').order_by('-score')
+
+    attempt_rows = []
+    for attempt in attempts:
+        pending_subjective = attempt.answers.filter(
+            question__question_type='subjective',
+            is_manually_checked=False,
+        ).count()
+
+        if pending_subjective > 0:
+            grading_status = 'Pending Manual Check'
+        else:
+            grading_status = 'Checked'
+
+        attempt_rows.append({
+            'attempt': attempt,
+            'pending_subjective': pending_subjective,
+            'grading_status': grading_status,
+        })
     
     context = {
         'quiz': quiz,
         'attempts': attempts,
+        'attempt_rows': attempt_rows,
     }
     
     return render(request, 'teacher/quiz_results.html', context)
+
+
+@login_required
+def grade_quiz_attempt(request, attempt_id):
+    """Manual checking screen for subjective quiz answers."""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    attempt = get_object_or_404(
+        QuizAttempt.objects.select_related('quiz', 'quiz__course', 'student'),
+        id=attempt_id,
+        quiz__created_by=request.user,
+        is_completed=True,
+    )
+
+    subjective_answers = attempt.answers.select_related('question').filter(
+        question__question_type='subjective'
+    ).order_by('question__order')
+
+    if request.method == 'POST':
+        for answer in subjective_answers:
+            raw_marks = (request.POST.get(f'manual_marks_{answer.id}') or '0').strip()
+            try:
+                manual_marks = float(raw_marks)
+            except ValueError:
+                manual_marks = 0
+
+            max_marks = float(answer.question.marks)
+            manual_marks = max(0, min(manual_marks, max_marks))
+
+            answer.manual_marks = manual_marks
+            answer.is_manually_checked = True
+            answer.checked_by = request.user
+            answer.checked_at = timezone.now()
+            answer.save(update_fields=['manual_marks', 'is_manually_checked', 'checked_by', 'checked_at'])
+
+        _calculate_attempt_score(attempt)
+        _sync_quiz_attempt_to_transcript(attempt)
+
+        messages.success(request, 'Manual grading saved successfully.')
+        return redirect('main:quiz_results', quiz_id=attempt.quiz.id)
+
+    objective_answers = attempt.answers.select_related('question').exclude(question__question_type='subjective').order_by('question__order')
+
+    context = {
+        'attempt': attempt,
+        'objective_answers': objective_answers,
+        'subjective_answers': subjective_answers,
+    }
+    return render(request, 'teacher/grade_quiz_attempt.html', context)
+
+
+@login_required
+def student_my_quizzes(request):
+    """List published quizzes for enrolled courses and attempt status."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:home')
+
+    course_ids = Enrollment.objects.filter(student=request.user).values_list('course_id', flat=True)
+    quizzes = Quiz.objects.filter(
+        course_id__in=course_ids,
+        is_published=True,
+    ).select_related('course', 'created_by').order_by('-created_at')
+
+    rows = []
+    for quiz in quizzes:
+        attempt = QuizAttempt.objects.filter(
+            quiz=quiz,
+            student=request.user,
+            is_completed=True,
+        ).order_by('-submitted_at').first()
+
+        if not attempt:
+            status = 'Not Attempted'
+            pending_subjective = 0
+        else:
+            pending_subjective = attempt.answers.filter(
+                question__question_type='subjective',
+                is_manually_checked=False,
+            ).count()
+            status = 'Pending Manual Check' if pending_subjective > 0 else 'Checked'
+
+        rows.append({
+            'quiz': quiz,
+            'attempt': attempt,
+            'status': status,
+            'pending_subjective': pending_subjective,
+        })
+
+    return render(request, 'student/my_quizzes.html', {
+        'quiz_rows': rows,
+    })
+
+
+@login_required
+def take_quiz(request, quiz_id):
+    """Student quiz attempt page with timeout auto-submit support."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:home')
+
+    quiz = get_object_or_404(Quiz.objects.select_related('course', 'created_by'), id=quiz_id, is_published=True)
+
+    if not Enrollment.objects.filter(student=request.user, course=quiz.course).exists():
+        messages.error(request, 'You are not enrolled in this course.')
+        return redirect('main:student_my_quizzes')
+
+    existing_attempt = QuizAttempt.objects.filter(
+        quiz=quiz,
+        student=request.user,
+        is_completed=True,
+    ).order_by('-submitted_at').first()
+    if existing_attempt:
+        return redirect('main:student_quiz_result', attempt_id=existing_attempt.id)
+
+    attempt = QuizAttempt.objects.filter(
+        quiz=quiz,
+        student=request.user,
+        is_completed=False,
+    ).order_by('-started_at').first()
+    if not attempt:
+        attempt = QuizAttempt.objects.create(
+            quiz=quiz,
+            student=request.user,
+        )
+
+    questions = quiz.questions.all().order_by('order')
+
+    if request.method == 'POST':
+        auto_score = 0
+        has_subjective = False
+
+        for question in questions:
+            field_name = f'question_{question.id}'
+
+            if question.question_type == 'subjective':
+                answer_text = (request.POST.get(field_name) or '').strip()
+                has_subjective = True
+                QuizAnswer.objects.update_or_create(
+                    attempt=attempt,
+                    question=question,
+                    defaults={
+                        'selected_answer': '',
+                        'answer_text': answer_text,
+                        'is_correct': False,
+                        'manual_marks': None,
+                        'is_manually_checked': False,
+                        'checked_by': None,
+                        'checked_at': None,
+                    },
+                )
+                continue
+
+            selected = (request.POST.get(field_name) or '').strip().upper()
+            is_correct = bool(selected) and selected == question.correct_answer
+            if is_correct:
+                auto_score += float(question.marks)
+
+            QuizAnswer.objects.update_or_create(
+                attempt=attempt,
+                question=question,
+                defaults={
+                    'selected_answer': selected,
+                    'answer_text': '',
+                    'is_correct': is_correct,
+                    'manual_marks': None,
+                    'is_manually_checked': True,
+                    'checked_by': None,
+                    'checked_at': None,
+                },
+            )
+
+        attempt.submitted_at = timezone.now()
+        attempt.score = round(auto_score, 2)
+        attempt.is_completed = True
+        if has_subjective:
+            attempt.is_passed = False
+        else:
+            attempt.is_passed = attempt.score >= float(quiz.passing_marks)
+        attempt.save(update_fields=['submitted_at', 'score', 'is_completed', 'is_passed'])
+
+        if has_subjective:
+            messages.info(request, 'Quiz submitted. Subjective answers are pending manual checking.')
+        else:
+            messages.success(request, 'Quiz submitted and auto-graded successfully.')
+
+        _sync_quiz_attempt_to_transcript(attempt)
+        return redirect('main:student_quiz_result', attempt_id=attempt.id)
+
+    end_time = attempt.started_at + timedelta(minutes=quiz.duration_minutes)
+    remaining_seconds = max(0, int((end_time - timezone.now()).total_seconds()))
+
+    return render(request, 'student/take_quiz.html', {
+        'quiz': quiz,
+        'attempt': attempt,
+        'questions': questions,
+        'remaining_seconds': remaining_seconds,
+    })
+
+
+@login_required
+def student_quiz_result(request, attempt_id):
+    """Student result screen after quiz submission."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:home')
+
+    attempt = get_object_or_404(
+        QuizAttempt.objects.select_related('quiz', 'quiz__course', 'student'),
+        id=attempt_id,
+        student=request.user,
+        is_completed=True,
+    )
+
+    answer_rows = []
+    has_pending_manual = False
+
+    for answer in attempt.answers.select_related('question').order_by('question__order'):
+        question = answer.question
+        correct_option = question.correct_answer
+        selected_option = answer.selected_answer
+
+        if question.question_type == 'subjective':
+            has_pending = not answer.is_manually_checked
+            has_pending_manual = has_pending_manual or has_pending
+            obtained = float(answer.manual_marks or 0) if answer.is_manually_checked else 0
+            status_label = 'Pending Manual Check' if has_pending else 'Checked'
+        else:
+            has_pending = False
+            obtained = float(question.marks) if answer.is_correct else 0
+            status_label = 'Correct' if answer.is_correct else 'Wrong'
+
+        answer_rows.append({
+            'answer': answer,
+            'question': question,
+            'correct_option': correct_option,
+            'selected_option': selected_option,
+            'obtained_marks': obtained,
+            'status_label': status_label,
+            'pending_manual': has_pending,
+        })
+
+    if not has_pending_manual:
+        _calculate_attempt_score(attempt)
+        _sync_quiz_attempt_to_transcript(attempt)
+
+    result_components = _build_course_result_components(request.user, attempt.quiz.course)
+
+    return render(request, 'student/quiz_result.html', {
+        'attempt': attempt,
+        'quiz': attempt.quiz,
+        'answer_rows': answer_rows,
+        'has_pending_manual': has_pending_manual,
+        'result_components': result_components,
+    })
 
 
 # ==================== STUDENT PROGRESS VIEWS ====================
@@ -2890,6 +3269,29 @@ def student_dashboard(request):
 
     pending_assignments_count = sum(1 for row in assignment_rows if row['status'] == 'Pending')
 
+    quiz_rows = []
+    for quiz in quizzes[:8]:
+        completed_attempt = QuizAttempt.objects.filter(
+            quiz=quiz,
+            student=student,
+            is_completed=True,
+        ).order_by('-submitted_at').first()
+
+        if completed_attempt:
+            pending_manual = completed_attempt.answers.filter(
+                question__question_type='subjective',
+                is_manually_checked=False,
+            ).exists()
+            status = 'Pending Manual Check' if pending_manual else 'Checked'
+        else:
+            status = 'Not Attempted'
+
+        quiz_rows.append({
+            'quiz': quiz,
+            'attempt': completed_attempt,
+            'status': status,
+        })
+
     attendance_records = list(
         Attendance.objects.filter(
             student=student,
@@ -2939,6 +3341,8 @@ def student_dashboard(request):
         'recent_lectures': lectures,
         'assignment_rows': assignment_rows,
         'pending_assignments_count': pending_assignments_count,
+        'quiz_rows': quiz_rows,
+        'total_quizzes': quizzes.count(),
         'attendance_summary_rows': attendance_summary_rows,
         'attendance_history_rows': attendance_history_rows,
         'total_courses': enrollments.count(),

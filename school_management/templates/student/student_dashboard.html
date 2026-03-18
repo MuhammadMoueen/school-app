@@ -52,6 +52,14 @@
                 <p>Reports Sent</p>
             </div>
         </div>
+
+        <div class="stat-card info">
+            <div class="stat-icon"><i class="fas fa-file-circle-check"></i></div>
+            <div class="stat-details">
+                <h3>{{ total_quizzes }}</h3>
+                <p>Published Quizzes</p>
+            </div>
+        </div>
     </div>
     
     <div class="section-divider"><hr></div>
@@ -105,6 +113,70 @@
                 <p class="empty-state-note">Assignments from your enrolled courses will appear here.</p>
             </div>
         {% endif %}
+    </div>
+
+    <div class="section-divider"><hr></div>
+
+    <div class="reports-section">
+        <h2><i class="fas fa-file-pen"></i> My Quizzes</h2>
+        <p class="section-desc">View available quizzes, attempt status, and latest scores</p>
+
+        {% if quiz_rows %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Quiz</th>
+                        <th>Course</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in quiz_rows %}
+                    <tr>
+                        <td>{{ row.quiz.title }}</td>
+                        <td>{{ row.quiz.course.code }} - {{ row.quiz.course.name }}</td>
+                        <td class="text-center">
+                            {% if row.status == 'Checked' %}
+                                <span class="badge bg-success">Checked</span>
+                            {% elif row.status == 'Pending Manual Check' %}
+                                <span class="badge bg-warning text-dark">Pending Manual Check</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not Attempted</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.attempt %}
+                                {{ row.attempt.score }} / {{ row.attempt.total_marks }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if row.attempt %}
+                                <a href="{% url 'main:student_quiz_result' row.attempt.id %}" class="btn btn-sm btn-outline-primary">View Result</a>
+                            {% else %}
+                                <a href="{% url 'main:take_quiz' row.quiz.id %}" class="btn btn-sm btn-primary">Start Quiz</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-pen"></i>
+                <p>No quizzes published yet</p>
+                <p class="empty-state-note">Your teachers can publish quizzes for your enrolled courses.</p>
+            </div>
+        {% endif %}
+
+        <a href="{% url 'main:student_my_quizzes' %}" class="btn-report mt-2 d-inline-block">
+            <i class="fas fa-table"></i> Open Full Quiz Dashboard
+        </a>
     </div>
 
     <div class="section-divider"><hr></div>
