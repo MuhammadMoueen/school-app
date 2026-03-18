@@ -1451,6 +1451,80 @@ def _build_monthly_attendance_rows(selected_course, month, year):
     return rows
 
 
+def _build_yearly_attendance_rows(selected_course, year):
+    """Build per-student yearly attendance aggregates for a selected course."""
+    enrollments = Enrollment.objects.filter(course=selected_course).select_related('student').order_by(
+        'student__first_name',
+        'student__last_name',
+        'student__username',
+    )
+
+    yearly_stats = Attendance.objects.filter(
+        course=selected_course,
+        date__year=year,
+    ).values('student_id').annotate(
+        present=Count('id', filter=Q(status='present')),
+        absent=Count('id', filter=Q(status='absent')),
+        late=Count('id', filter=Q(status='late')),
+        leave=Count('id', filter=Q(status='leave')),
+        total=Count('id'),
+    )
+
+    stats_map = {row['student_id']: row for row in yearly_stats}
+    rows = []
+
+    for enrollment in enrollments:
+        student = enrollment.student
+        stats = stats_map.get(student.id, {})
+
+        present = stats.get('present', 0)
+        absent = stats.get('absent', 0)
+        late = stats.get('late', 0)
+        leave = stats.get('leave', 0)
+        total = stats.get('total', 0)
+        percentage = round((present / total * 100) if total > 0 else 0, 2)
+
+        rows.append({
+            'student': student,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'leave': leave,
+            'total': total,
+            'percentage': percentage,
+            'is_low_attendance': percentage < 75,
+        })
+
+    total_classes = Attendance.objects.filter(
+        course=selected_course,
+        date__year=year,
+    ).values('date').distinct().count()
+
+    rows_with_data = [row for row in rows if row['total'] > 0]
+    average_percentage = round(
+        (sum(row['percentage'] for row in rows_with_data) / len(rows_with_data)) if rows_with_data else 0,
+        2,
+    )
+
+    highest_row = max(rows_with_data, key=lambda row: row['percentage']) if rows_with_data else None
+    lowest_row = min(rows_with_data, key=lambda row: row['percentage']) if rows_with_data else None
+
+    summary = {
+        'total_classes': total_classes,
+        'average_percentage': average_percentage,
+        'highest_student_name': (
+            highest_row['student'].get_full_name() or highest_row['student'].username
+        ) if highest_row else 'N/A',
+        'highest_percentage': highest_row['percentage'] if highest_row else 0,
+        'lowest_student_name': (
+            lowest_row['student'].get_full_name() or lowest_row['student'].username
+        ) if lowest_row else 'N/A',
+        'lowest_percentage': lowest_row['percentage'] if lowest_row else 0,
+    }
+
+    return rows, summary
+
+
 def _attendance_export_response(selected_course, month, year, rows, export_type):
     """Return CSV or Excel-like export response for monthly attendance rows."""
     month_name = datetime(year, month, 1).strftime('%B').lower()
@@ -1511,6 +1585,68 @@ def _attendance_export_response(selected_course, month, year, rows, export_type)
         ])
     return response
 
+
+def _attendance_yearly_export_response(selected_course, year, rows, export_type):
+    """Return CSV or Excel-like export response for yearly attendance rows."""
+    base_filename = f"{selected_course.code.lower()}_{selected_course.student_class}{selected_course.section}_{year}_yearly_attendance"
+
+    headers = [
+        'Student Name',
+        'Present',
+        'Absent',
+        'Late',
+        'Leave',
+        'Attendance %',
+        'Attendance Flag',
+    ]
+
+    if export_type == 'excel':
+        try:
+            from openpyxl import Workbook
+
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = 'Yearly Attendance'
+            sheet.append(headers)
+
+            for row in rows:
+                student_name = row['student'].get_full_name() or row['student'].username
+                sheet.append([
+                    student_name,
+                    row['present'],
+                    row['absent'],
+                    row['late'],
+                    row['leave'],
+                    row['percentage'],
+                    'Low Attendance' if row['is_low_attendance'] else 'Normal',
+                ])
+
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{base_filename}.xlsx"'
+            workbook.save(response)
+            return response
+        except Exception:
+            pass
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{base_filename}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    for row in rows:
+        student_name = row['student'].get_full_name() or row['student'].username
+        writer.writerow([
+            student_name,
+            row['present'],
+            row['absent'],
+            row['late'],
+            row['leave'],
+            row['percentage'],
+            'Low Attendance' if row['is_low_attendance'] else 'Normal',
+        ])
+    return response
+
 @login_required
 def manage_attendance(request):
     """Teacher attendance page with daily, monthly, import, and export workflows."""
@@ -1529,6 +1665,7 @@ def manage_attendance(request):
     today = timezone.localdate()
     selected_month = int(request_data.get('month') or today.month)
     selected_year = int(request_data.get('year') or today.year)
+    selected_yearly_year = int(request_data.get('yearly_year') or today.year)
     archive_year = int(request_data.get('archive_year') or selected_year)
     export_type = request.GET.get('export', '').lower()
 
@@ -1543,6 +1680,15 @@ def manage_attendance(request):
     students = []
     history_rows = []
     monthly_rows = []
+    yearly_rows = []
+    yearly_summary = {
+        'total_classes': 0,
+        'average_percentage': 0,
+        'highest_student_name': 'N/A',
+        'highest_percentage': 0,
+        'lowest_student_name': 'N/A',
+        'lowest_percentage': 0,
+    }
     attendance_exists = False
     total_students = 0
     available_years = [today.year]
@@ -1570,8 +1716,16 @@ def manage_attendance(request):
             archive_year = available_years[0]
 
         monthly_rows = _build_monthly_attendance_rows(selected_course, selected_month, selected_year)
+        yearly_rows, yearly_summary = _build_yearly_attendance_rows(selected_course, selected_yearly_year)
 
         if request.method == 'GET' and export_type in {'csv', 'excel'}:
+            if active_tab == 'yearly':
+                return _attendance_yearly_export_response(
+                    selected_course,
+                    selected_yearly_year,
+                    yearly_rows,
+                    export_type,
+                )
             return _attendance_export_response(selected_course, selected_month, selected_year, monthly_rows, export_type)
 
         selected_date_records = Attendance.objects.filter(
@@ -1782,12 +1936,15 @@ def manage_attendance(request):
         'active_tab': active_tab,
         'selected_month': selected_month,
         'selected_year': selected_year,
+        'selected_yearly_year': selected_yearly_year,
         'archive_year': archive_year,
         'available_years': available_years,
         'students': students,
         'attendance_exists': attendance_exists,
         'history_rows': history_rows,
         'monthly_rows': monthly_rows,
+        'yearly_rows': yearly_rows,
+        'yearly_summary': yearly_summary,
         'today_summary': today_summary,
         'today_date': today,
     }

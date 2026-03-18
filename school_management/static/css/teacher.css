@@ -1962,6 +1962,10 @@ main .container .alert {
     color: #6b7280;
 }
 
+.attendance-low-row td {
+    background: #fdeceb;
+}
+
 @media (max-width: 992px) {
     .stats-grid {
         grid-template-columns: repeat(2, minmax(140px, 1fr));
