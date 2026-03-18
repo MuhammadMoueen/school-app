@@ -4,11 +4,12 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.db.models import Q, Count, F, Avg
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from datetime import datetime
 import json
+import csv
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignEmailForm, CourseForm, EnrollmentForm, TranscriptForm,
                    MarksReportForm, ReportReplyForm, AdminCreateStudentForm, ProfileEditForm,
@@ -1233,9 +1234,108 @@ def submit_assignment(request, assignment_id):
 
 # ==================== ATTENDANCE VIEWS ====================
 
+def _build_monthly_attendance_rows(selected_course, month, year):
+    """Build per-student monthly attendance aggregates for a selected course."""
+    enrollments = Enrollment.objects.filter(course=selected_course).select_related('student').order_by(
+        'student__first_name',
+        'student__last_name',
+        'student__username',
+    )
+
+    monthly_records = Attendance.objects.filter(
+        course=selected_course,
+        date__year=year,
+        date__month=month,
+    )
+
+    rows = []
+    for enrollment in enrollments:
+        student = enrollment.student
+        student_records = monthly_records.filter(student=student)
+
+        present = student_records.filter(status='present').count()
+        absent = student_records.filter(status='absent').count()
+        late = student_records.filter(status='late').count()
+        leave = student_records.filter(status='leave').count()
+        total = present + absent + late + leave
+        percentage = round((present / total * 100) if total > 0 else 0, 2)
+
+        rows.append({
+            'student': student,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'leave': leave,
+            'total': total,
+            'percentage': percentage,
+        })
+
+    return rows
+
+
+def _attendance_export_response(selected_course, month, year, rows, export_type):
+    """Return CSV or Excel-like export response for monthly attendance rows."""
+    month_name = datetime(year, month, 1).strftime('%B').lower()
+    base_filename = f"{selected_course.code}_{selected_course.student_class}{selected_course.section}_{month_name}_attendance"
+
+    headers = [
+        'Student Name',
+        'Present',
+        'Absent',
+        'Late',
+        'Leave',
+        'Attendance %',
+    ]
+
+    if export_type == 'excel':
+        try:
+            from openpyxl import Workbook
+
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = 'Monthly Attendance'
+            sheet.append(headers)
+
+            for row in rows:
+                student_name = row['student'].get_full_name() or row['student'].username
+                sheet.append([
+                    student_name,
+                    row['present'],
+                    row['absent'],
+                    row['late'],
+                    row['leave'],
+                    row['percentage'],
+                ])
+
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{base_filename}.xlsx"'
+            workbook.save(response)
+            return response
+        except Exception:
+            # Graceful fallback if openpyxl is unavailable.
+            pass
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{base_filename}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    for row in rows:
+        student_name = row['student'].get_full_name() or row['student'].username
+        writer.writerow([
+            student_name,
+            row['present'],
+            row['absent'],
+            row['late'],
+            row['leave'],
+            row['percentage'],
+        ])
+    return response
+
 @login_required
 def manage_attendance(request):
-    """Teacher attendance page: mark/edit attendance, view history, and daily analytics."""
+    """Teacher attendance page with daily, monthly, import, and export workflows."""
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('main:home')
@@ -1243,10 +1343,18 @@ def manage_attendance(request):
     teacher = request.user
     courses = Course.objects.filter(teacher=teacher).order_by('code', 'name')
 
-    selected_course_id = (request.POST.get('course') if request.method == 'POST' else request.GET.get('course'))
-    raw_selected_date = (request.POST.get('date') if request.method == 'POST' else request.GET.get('date'))
+    request_data = request.POST if request.method == 'POST' else request.GET
+    selected_course_id = request_data.get('course')
+    raw_selected_date = request_data.get('date')
+    active_tab = request_data.get('tab') or 'daily'
 
-    selected_date = timezone.localdate()
+    today = timezone.localdate()
+    selected_month = int(request_data.get('month') or today.month)
+    selected_year = int(request_data.get('year') or today.year)
+    archive_year = int(request_data.get('archive_year') or selected_year)
+    export_type = request.GET.get('export', '').lower()
+
+    selected_date = today
     if raw_selected_date:
         try:
             selected_date = datetime.strptime(raw_selected_date, '%Y-%m-%d').date()
@@ -1256,9 +1364,10 @@ def manage_attendance(request):
     selected_course = None
     students = []
     history_rows = []
+    monthly_rows = []
     attendance_exists = False
     total_students = 0
-    today = timezone.localdate()
+    available_years = [today.year]
     today_summary = {
         'total_students': 0,
         'present': 0,
@@ -1277,6 +1386,16 @@ def manage_attendance(request):
         )
         total_students = enrollments.count()
 
+        available_years_qs = Attendance.objects.filter(course=selected_course).dates('date', 'year')
+        available_years = sorted({entry.year for entry in available_years_qs} | {today.year}, reverse=True)
+        if archive_year not in available_years:
+            archive_year = available_years[0]
+
+        monthly_rows = _build_monthly_attendance_rows(selected_course, selected_month, selected_year)
+
+        if request.method == 'GET' and export_type in {'csv', 'excel'}:
+            return _attendance_export_response(selected_course, selected_month, selected_year, monthly_rows, export_type)
+
         selected_date_records = Attendance.objects.filter(
             course=selected_course,
             date=selected_date,
@@ -1285,51 +1404,154 @@ def manage_attendance(request):
         attendance_exists = selected_date_records.exists()
 
         if request.method == 'POST':
-            valid_statuses = {choice[0] for choice in Attendance.STATUS_CHOICES}
+            action = request.POST.get('action') or 'save_daily'
 
-            for enrollment in enrollments:
-                student = enrollment.student
-                status = request.POST.get(f'status_{student.id}', 'present')
-                remarks = request.POST.get(f'remarks_{student.id}', '').strip()
-
-                if status not in valid_statuses:
-                    status = 'present'
-
-                existing_record = attendance_map.get(student.id)
-                if existing_record:
-                    existing_record.status = status
-                    existing_record.remarks = remarks
-                    existing_record.marked_by = teacher
-                    existing_record.student_class = selected_course.student_class
-                    existing_record.section = selected_course.section
-                    existing_record.save()
-                else:
-                    Attendance.objects.create(
-                        course=selected_course,
-                        student=student,
-                        date=selected_date,
-                        status=status,
-                        remarks=remarks,
-                        marked_by=teacher,
-                        student_class=selected_course.student_class,
-                        section=selected_course.section,
+            if action == 'save_daily':
+                if total_students == 0:
+                    messages.error(request, 'No students enrolled in this course to mark attendance.')
+                    return redirect(
+                        f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=daily"
                     )
 
-            teacher_name = teacher.get_full_name() or teacher.username
-            log_teacher_activity(
-                teacher=teacher,
-                action_type='mark_attendance',
-                description=f'Teacher {teacher_name} marked attendance for {selected_course.name} (Class {selected_course.student_class}{selected_course.section}) on {selected_date}',
-                course=selected_course,
-            )
+                valid_statuses = {choice[0] for choice in Attendance.STATUS_CHOICES}
 
-            if attendance_exists:
-                messages.info(request, 'Attendance already recorded for this date.')
-                messages.success(request, 'Existing attendance has been updated successfully.')
-            else:
+                for enrollment in enrollments:
+                    student = enrollment.student
+                    status = request.POST.get(f'status_{student.id}', '').strip() or 'present'
+                    remarks = request.POST.get(f'remarks_{student.id}', '').strip()
+
+                    if status not in valid_statuses:
+                        status = 'present'
+
+                    existing_record = attendance_map.get(student.id)
+                    if existing_record:
+                        existing_record.status = status
+                        existing_record.remarks = remarks
+                        existing_record.marked_by = teacher
+                        existing_record.student_class = selected_course.student_class
+                        existing_record.section = selected_course.section
+                        existing_record.save()
+                    else:
+                        Attendance.objects.create(
+                            course=selected_course,
+                            student=student,
+                            date=selected_date,
+                            status=status,
+                            remarks=remarks,
+                            marked_by=teacher,
+                            student_class=selected_course.student_class,
+                            section=selected_course.section,
+                        )
+
+                teacher_name = teacher.get_full_name() or teacher.username
+                log_teacher_activity(
+                    teacher=teacher,
+                    action_type='mark_attendance',
+                    description=(
+                        f'Teacher {teacher_name} marked attendance for {selected_course.name} '
+                        f'(Class {selected_course.student_class}{selected_course.section}) on {selected_date}'
+                    ),
+                    course=selected_course,
+                )
+
+                if attendance_exists:
+                    messages.info(request, 'Attendance already existed for this date; records were updated.')
                 messages.success(request, f'Attendance saved successfully for {selected_course.name} on {selected_date}.')
 
-            return redirect(f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}")
+                return redirect(
+                    f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=daily"
+                )
+
+            if action == 'import_csv':
+                upload_file = request.FILES.get('attendance_file')
+                if not upload_file:
+                    messages.error(request, 'Please choose a CSV file to import.')
+                    return redirect(
+                        f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=monthly"
+                    )
+
+                if not upload_file.name.lower().endswith('.csv'):
+                    messages.error(request, 'Invalid file type. Please upload a CSV file.')
+                    return redirect(
+                        f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=monthly"
+                    )
+
+                valid_statuses = {choice[0] for choice in Attendance.STATUS_CHOICES}
+                student_lookup = {}
+                for enrollment in enrollments:
+                    student_obj = enrollment.student
+                    full_name = (student_obj.get_full_name() or '').strip().lower()
+                    username = (student_obj.username or '').strip().lower()
+                    if full_name:
+                        student_lookup[full_name] = student_obj
+                    if username:
+                        student_lookup[username] = student_obj
+
+                imported_count = 0
+                skipped_count = 0
+                invalid_count = 0
+
+                try:
+                    decoded = upload_file.read().decode('utf-8-sig').splitlines()
+                    reader = csv.DictReader(decoded)
+
+                    required_columns = {'Student Name', 'Date', 'Status'}
+                    if not reader.fieldnames or not required_columns.issubset(set(reader.fieldnames)):
+                        messages.error(request, 'CSV must include columns: Student Name, Date, Status.')
+                        return redirect(
+                            f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=monthly"
+                        )
+
+                    for row in reader:
+                        student_name = (row.get('Student Name') or '').strip().lower()
+                        date_text = (row.get('Date') or '').strip()
+                        status = (row.get('Status') or '').strip().lower()
+                        remarks = (row.get('Remark') or row.get('Remarks') or '').strip()
+
+                        if not student_name or not date_text or status not in valid_statuses:
+                            invalid_count += 1
+                            continue
+
+                        student_obj = student_lookup.get(student_name)
+                        if not student_obj:
+                            skipped_count += 1
+                            continue
+
+                        try:
+                            attendance_date = datetime.strptime(date_text, '%Y-%m-%d').date()
+                        except ValueError:
+                            invalid_count += 1
+                            continue
+
+                        Attendance.objects.update_or_create(
+                            course=selected_course,
+                            student=student_obj,
+                            date=attendance_date,
+                            defaults={
+                                'status': status,
+                                'remarks': remarks,
+                                'marked_by': teacher,
+                                'student_class': selected_course.student_class,
+                                'section': selected_course.section,
+                            },
+                        )
+                        imported_count += 1
+
+                    messages.success(request, f'Imported/updated {imported_count} attendance record(s).')
+                    if skipped_count > 0:
+                        messages.warning(request, f'{skipped_count} row(s) skipped (student not enrolled in selected course).')
+                    if invalid_count > 0:
+                        messages.warning(request, f'{invalid_count} row(s) skipped due to invalid data.')
+
+                    return redirect(
+                        f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=monthly"
+                    )
+
+                except UnicodeDecodeError:
+                    messages.error(request, 'Unable to read CSV file. Please save it as UTF-8 and try again.')
+                    return redirect(
+                        f"{reverse('main:manage_attendance')}?course={selected_course.id}&date={selected_date.isoformat()}&tab=monthly"
+                    )
 
         selected_date_records = Attendance.objects.filter(
             course=selected_course,
@@ -1346,7 +1568,10 @@ def manage_attendance(request):
                 'status': record.status if record else 'present',
             })
 
-        course_records = Attendance.objects.filter(course=selected_course).order_by('-date')
+        course_records = Attendance.objects.filter(
+            course=selected_course,
+            date__year=archive_year,
+        ).order_by('-date')
         history_map = {}
         for record in course_records:
             row = history_map.setdefault(record.date, {
@@ -1376,9 +1601,15 @@ def manage_attendance(request):
         'selected_course': selected_course,
         'selected_course_id': str(selected_course.id) if selected_course else '',
         'selected_date': selected_date.isoformat(),
+        'active_tab': active_tab,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'archive_year': archive_year,
+        'available_years': available_years,
         'students': students,
         'attendance_exists': attendance_exists,
         'history_rows': history_rows,
+        'monthly_rows': monthly_rows,
         'today_summary': today_summary,
         'today_date': today,
     }
@@ -1922,10 +2153,11 @@ def manage_enrollments(request):
     """Enroll students in subjects"""
     if request.user.role != 'teacher':
         return redirect('main:dashboard')
-    
-    enrollments = Enrollment.objects.filter(course__teacher=request.user).select_related(
+
+    all_enrollments = Enrollment.objects.filter(course__teacher=request.user).select_related(
         'student', 'course'
-    )
+    ).order_by('-enrolled_at')
+    enrollments = all_enrollments[:5]
     
     if request.method == 'POST':
         form = EnrollmentForm(request.POST, teacher=request.user)
@@ -1961,6 +2193,7 @@ def manage_enrollments(request):
     
     context = {
         'enrollments': enrollments,
+        'total_enrollments': all_enrollments.count(),
         'form': form
     }
     return render(request, 'teacher/manage_enrollments.html', context)
@@ -2443,7 +2676,7 @@ def get_notifications(request):
                 'time': _relative_time_text(reply.created_at),
                 'is_read': reply.report.is_read_by_teacher,
                 'sort_time': reply.created_at.isoformat(),
-                'url': reverse('main:report_detail', args=[reply.report.id]),
+                'url': reverse('main:teacher_admin_chat'),
                 'icon': 'fa-comment-dots'
             })
 
@@ -2500,7 +2733,7 @@ def get_notifications(request):
                 'time': _relative_time_text(response.created_at),
                 'is_read': response.is_read_by_teacher,
                 'sort_time': response.created_at.isoformat(),
-                'url': reverse('main:dashboard'),
+                'url': reverse('main:teacher_admin_chat'),
                 'icon': 'fa-user-shield'
             })
 

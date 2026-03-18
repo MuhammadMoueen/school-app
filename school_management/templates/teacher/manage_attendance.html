@@ -14,9 +14,22 @@
     </div>
 </div>
 
+<div class="content-card mb-25">
+    <div class="card-body card-body-pad-20 d-flex gap-2 flex-wrap">
+        <a href="{% url 'main:manage_attendance' %}?course={{ selected_course_id }}&date={{ selected_date }}&tab=daily" class="btn {% if active_tab == 'daily' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <i class="fas fa-calendar-check"></i> Daily Attendance
+        </a>
+        <a href="{% url 'main:manage_attendance' %}?course={{ selected_course_id }}&date={{ selected_date }}&month={{ selected_month }}&year={{ selected_year }}&tab=monthly" class="btn {% if active_tab == 'monthly' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <i class="fas fa-chart-bar"></i> Monthly Report
+        </a>
+    </div>
+</div>
+
+{% if active_tab == 'daily' %}
 <div class="content-card">
     <div class="card-body card-body-pad-20">
         <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="tab" value="daily">
             <div class="col-md-5">
                 <label class="form-label" for="courseSelect">
                     <i class="fas fa-book"></i> Select Course
@@ -65,6 +78,8 @@
         {% if students %}
         <form method="post">
             {% csrf_token %}
+            <input type="hidden" name="action" value="save_daily">
+            <input type="hidden" name="tab" value="daily">
             <input type="hidden" name="course" value="{{ selected_course.id }}">
             <input type="hidden" name="date" value="{{ selected_date }}">
 
@@ -146,6 +161,20 @@
 <div class="content-card">
     <div class="card-header-section">
         <h3 class="card-section-title"><i class="fas fa-history"></i> Attendance History</h3>
+        <div class="card-header-actions">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="tab" value="daily">
+                <input type="hidden" name="course" value="{{ selected_course.id }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <label class="form-label mb-0" for="archiveYear"><i class="fas fa-archive"></i> Year</label>
+                <select id="archiveYear" name="archive_year" class="form-select form-select-sm">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == archive_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+            </form>
+        </div>
     </div>
     <div class="card-body">
         {% if history_rows %}
@@ -177,6 +206,123 @@
         <div class="empty-state">
             <i class="fas fa-history"></i>
             <p>No attendance history yet for this course</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if active_tab == 'monthly' %}
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title"><i class="fas fa-chart-line"></i> Monthly Attendance Report</h3>
+    </div>
+    <div class="card-body card-body-pad-20">
+        <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="tab" value="monthly">
+            <div class="col-md-4">
+                <label class="form-label" for="monthlyCourse"><i class="fas fa-book"></i> Course</label>
+                <select id="monthlyCourse" name="course" class="form-select" required>
+                    <option value="">Choose a course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }} (Class {{ course.student_class }}{{ course.section }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="monthSelect"><i class="fas fa-calendar-alt"></i> Month</label>
+                <select id="monthSelect" name="month" class="form-select">
+                    <option value="1" {% if selected_month == 1 %}selected{% endif %}>January</option>
+                    <option value="2" {% if selected_month == 2 %}selected{% endif %}>February</option>
+                    <option value="3" {% if selected_month == 3 %}selected{% endif %}>March</option>
+                    <option value="4" {% if selected_month == 4 %}selected{% endif %}>April</option>
+                    <option value="5" {% if selected_month == 5 %}selected{% endif %}>May</option>
+                    <option value="6" {% if selected_month == 6 %}selected{% endif %}>June</option>
+                    <option value="7" {% if selected_month == 7 %}selected{% endif %}>July</option>
+                    <option value="8" {% if selected_month == 8 %}selected{% endif %}>August</option>
+                    <option value="9" {% if selected_month == 9 %}selected{% endif %}>September</option>
+                    <option value="10" {% if selected_month == 10 %}selected{% endif %}>October</option>
+                    <option value="11" {% if selected_month == 11 %}selected{% endif %}>November</option>
+                    <option value="12" {% if selected_month == 12 %}selected{% endif %}>December</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="yearSelect"><i class="fas fa-clock"></i> Year</label>
+                <select id="yearSelect" name="year" class="form-select">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 text-end d-flex gap-2">
+                <button type="submit" class="btn-action flex-fill">
+                    <i class="fas fa-sync"></i> Generate
+                </button>
+            </div>
+        </form>
+
+        {% if selected_course %}
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            <a href="{% url 'main:manage_attendance' %}?tab=monthly&course={{ selected_course.id }}&month={{ selected_month }}&year={{ selected_year }}&export=csv" class="btn btn-secondary btn-sm">
+                <i class="fas fa-file-csv"></i> Export CSV
+            </a>
+            <a href="{% url 'main:manage_attendance' %}?tab=monthly&course={{ selected_course.id }}&month={{ selected_month }}&year={{ selected_year }}&export=excel" class="btn btn-secondary btn-sm">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </a>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Leave</th>
+                        <th class="text-center">Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in monthly_rows %}
+                    <tr>
+                        <td>{{ row.student.get_full_name|default:row.student.username }}</td>
+                        <td class="text-center"><span class="badge badge-success">{{ row.present }}</span></td>
+                        <td class="text-center"><span class="badge badge-danger">{{ row.absent }}</span></td>
+                        <td class="text-center"><span class="badge badge-warning">{{ row.late }}</span></td>
+                        <td class="text-center"><span class="badge badge-info">{{ row.leave }}</span></td>
+                        <td class="text-center"><strong>{{ row.percentage }}%</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No monthly attendance data found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 pt-3 border-top">
+            <h4 class="mb-3"><i class="fas fa-file-upload"></i> Import Attendance (CSV)</h4>
+            <form method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="import_csv">
+                <input type="hidden" name="tab" value="monthly">
+                <input type="hidden" name="course" value="{{ selected_course.id }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <div class="col-md-8">
+                    <label class="form-label" for="attendanceImportFile">CSV File (Student Name, Date, Status)</label>
+                    <input id="attendanceImportFile" type="file" name="attendance_file" class="form-control" accept=".csv" required>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-upload"></i> Import CSV
+                    </button>
+                </div>
+            </form>
         </div>
         {% endif %}
     </div>
