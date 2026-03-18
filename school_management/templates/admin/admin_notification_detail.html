@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<link rel="stylesheet" href="{% static 'css/chat-system.css' %}">
 <style>
     .detail-layout {
         display: grid;
@@ -89,34 +90,6 @@
         margin-top: 16px;
     }
 
-    .chat-presence-row {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 8px;
-    }
-
-    .presence-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 999px;
-        display: inline-block;
-    }
-
-    .presence-dot.online {
-        background: #22c55e;
-    }
-
-    .presence-dot.offline {
-        background: #9ca3af;
-    }
-
-    .presence-text {
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: #4b5563;
-    }
-
     .response-item {
         border: 1px solid #e7eaf3;
         border-radius: 10px;
@@ -132,28 +105,8 @@
         margin-bottom: 4px;
     }
 
-    .response-item .response-time {
-        color: #7f8c8d;
-        font-size: 0.77rem;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-    }
-
-    .chat-tick {
-        font-size: 0.8rem;
-        line-height: 1;
-    }
-
-    .chat-tick.sent,
-    .chat-tick.delivered {
-        color: #64748b;
-    }
-
-    .chat-tick.seen {
-        color: #0ea5e9;
+    .admin-chat-card {
+        padding: 16px;
     }
 
     @media (max-width: 992px) {
@@ -185,10 +138,6 @@
     <div class="detail-layout">
         <div class="detail-card">
             <h2 class="detail-title">Teacher Activity Information</h2>
-            <div class="chat-presence-row">
-                <span class="presence-dot {% if teacher_online %}online{% else %}offline{% endif %}"></span>
-                <span class="presence-text">Teacher is {% if teacher_online %}Online{% else %}Offline{% endif %}</span>
-            </div>
 
             {% if notification_item.is_seen %}
                 <div class="status-line seen"><i class="fas fa-check-circle"></i> Seen</div>
@@ -233,51 +182,71 @@
                 </button>
             </form>
 
-            <h3 style="font-size:1.05rem; font-weight:700; color:#2c3e50;">Admin Responses</h3>
             <div class="response-list">
-                {% if response_rows %}
+                <h3 style="font-size:1.05rem; font-weight:700; color:#2c3e50;">Activity Notes</h3>
+                <div class="response-item">
+                    <div class="response-head">Teacher Message</div>
+                    <div class="response-time">{{ activity.timestamp|date:"M d, Y - H:i" }}</div>
+                    <div>{{ activity.description }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card admin-chat-card chat-app" data-chat-app data-chat-endpoint="{{ chat_endpoint }}" data-chat-target-id="{{ chat_target_id }}" data-empty-text="Start conversation with Teacher">
+            <div class="chat-header-card">
+                <div class="chat-header-main">
+                    <h3 class="chat-peer-title">{{ chat_title }}</h3>
+                    <div class="chat-presence-row">
+                        <span class="presence-dot {% if teacher_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
+                        <span class="presence-text" data-chat-status-text>{{ teacher_status_text|default:'Offline' }}</span>
+                    </div>
+                </div>
+                <div class="chat-header-avatar"><i class="fas fa-user-graduate"></i></div>
+            </div>
+
+            <div class="chat-shell mt-3">
+                <div class="chat-thread" data-chat-thread>
+                    <div class="chat-row theirs">
+                        <div class="chat-bubble theirs">
+                            <div class="chat-meta"><span class="chat-name">{{ activity.teacher_name }}</span></div>
+                            <p class="chat-message-text">{{ activity.description }}</p>
+                            <div class="chat-time"><span>{{ activity.timestamp|date:"M d, Y - H:i" }}</span></div>
+                        </div>
+                    </div>
                     {% for row in response_rows %}
-                        <div class="response-item">
-                            <div class="response-head">{{ row.response.get_response_type_display }} by {{ row.response.admin.get_full_name|default:row.response.admin.username }}</div>
-                            <div class="response-time">
+                    <div class="chat-row mine">
+                        <div class="chat-bubble mine">
+                            <div class="chat-meta"><span class="chat-name">{{ row.response.admin.get_full_name|default:row.response.admin.username }}</span></div>
+                            <p class="chat-message-text">{{ row.response.message }}</p>
+                            <div class="chat-time">
                                 <span>{{ row.response.created_at|date:"M d, Y - H:i" }}</span>
                                 <span class="chat-tick {{ row.tick_data.state }}" title="{{ row.tick_data.label }}">
                                     <i class="{{ row.tick_data.icon }}"></i>
                                 </span>
                             </div>
-                            <div>{{ row.response.message }}</div>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state" style="margin:0;">
-                        <i class="fas fa-comment-slash"></i>
-                        <p>No messages or questions submitted yet.</p>
                     </div>
-                {% endif %}
-            </div>
-        </div>
+                    {% endfor %}
+                </div>
 
-        <div class="detail-card">
-            <h2 class="detail-title">Send Message / Raise Question</h2>
-            <form method="post">
+                <form method="post" class="chat-compose-form mt-3" data-chat-form>
                 {% csrf_token %}
                 <input type="hidden" name="action" value="save_response">
 
-                <div class="mb-3">
-                    <label class="form-label" for="id_response_type">Action</label>
-                    {{ response_form.response_type }}
-                </div>
+                <input type="hidden" name="response_type" value="message">
 
-                <div class="mb-3">
-                    <label class="form-label" for="id_message">Message</label>
-                    {{ response_form.message }}
-                </div>
+                <textarea id="id_message" name="message" class="chat-compose-input" rows="1" placeholder="Write your message to teacher..." data-chat-input required></textarea>
 
-                <button type="submit" class="btn btn-primary justify-content-center">
+                <button type="submit" class="chat-send-btn" data-chat-send>
                     <i class="fas fa-paper-plane"></i> Send Message
                 </button>
             </form>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat-system.js' %}"></script>
 {% endblock %}

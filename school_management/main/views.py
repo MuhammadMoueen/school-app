@@ -26,19 +26,31 @@ from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, Mar
 
 ONLINE_PRESENCE_WINDOW_SECONDS = 90
 ONLINE_PRESENCE_KEY_PREFIX = 'presence:user:'
+LAST_SEEN_KEY_PREFIX = 'presence:last_seen:user:'
+LAST_SEEN_CACHE_SECONDS = 60 * 60 * 24 * 7
 
 
 def _presence_cache_key(user_id):
     return f"{ONLINE_PRESENCE_KEY_PREFIX}{user_id}"
 
 
+def _last_seen_cache_key(user_id):
+    return f"{LAST_SEEN_KEY_PREFIX}{user_id}"
+
+
 def _mark_user_online(user_id):
     if not user_id:
         return
+    now_timestamp = timezone.now().timestamp()
     cache.set(
         _presence_cache_key(user_id),
-        timezone.now().timestamp(),
+        now_timestamp,
         ONLINE_PRESENCE_WINDOW_SECONDS * 2,
+    )
+    cache.set(
+        _last_seen_cache_key(user_id),
+        now_timestamp,
+        LAST_SEEN_CACHE_SECONDS,
     )
 
 
@@ -56,6 +68,66 @@ def _is_user_online(user_id):
         return False
 
     return delta <= ONLINE_PRESENCE_WINDOW_SECONDS
+
+
+def _get_last_seen_timestamp(user_id):
+    if not user_id:
+        return None
+
+    last_seen_timestamp = cache.get(_last_seen_cache_key(user_id))
+    if last_seen_timestamp:
+        try:
+            return datetime.fromtimestamp(float(last_seen_timestamp), tz=timezone.get_current_timezone())
+        except (TypeError, ValueError, OSError):
+            return None
+    return None
+
+
+def _presence_payload(user_id):
+    online = _is_user_online(user_id)
+    last_seen_dt = _get_last_seen_timestamp(user_id)
+
+    if online:
+        status_text = 'Online'
+    elif last_seen_dt:
+        status_text = f"Last seen {_relative_time_text(last_seen_dt)}"
+    else:
+        status_text = 'Offline'
+
+    return {
+        'online': online,
+        'status_text': status_text,
+        'last_seen': last_seen_dt.isoformat() if last_seen_dt else None,
+    }
+
+
+def _serialize_teacher_admin_message(item):
+    payload = {
+        'sender': item.get('sender'),
+        'name': item.get('name', ''),
+        'message': item.get('message', ''),
+        'created_at': item['created_at'].isoformat() if item.get('created_at') else None,
+        'time_label': item['created_at'].strftime('%b %d, %Y - %H:%M') if item.get('created_at') else '',
+        'is_outgoing': bool(item.get('is_outgoing')),
+        'tick_state': item.get('tick_state', ''),
+        'tick_icon': item.get('tick_icon', ''),
+        'tick_label': item.get('tick_label', ''),
+    }
+    return payload
+
+
+def _serialize_report_reply(reply, is_outgoing=False, tick_data=None):
+    return {
+        'sender': 'mine' if is_outgoing else 'theirs',
+        'name': reply.sender.get_full_name() or reply.sender.username,
+        'message': reply.message,
+        'created_at': reply.created_at.isoformat() if reply.created_at else None,
+        'time_label': reply.created_at.strftime('%b %d, %Y - %H:%M') if reply.created_at else '',
+        'is_outgoing': is_outgoing,
+        'tick_state': tick_data['state'] if tick_data else '',
+        'tick_icon': tick_data['icon'] if tick_data else '',
+        'tick_label': tick_data['label'] if tick_data else '',
+    }
 
 
 def _build_tick_data(is_read=False, recipient_online=False):
@@ -409,19 +481,47 @@ def teacher_admin_chat(request):
 
     _mark_user_online(request.user.id)
 
+    is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
     if request.method == 'POST':
         action = request.POST.get('action')
 
         if action == 'send_message':
             message_text = (request.POST.get('message') or '').strip()
             if message_text:
-                log_teacher_activity(
+                activity = log_teacher_activity(
                     teacher=request.user,
                     action_type='other',
                     description=f"Teacher message to admin: {message_text}",
                 )
+                admin_ids = list(User.objects.filter(role='admin', is_active=True).values_list('id', flat=True))
+                admin_online = any(_is_user_online(admin_id) for admin_id in admin_ids)
+                tick_data = _build_tick_data(
+                    is_read=activity.notifications.filter(is_seen=True).exists(),
+                    recipient_online=admin_online,
+                )
+
+                if is_ajax_request:
+                    return JsonResponse({
+                        'success': True,
+                        'message': {
+                            'sender': 'teacher',
+                            'name': request.user.get_full_name() or request.user.username,
+                            'message': message_text,
+                            'created_at': activity.timestamp.isoformat(),
+                            'time_label': activity.timestamp.strftime('%b %d, %Y - %H:%M'),
+                            'is_outgoing': True,
+                            'tick_state': tick_data['state'],
+                            'tick_icon': tick_data['icon'],
+                            'tick_label': tick_data['label'],
+                        },
+                        'presence': _presence_payload(admin_ids[0]) if admin_ids else {'online': False, 'status_text': 'Offline'},
+                    })
                 messages.success(request, 'Message sent to admin successfully.')
                 return redirect('main:teacher_admin_chat')
+
+            if is_ajax_request:
+                return JsonResponse({'success': False, 'error': 'Please write a message before sending.'}, status=400)
             messages.error(request, 'Please write a message before sending.')
 
     TeacherActivityResponse.objects.filter(
@@ -429,9 +529,7 @@ def teacher_admin_chat(request):
         is_read_by_teacher=False,
     ).update(is_read_by_teacher=True)
 
-    admin_ids = list(
-        User.objects.filter(role='admin', is_active=True).values_list('id', flat=True)
-    )
+    admin_ids = list(User.objects.filter(role='admin', is_active=True).values_list('id', flat=True))
     admin_online = any(_is_user_online(admin_id) for admin_id in admin_ids)
 
     teacher_messages = TeacherActivityLog.objects.filter(
@@ -474,11 +572,25 @@ def teacher_admin_chat(request):
     chat_messages.sort(key=lambda item: item['created_at'])
     chat_messages = chat_messages[-50:]
 
+    serialized_messages = [_serialize_teacher_admin_message(item) for item in chat_messages]
+    presence_info = _presence_payload(admin_ids[0]) if admin_ids else {'online': False, 'status_text': 'Offline', 'last_seen': None}
+
+    if request.GET.get('chat_ajax') == '1':
+        return JsonResponse({
+            'success': True,
+            'messages': serialized_messages,
+            'presence': presence_info,
+        })
+
     context = {
         'teacher_messages': teacher_messages,
         'admin_responses': admin_responses,
         'chat_messages': chat_messages,
         'admin_online': admin_online,
+        'admin_status_text': presence_info['status_text'],
+        'chat_endpoint': reverse('main:teacher_admin_chat'),
+        'chat_target_id': admin_ids[0] if admin_ids else '',
+        'chat_title': 'Admin Chat',
     }
     return render(request, 'teacher/teacher_admin_chat.html', context)
 
@@ -2461,6 +2573,8 @@ def report_detail(request, report_id):
         report.is_read_by_teacher = True
         report.save()
     
+    is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
     if request.method == 'POST':
         form = ReportReplyForm(request.POST)
         if form.is_valid():
@@ -2481,9 +2595,23 @@ def report_detail(request, report_id):
             # Update report status
             report.status = 'replied'
             report.save()
+
+            tick_data = _build_tick_data(
+                is_read=reply.is_read_by_student,
+                recipient_online=student_online,
+            )
+
+            if is_ajax_request:
+                return JsonResponse({
+                    'success': True,
+                    'message': _serialize_report_reply(reply, is_outgoing=True, tick_data=tick_data),
+                    'presence': _presence_payload(report.student_id),
+                })
             
             messages.success(request, 'Reply sent successfully!')
             return redirect('main:report_detail', report_id=report.id)
+        if is_ajax_request:
+            return JsonResponse({'success': False, 'error': 'Unable to send reply.'}, status=400)
     else:
         form = ReportReplyForm()
 
@@ -2504,12 +2632,35 @@ def report_detail(request, report_id):
             'tick_data': tick_data,
         })
     
+    serialized_messages = []
+    for row in reply_rows:
+        serialized_messages.append(
+            _serialize_report_reply(
+                row['reply'],
+                is_outgoing=row['is_outgoing'],
+                tick_data=row['tick_data'],
+            )
+        )
+
+    presence_info = _presence_payload(report.student_id)
+
+    if request.GET.get('chat_ajax') == '1':
+        return JsonResponse({
+            'success': True,
+            'messages': serialized_messages,
+            'presence': presence_info,
+        })
+
     context = {
         'report': report,
         'form': form,
         'replies': replies,
         'reply_rows': reply_rows,
         'student_online': student_online,
+        'student_status_text': presence_info['status_text'],
+        'chat_endpoint': reverse('main:report_detail', args=[report.id]),
+        'chat_target_id': report.student_id,
+        'chat_title': report.student.get_full_name() or report.student.username,
     }
     return render(request, 'teacher/report_detail.html', context)
 
@@ -2668,6 +2819,8 @@ def student_report_detail(request, report_id):
     # Mark all teacher replies as read when student views them
     report.replies.exclude(sender=request.user).update(is_read_by_student=True)
     
+    is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
     if request.method == 'POST':
         form = ReportReplyForm(request.POST)
         if form.is_valid():
@@ -2678,9 +2831,23 @@ def student_report_detail(request, report_id):
 
             report.is_read_by_teacher = False
             report.save(update_fields=['is_read_by_teacher', 'updated_at'])
+
+            tick_data = _build_tick_data(
+                is_read=report.is_read_by_teacher,
+                recipient_online=teacher_online,
+            )
+
+            if is_ajax_request:
+                return JsonResponse({
+                    'success': True,
+                    'message': _serialize_report_reply(reply, is_outgoing=True, tick_data=tick_data),
+                    'presence': _presence_payload(report.teacher_id),
+                })
             
             messages.success(request, 'Reply sent successfully!')
             return redirect('main:student_report_detail', report_id=report.id)
+        if is_ajax_request:
+            return JsonResponse({'success': False, 'error': 'Unable to send message.'}, status=400)
     else:
         form = ReportReplyForm()
 
@@ -2701,12 +2868,35 @@ def student_report_detail(request, report_id):
             'tick_data': tick_data,
         })
     
+    serialized_messages = []
+    for row in reply_rows:
+        serialized_messages.append(
+            _serialize_report_reply(
+                row['reply'],
+                is_outgoing=row['is_outgoing'],
+                tick_data=row['tick_data'],
+            )
+        )
+
+    presence_info = _presence_payload(report.teacher_id)
+
+    if request.GET.get('chat_ajax') == '1':
+        return JsonResponse({
+            'success': True,
+            'messages': serialized_messages,
+            'presence': presence_info,
+        })
+
     context = {
         'report': report,
         'form': form,
         'replies': replies,
         'reply_rows': reply_rows,
         'teacher_online': teacher_online,
+        'teacher_status_text': presence_info['status_text'],
+        'chat_endpoint': reverse('main:student_report_detail', args=[report.id]),
+        'chat_target_id': report.teacher_id,
+        'chat_title': report.teacher.get_full_name() or report.teacher.username,
     }
     return render(request, 'student/student_report_detail.html', context)
 
@@ -2731,6 +2921,18 @@ def _relative_time_text(reference_time):
 @require_http_methods(["GET"])
 def presence_ping(request):
     _mark_user_online(request.user.id)
+    target_user_id = request.GET.get('target_user_id')
+    if target_user_id:
+        try:
+            target_user_id = int(target_user_id)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Invalid user id.'}, status=400)
+
+        return JsonResponse({
+            'success': True,
+            'presence': _presence_payload(target_user_id),
+        })
+
     return JsonResponse({'success': True})
 
 @login_required
@@ -3606,6 +3808,9 @@ def admin_notification_detail(request, notification_id):
         id=notification_id,
         admin=request.user,
     )
+    teacher_online = _is_user_online(notification.activity.teacher_id)
+
+    is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -3634,13 +3839,36 @@ def admin_notification_detail(request, notification_id):
                     messages.success(request, 'Message sent and activity recorded.')
                 else:
                     messages.success(request, 'Question/report submitted and activity recorded.')
+
+                tick_data = _build_tick_data(
+                    is_read=response.is_read_by_teacher,
+                    recipient_online=teacher_online,
+                )
+
+                if is_ajax_request:
+                    return JsonResponse({
+                        'success': True,
+                        'message': {
+                            'sender': 'mine',
+                            'name': response.admin.get_full_name() or response.admin.username,
+                            'message': response.message,
+                            'created_at': response.created_at.isoformat(),
+                            'time_label': response.created_at.strftime('%b %d, %Y - %H:%M'),
+                            'is_outgoing': True,
+                            'tick_state': tick_data['state'],
+                            'tick_icon': tick_data['icon'],
+                            'tick_label': tick_data['label'],
+                        },
+                        'presence': _presence_payload(notification.activity.teacher_id),
+                    })
                 return redirect('main:admin_notification_detail', notification_id=notification.id)
+            if is_ajax_request:
+                return JsonResponse({'success': False, 'error': 'Unable to send message.'}, status=400)
         else:
             form = TeacherActivityResponseForm()
     else:
         form = TeacherActivityResponseForm()
 
-    teacher_online = _is_user_online(notification.activity.teacher_id)
     response_rows = []
     for response in notification.responses.select_related('admin').order_by('created_at'):
         tick_data = _build_tick_data(
@@ -3652,13 +3880,51 @@ def admin_notification_detail(request, notification_id):
             'tick_data': tick_data,
         })
 
+    serialized_messages = [{
+        'sender': 'theirs',
+        'name': notification.activity.teacher_name,
+        'message': notification.activity.description,
+        'created_at': notification.activity.timestamp.isoformat() if notification.activity.timestamp else None,
+        'time_label': notification.activity.timestamp.strftime('%b %d, %Y - %H:%M') if notification.activity.timestamp else '',
+        'is_outgoing': False,
+        'tick_state': '',
+        'tick_icon': '',
+        'tick_label': '',
+    }]
+
+    for row in response_rows:
+        serialized_messages.append({
+            'sender': 'mine',
+            'name': row['response'].admin.get_full_name() or row['response'].admin.username,
+            'message': row['response'].message,
+            'created_at': row['response'].created_at.isoformat() if row['response'].created_at else None,
+            'time_label': row['response'].created_at.strftime('%b %d, %Y - %H:%M') if row['response'].created_at else '',
+            'is_outgoing': True,
+            'tick_state': row['tick_data']['state'],
+            'tick_icon': row['tick_data']['icon'],
+            'tick_label': row['tick_data']['label'],
+        })
+
+    presence_info = _presence_payload(notification.activity.teacher_id)
+
+    if request.GET.get('chat_ajax') == '1':
+        return JsonResponse({
+            'success': True,
+            'messages': serialized_messages,
+            'presence': presence_info,
+        })
+
     context = {
         'notification_item': notification,
         'activity': notification.activity,
         'responses': notification.responses.select_related('admin').all(),
         'response_rows': response_rows,
         'teacher_online': teacher_online,
+        'teacher_status_text': presence_info['status_text'],
         'response_form': form,
+        'chat_endpoint': reverse('main:admin_notification_detail', args=[notification.id]),
+        'chat_target_id': notification.activity.teacher_id,
+        'chat_title': notification.activity.teacher_name,
     }
     return render(request, 'admin/admin_notification_detail.html', context)
 

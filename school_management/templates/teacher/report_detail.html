@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+<link rel="stylesheet" href="{% static 'css/chat-system.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -54,58 +55,62 @@
         </div>
     </div>
     
-    <div class="conversation-section">
-        <div class="chat-headline">
-            <h4>Conversation Thread</h4>
-            <div class="chat-presence-row">
-                <span class="presence-dot {% if student_online %}online{% else %}offline{% endif %}"></span>
-                <span class="presence-text">Student is {% if student_online %}Online{% else %}Offline{% endif %}</span>
-            </div>
-        </div>
-        
-        {% if reply_rows %}
-        <div class="conversation-thread">
-            {% for row in reply_rows %}
-            <div class="message-bubble {% if row.reply.sender == report.student %}student{% else %}teacher{% endif %}">
-                <div class="message-sender">
-                    {{ row.reply.sender.get_full_name }}
-                    {% if row.reply.sender == report.teacher %}(Teacher){% else %}(Student){% endif %}
+    <div class="conversation-section chat-app" data-chat-app data-chat-endpoint="{{ chat_endpoint }}" data-chat-target-id="{{ chat_target_id }}" data-empty-text="Start conversation with Student">
+        <div class="chat-header-card">
+            <div class="chat-header-main">
+                <h4 class="chat-peer-title">{{ chat_title }}</h4>
+                <div class="chat-presence-row">
+                    <span class="presence-dot {% if student_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
+                    <span class="presence-text" data-chat-status-text>{{ student_status_text|default:'Offline' }}</span>
                 </div>
-                <p class="message-text">{{ row.reply.message }}</p>
-                <div class="message-time-row">
-                    <span class="message-time">{{ row.reply.created_at|date:"M d, Y • h:i A" }}</span>
+            </div>
+            <div class="chat-header-avatar"><i class="fas fa-user-graduate"></i></div>
+        </div>
+
+        <div class="chat-shell">
+        <div class="chat-thread conversation-thread" data-chat-thread>
+            {% if reply_rows %}
+            {% for row in reply_rows %}
+            <div class="chat-row {% if row.is_outgoing %}mine{% else %}theirs{% endif %}">
+                <div class="chat-bubble {% if row.is_outgoing %}mine{% else %}theirs{% endif %}">
+                <div class="chat-meta">
+                    <span class="chat-name">{{ row.reply.sender.get_full_name }}</span>
+                </div>
+                <p class="chat-message-text">{{ row.reply.message }}</p>
+                <div class="chat-time">
+                    <span>{{ row.reply.created_at|date:"M d, Y - H:i" }}</span>
                     {% if row.is_outgoing and row.tick_data %}
                     <span class="chat-tick {{ row.tick_data.state }}" title="{{ row.tick_data.label }}">
                         <i class="{{ row.tick_data.icon }}"></i>
                     </span>
                     {% endif %}
                 </div>
+                </div>
             </div>
             {% endfor %}
+            {% else %}
+            <div class="chat-empty-state">
+                <div>
+                    <i class="fas fa-comments"></i>
+                    <p>Start conversation with Student</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="empty-conversation">
-            <p>No replies yet. Be the first to respond!</p>
-        </div>
-        {% endif %}
         
-        <div class="reply-form">
-            <form method="post">
+            <form method="post" class="chat-compose-form" data-chat-form>
                 {% csrf_token %}
                 
-                <div class="form-field">
-                    <label>Your Reply</label>
-                    {{ form.message }}
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" name="action" value="reply" class="btn btn-primary">Send Reply</button>
-                    {% if report.status != 'resolved' %}
-                    <button type="submit" name="action" value="resolve" class="btn btn-success">Mark as Resolved</button>
-                    {% endif %}
-                </div>
+                <textarea id="id_message" name="message" class="chat-compose-input" rows="1" placeholder="Type your reply..." data-chat-input required></textarea>
+                <button type="submit" name="action" value="reply" class="chat-send-btn" data-chat-send>
+                    <i class="fas fa-paper-plane"></i> Send Reply
+                </button>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat-system.js' %}"></script>
 {% endblock %}

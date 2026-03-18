@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
+<link rel="stylesheet" href="{% static 'css/chat-system.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -46,13 +47,16 @@
         </div>
     </div>
     
-    <div class="conversation-section">
-        <div class="chat-headline">
-            <h4>Conversation with Teacher</h4>
-            <div class="chat-presence-row">
-                <span class="presence-dot {% if teacher_online %}online{% else %}offline{% endif %}"></span>
-                <span class="presence-text">Teacher is {% if teacher_online %}Online{% else %}Offline{% endif %}</span>
+    <div class="conversation-section chat-app" data-chat-app data-chat-endpoint="{{ chat_endpoint }}" data-chat-target-id="{{ chat_target_id }}" data-empty-text="Start conversation with Teacher">
+        <div class="chat-header-card">
+            <div class="chat-header-main">
+                <h4 class="chat-peer-title">{{ chat_title }}</h4>
+                <div class="chat-presence-row">
+                    <span class="presence-dot {% if teacher_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
+                    <span class="presence-text" data-chat-status-text>{{ teacher_status_text|default:'Offline' }}</span>
+                </div>
             </div>
+            <div class="chat-header-avatar"><i class="fas fa-chalkboard-teacher"></i></div>
         </div>
         
         {% if report.status == 'resolved' %}
@@ -61,46 +65,52 @@
         </div>
         {% endif %}
         
-        {% if reply_rows %}
-        <div class="conversation-thread">
+        <div class="chat-shell">
+        <div class="chat-thread conversation-thread" data-chat-thread>
+            {% if reply_rows %}
             {% for row in reply_rows %}
-            <div class="message-bubble {% if row.reply.sender == report.student %}student{% else %}teacher{% endif %}">
-                <div class="message-sender">
-                    {{ row.reply.sender.get_full_name }}
-                    {% if row.reply.sender == report.teacher %}(Teacher){% else %}(You){% endif %}
+            <div class="chat-row {% if row.is_outgoing %}mine{% else %}theirs{% endif %}">
+                <div class="chat-bubble {% if row.is_outgoing %}mine{% else %}theirs{% endif %}">
+                <div class="chat-meta">
+                    <span class="chat-name">{{ row.reply.sender.get_full_name }}</span>
                 </div>
-                <p class="message-text">{{ row.reply.message }}</p>
-                <div class="message-time-row">
-                    <span class="message-time">{{ row.reply.created_at|date:"M d, Y • h:i A" }}</span>
+                <p class="chat-message-text">{{ row.reply.message }}</p>
+                <div class="chat-time">
+                    <span>{{ row.reply.created_at|date:"M d, Y - H:i" }}</span>
                     {% if row.is_outgoing and row.tick_data %}
                     <span class="chat-tick {{ row.tick_data.state }}" title="{{ row.tick_data.label }}">
                         <i class="{{ row.tick_data.icon }}"></i>
                     </span>
                     {% endif %}
                 </div>
+                </div>
             </div>
             {% endfor %}
+            {% else %}
+            <div class="chat-empty-state">
+                <div>
+                    <i class="fas fa-comments"></i>
+                    <p>Start conversation with Teacher</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="empty-conversation">
-            <p>Waiting for teacher's response...</p>
-        </div>
-        {% endif %}
         
         {% if report.status != 'resolved' %}
-        <div class="reply-form">
-            <form method="post">
+            <form method="post" class="chat-compose-form" data-chat-form>
                 {% csrf_token %}
-                
-                <div class="form-field">
-                    <label>Add a Reply</label>
-                    {{ form.message }}
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Send Message</button>
+
+                <textarea id="id_message" name="message" class="chat-compose-input" rows="1" placeholder="Write your message..." data-chat-input required></textarea>
+                <button type="submit" class="chat-send-btn" data-chat-send>
+                    <i class="fas fa-paper-plane"></i> Send Message
+                </button>
             </form>
-        </div>
         {% endif %}
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat-system.js' %}"></script>
 {% endblock %}

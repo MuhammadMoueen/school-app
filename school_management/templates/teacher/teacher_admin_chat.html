@@ -5,25 +5,26 @@
 {% block topbar_title %}Admin Chat - {{ user.get_full_name|default:user.username }}{% endblock %}
 
 {% block page_css %}
-<link rel="stylesheet" href="{% static 'css/teacher_admin_chat.css' %}">
+<link rel="stylesheet" href="{% static 'css/chat-system.css' %}">
 {% endblock %}
 
 {% block page_content %}
-<div class="dashboard-content chat-page-wrap">
-    <div class="section-header chat-page-header">
-        <div>
-            <h2 class="section-title">
-                <i class="fas fa-headset"></i> Chat With Admin
-            </h2>
+<div class="dashboard-content chat-page-wrap chat-app" data-chat-app data-chat-endpoint="{{ chat_endpoint }}" data-chat-target-id="{{ chat_target_id }}" data-empty-text="Start conversation with Admin">
+    <div class="chat-header-card">
+        <div class="chat-header-main">
+            <h2 class="chat-peer-title"><i class="fas fa-headset"></i> Admin</h2>
             <div class="chat-presence-row">
-                <span class="presence-dot {% if admin_online %}online{% else %}offline{% endif %}"></span>
-                <span class="presence-text">Admin is {% if admin_online %}Online{% else %}Offline{% endif %}</span>
+                <span class="presence-dot {% if admin_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
+                <span class="presence-text" data-chat-status-text>{{ admin_status_text|default:'Offline' }}</span>
             </div>
+        </div>
+        <div class="chat-header-avatar" title="Admin">
+            <i class="fas fa-user-shield"></i>
         </div>
     </div>
 
     <div class="chat-shell">
-        <div class="chat-thread" id="chatThread">
+        <div class="chat-thread" id="chatThread" data-chat-thread>
             {% if chat_messages %}
                 {% for item in chat_messages %}
                     <div class="chat-row {% if item.sender == 'teacher' %}mine{% else %}theirs{% endif %}">
@@ -54,21 +55,26 @@
             {% endif %}
         </div>
 
-        <form method="post" class="chat-compose-form">
+        <form method="post" class="chat-compose-form" data-chat-form>
             {% csrf_token %}
             <input type="hidden" name="action" value="send_message">
             <textarea
                 id="id_message"
                 name="message"
                 class="chat-compose-input"
-                rows="3"
+                rows="1"
                 placeholder="Write your message to admin..."
+                data-chat-input
                 required
             ></textarea>
-            <button type="submit" class="chat-send-btn">
+            <button type="submit" class="chat-send-btn" data-chat-send>
                 <i class="fas fa-paper-plane"></i> Send Message
             </button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'js/chat-system.js' %}"></script>
 {% endblock %}
