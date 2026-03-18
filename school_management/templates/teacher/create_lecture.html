@@ -1,250 +1,161 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Upload Lecture - Teacher Panel{% endblock %}
+{% block page_title %}Upload Lecture{% endblock %}
+{% block topbar_title %}The City School - Upload Lecture{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
-
-{% block content %}
-<div class="teacher-layout">
-    <!-- Sidebar -->
-    <aside class="teacher-sidebar" id="teacherSidebar">
-        <div class="sidebar-header">
-            <div class="logo-area">
-                <img src="{% static 'images/school-logo.png' %}" alt="School Logo" class="inline-logo-md">
-                <span class="sidebar-title">Teacher Panel</span>
-            </div>
-        </div>
-        
-        <nav class="teacher-nav">
-            <!-- Main Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Main</div>
-                <a href="{% url 'main:dashboard' %}" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span class="nav-text">Dashboard</span>
-                </a>
-            </div>
-            
-            <!-- Academic Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Academic</div>
-                <a href="{% url 'main:manage_courses' %}" class="nav-item">
-                    <i class="fas fa-book"></i>
-                    <span class="nav-text">Courses</span>
-                </a>
-                <a href="{% url 'main:manage_lectures' %}" class="nav-item active">
-                    <i class="fas fa-file-video"></i>
-                    <span class="nav-text">Lectures</span>
-                </a>
-                <a href="{% url 'main:manage_enrollments' %}" class="nav-item">
-                    <i class="fas fa-user-plus"></i>
-                    <span class="nav-text">Enrollments</span>
-                </a>
-                <a href="{% url 'main:manage_transcripts' %}" class="nav-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span class="nav-text">Grades</span>
-                </a>
-            </div>
-            
-            <!-- Communication Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Communication</div>
-                <a href="{% url 'main:view_reports' %}" class="nav-item">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span class="nav-text">Reports</span>
-                </a>
-            </div>
-            
-            <!-- Account Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Account</div>
-                <a href="{% url 'main:edit_profile' %}" class="nav-item">
-                    <i class="fas fa-user-edit"></i>
-                    <span class="nav-text">Edit Profile</span>
-                </a>
-                <a href="{% url 'main:logout' %}" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="nav-text">Logout</span>
-                </a>
-            </div>
-        </nav>
-    </aside>
-    
-    <!-- Main Content -->
-    <div class="teacher-content">
-        <!-- Top Navbar -->
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-            
-            <div class="topbar-left">
-                <h1 class="page-title">Upload Lecture</h1>
-            </div>
-        </header>
-        
-        <!-- Page Content -->
-        <main class="page-content">
-            <div class="upload-form">
-                <div class="form-header text-center">
-                    <div class="form-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <h2>Upload New Lecture Material</h2>
-                    <p class="text-muted">Share course materials with your students</p>
-                </div>
-                
-                <form method="post" enctype="multipart/form-data" id="lectureForm">
-                    {% csrf_token %}
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.course.id_for_label }}" class="form-label">
-                            <i class="fas fa-book"></i> Select Course <span class="text-danger">*</span>
-                        </label>
-                        {{ form.course }}
-                        {% if form.course.errors %}
-                            <div class="text-danger mt-1">{{ form.course.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.title.id_for_label }}" class="form-label">
-                            <i class="fas fa-heading"></i> Lecture Title <span class="text-danger">*</span>
-                        </label>
-                        {{ form.title }}
-                        {% if form.title.errors %}
-                            <div class="text-danger mt-1">{{ form.title.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.description.id_for_label }}" class="form-label">
-                            <i class="fas fa-align-left"></i> Description (Optional)
-                        </label>
-                        {{ form.description }}
-                        <div class="help-text">Provide details about what students will learn in this lecture</div>
-                        {% if form.description.errors %}
-                            <div class="text-danger mt-1">{{ form.description.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.file_type.id_for_label }}" class="form-label">
-                            <i class="fas fa-layer-group"></i> Lecture Type <span class="text-danger">*</span>
-                        </label>
-                        {{ form.file_type }}
-                        {% if form.file_type.errors %}
-                            <div class="text-danger mt-1">{{ form.file_type.errors }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.file.id_for_label }}" class="form-label">
-                            <i class="fas fa-file-upload"></i> Upload File <span class="text-danger">*</span>
-                        </label>
-                        {{ form.file }}
-                        <div class="help-text">
-                            Upload MP4, MP3, PDF, DOCX, PPT/PPTX, JPG/JPEG, or PNG files.
-                        </div>
-                        {% if form.file.errors %}
-                            <div class="text-danger mt-1">{{ form.file.errors }}</div>
-                        {% endif %}
-                        
-                        <div class="file-preview" id="filePreview">
-                            <div class="file-info">
-                                <i class="fas fa-file" id="fileIcon"></i>
-                                <div>
-                                    <strong id="fileName"></strong>
-                                    <p class="mb-0 text-muted" id="fileSize"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.external_link.id_for_label }}" class="form-label">
-                            <i class="fas fa-link"></i> External Link (required for Link type)
-                        </label>
-                        {{ form.external_link }}
-                        {% if form.external_link.errors %}
-                            <div class="text-danger mt-1">{{ form.external_link.errors }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.attachments.id_for_label }}" class="form-label">
-                            <i class="fas fa-paperclip"></i> Additional Attachments
-                        </label>
-                        {{ form.attachments }}
-                        <div class="help-text">You can select multiple files for assignments, notes, and slides.</div>
-                        {% if form.attachments.errors %}
-                            <div class="text-danger mt-1">{{ form.attachments.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label for="{{ form.order.id_for_label }}" class="form-label">
-                                <i class="fas fa-sort-numeric-up"></i> Display Order
-                            </label>
-                            {{ form.order }}
-                            <div class="help-text">Lower numbers appear first (e.g., 1, 2, 3...)</div>
-                            {% if form.order.errors %}
-                                <div class="text-danger mt-1">{{ form.order.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="col-md-6 mb-4">
-                            <label for="{{ form.lecture_date.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar-day"></i> Lecture Date
-                            </label>
-                            {{ form.lecture_date }}
-                            {% if form.lecture_date.errors %}
-                                <div class="text-danger mt-1">{{ form.lecture_date.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label for="{{ form.visibility_status.id_for_label }}" class="form-label">
-                                <i class="fas fa-eye"></i> Visibility
-                            </label>
-                            {{ form.visibility_status }}
-                            {% if form.visibility_status.errors %}
-                                <div class="text-danger mt-1">{{ form.visibility_status.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-6 mb-4">
-                            <label for="{{ form.scheduled_publish_at.id_for_label }}" class="form-label">
-                                <i class="fas fa-clock"></i> Scheduled Publish Date/Time
-                            </label>
-                            {{ form.scheduled_publish_at }}
-                            {% if form.scheduled_publish_at.errors %}
-                                <div class="text-danger mt-1">{{ form.scheduled_publish_at.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'main:manage_lectures' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancel
-                        </a>
-                        <button type="submit" class="btn btn-submit">
-                            <i class="fas fa-upload"></i> Upload Lecture
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </main>
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-cloud-upload-alt"></i> Upload New Lecture Material
+        </h2>
+        <p class="page-subtitle">Share course materials with your students</p>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'js/teacher.js' %}"></script>
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+        <form method="post" enctype="multipart/form-data" id="lectureForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label for="{{ form.course.id_for_label }}" class="form-label">
+                    <i class="fas fa-book"></i> Select Course <span class="text-danger">*</span>
+                </label>
+                {{ form.course }}
+                {% if form.course.errors %}
+                    <div class="text-danger mt-1">{{ form.course.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.title.id_for_label }}" class="form-label">
+                    <i class="fas fa-heading"></i> Lecture Title <span class="text-danger">*</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="text-danger mt-1">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.description.id_for_label }}" class="form-label">
+                    <i class="fas fa-align-left"></i> Description (Optional)
+                </label>
+                {{ form.description }}
+                <div class="help-text">Provide details about what students will learn in this lecture</div>
+                {% if form.description.errors %}
+                    <div class="text-danger mt-1">{{ form.description.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.file_type.id_for_label }}" class="form-label">
+                    <i class="fas fa-layer-group"></i> Lecture Type <span class="text-danger">*</span>
+                </label>
+                {{ form.file_type }}
+                {% if form.file_type.errors %}
+                    <div class="text-danger mt-1">{{ form.file_type.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.file.id_for_label }}" class="form-label">
+                    <i class="fas fa-file-upload"></i> Upload File <span class="text-danger">*</span>
+                </label>
+                {{ form.file }}
+                <div class="help-text">Upload MP4, MP3, PDF, DOCX, PPT/PPTX, JPG/JPEG, or PNG files.</div>
+                {% if form.file.errors %}
+                    <div class="text-danger mt-1">{{ form.file.errors }}</div>
+                {% endif %}
+
+                <div class="file-preview" id="filePreview">
+                    <div class="file-info">
+                        <i class="fas fa-file" id="fileIcon"></i>
+                        <div>
+                            <strong id="fileName"></strong>
+                            <p class="mb-0 text-muted" id="fileSize"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.external_link.id_for_label }}" class="form-label">
+                    <i class="fas fa-link"></i> External Link (required for Link type)
+                </label>
+                {{ form.external_link }}
+                {% if form.external_link.errors %}
+                    <div class="text-danger mt-1">{{ form.external_link.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.attachments.id_for_label }}" class="form-label">
+                    <i class="fas fa-paperclip"></i> Additional Attachments
+                </label>
+                {{ form.attachments }}
+                <div class="help-text">You can select multiple files for assignments, notes, and slides.</div>
+                {% if form.attachments.errors %}
+                    <div class="text-danger mt-1">{{ form.attachments.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label for="{{ form.order.id_for_label }}" class="form-label">
+                        <i class="fas fa-sort-numeric-up"></i> Display Order
+                    </label>
+                    {{ form.order }}
+                    <div class="help-text">Lower numbers appear first (e.g., 1, 2, 3...)</div>
+                    {% if form.order.errors %}
+                        <div class="text-danger mt-1">{{ form.order.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="{{ form.lecture_date.id_for_label }}" class="form-label">
+                        <i class="fas fa-calendar-day"></i> Lecture Date
+                    </label>
+                    {{ form.lecture_date }}
+                    {% if form.lecture_date.errors %}
+                        <div class="text-danger mt-1">{{ form.lecture_date.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label for="{{ form.visibility_status.id_for_label }}" class="form-label">
+                        <i class="fas fa-eye"></i> Visibility
+                    </label>
+                    {{ form.visibility_status }}
+                    {% if form.visibility_status.errors %}
+                        <div class="text-danger mt-1">{{ form.visibility_status.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="{{ form.scheduled_publish_at.id_for_label }}" class="form-label">
+                        <i class="fas fa-clock"></i> Scheduled Publish Date/Time
+                    </label>
+                    {{ form.scheduled_publish_at }}
+                    {% if form.scheduled_publish_at.errors %}
+                        <div class="text-danger mt-1">{{ form.scheduled_publish_at.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'main:manage_lectures' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-submit">
+                    <i class="fas fa-upload"></i> Upload Lecture
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

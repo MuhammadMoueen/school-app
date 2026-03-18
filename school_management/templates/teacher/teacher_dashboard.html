@@ -1,295 +1,136 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Teacher Dashboard - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
+{% block page_title %}Teacher Dashboard{% endblock %}
+{% block topbar_title %}Dashboard - {{ user.get_full_name|default:user.username }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
-
-{% block content %}
-<!-- Mobile Sidebar Overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<!-- Teacher Layout -->
-<div class="teacher-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="teacher-sidebar" id="teacherSidebar">
-        <!-- Simple Header -->
-        <div class="sidebar-header">
-            <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="sidebar-logo">
-            <h3 class="sidebar-title">The City School</h3>
-            <p class="sidebar-subtitle">of Bahawalpur</p>
-            <div class="sidebar-divider"></div>
-            <p class="sidebar-panel-label">Teacher Panel</p>
+{% block page_content %}
+<div class="dashboard-content">
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon primary">
+                    <i class="fas fa-book"></i>
+                </div>
+            </div>
+            <h2 class="card-value">{{ total_courses }}</h2>
+            <p class="card-label">Total Courses</p>
         </div>
-        
-        <!-- Navigation Menu -->
-        <nav class="teacher-nav">
-            <a href="{% url 'main:dashboard' %}" class="nav-item active">
-                <i class="fas fa-tachometer-alt nav-icon"></i>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="{% url 'main:manage_courses' %}" class="nav-item">
-                <i class="fas fa-book nav-icon"></i>
-                <span class="nav-text">My Courses</span>
-            </a>
-            <a href="{% url 'main:manage_lectures' %}" class="nav-item">
-                <i class="fas fa-file-video nav-icon"></i>
-                <span class="nav-text">Lectures</span>
-            </a>
-            <a href="{% url 'main:manage_assignments' %}" class="nav-item">
-                <i class="fas fa-file-signature nav-icon"></i>
-                <span class="nav-text">Assignments</span>
-            </a>
-            <a href="{% url 'main:manage_attendance' %}" class="nav-item">
-                <i class="fas fa-calendar-check nav-icon"></i>
-                <span class="nav-text">Attendance</span>
-            </a>
-            <a href="{% url 'main:manage_quizzes' %}" class="nav-item">
-                <i class="fas fa-tasks nav-icon"></i>
-                <span class="nav-text">Quizzes</span>
-            </a>
-            <a href="{% url 'main:manage_enrollments' %}" class="nav-item">
-                <i class="fas fa-user-check nav-icon"></i>
-                <span class="nav-text">Enrollments</span>
-            </a>
-            <a href="{% url 'main:manage_transcripts' %}" class="nav-item">
-                <i class="fas fa-clipboard-list nav-icon"></i>
-                <span class="nav-text">Grades/Transcripts</span>
-            </a>
-            <a href="{% url 'main:view_reports' %}" class="nav-item">
-                <i class="fas fa-comments nav-icon"></i>
-                <span class="nav-text">Reports</span>
-                {% if unread_reports > 0 %}
-                    <span class="nav-badge">{{ unread_reports }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'main:course_analytics' %}" class="nav-item">
-                <i class="fas fa-chart-bar nav-icon"></i>
-                <span class="nav-text">Course Analytics</span>
-            </a>
-            <a href="{% url 'main:teacher_admin_chat' %}" class="nav-item">
-                <i class="fas fa-headset nav-icon"></i>
-                <span class="nav-text">Admin Chat</span>
-            </a>
-        </nav>
-    </aside>
-    
-    <!-- Main Content Area -->
-    <main class="teacher-main">
-        <!-- Top Navbar -->
-        <div class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="topbar-left">
-                <h1>Dashboard – {{ user.get_full_name|default:user.username }}</h1>
-            </div>
-            <div class="topbar-spacer"></div>
-            <div class="topbar-actions">
-                <!-- Notification Icon -->
-                {% if user.role in 'teacher,student' %}
-                <div class="notification-section">
-                    <div class="notification-icon" id="notificationIcon">
-                        <i class="fas fa-bell"></i>
-                        {% if unread_notification_count > 0 %}
-                            <span class="notification-badge">{{ unread_notification_count }}</span>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Notification Dropdown -->
-                    <div class="notification-dropdown" id="notificationDropdown">
-                        <div class="notification-header">
-                            <span><i class="fas fa-bell"></i> Notifications</span>
-                            <div class="notification-header-tools">
-                                <span class="notification-unread-count" id="notificationUnreadCount">{{ unread_notification_count|default:0 }} unread</span>
-                                <button type="button" class="notification-header-action" id="markAllNotificationsBtn">Mark All</button>
-                                <a href="{% url 'main:teacher_admin_chat' %}" class="notification-header-action">Chat Admin</a>
-                            </div>
-                        </div>
-                        <div class="notification-list" id="notificationList">
-                            <div class="notification-empty">
-                                <i class="fas fa-inbox"></i>
-                                <p>Loading notifications...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Profile Icon -->
-                <div class="profile-section">
-                    <button type="button" class="profile-trigger" id="profileToggleBtn" aria-expanded="false" aria-controls="profileDropdown">
-                        {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
-                        {% else %}
-                            <div class="profile-icon-circle" id="profileIcon">
-                                <i class="fas fa-user-circle"></i>
-                            </div>
-                        {% endif %}
-                    </button>
-                    
-                    <div class="profile-dropdown" id="profileDropdown">
-                        <div class="profile-dropdown-header">
-                            <div class="profile-username">{{ user.username }}</div>
-                            <div class="profile-role">{{ user.get_role_display }}</div>
-                        </div>
-                        <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                        <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
-                            <i class="fas fa-user-edit"></i> My Profile
-                        </a>
-                        <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
-                            <i class="fas fa-key"></i> Change Password
-                        </a>
-                        <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                    </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon success">
+                    <i class="fas fa-users"></i>
                 </div>
             </div>
+            <h2 class="card-value">{{ total_students }}</h2>
+            <p class="card-label">Total Students</p>
         </div>
-        
-        <!-- Dashboard Content -->
-        <div class="dashboard-content">
-            <!-- Dashboard Cards -->
-            <div class="dashboard-cards">
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <div class="card-icon primary">
-                            <i class="fas fa-book"></i>
-                        </div>
-                    </div>
-                    <h2 class="card-value">{{ total_courses }}</h2>
-                    <p class="card-label">Total Courses</p>
-                </div>
-                
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <div class="card-icon success">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                    <h2 class="card-value">{{ total_students }}</h2>
-                    <p class="card-label">Total Students</p>
-                </div>
-                
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <div class="card-icon warning">
-                            <i class="fas fa-user-graduate"></i>
-                        </div>
-                    </div>
-                    <h2 class="card-value">{{ total_enrollments }}</h2>
-                    <p class="card-label">Total Enrollments</p>
-                </div>
-                
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <div class="card-icon danger">
-                            <i class="fas fa-inbox"></i>
-                        </div>
-                    </div>
-                    <h2 class="card-value">{{ unread_reports }}</h2>
-                    <p class="card-label">Pending Reports</p>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon warning">
+                    <i class="fas fa-user-graduate"></i>
                 </div>
             </div>
-            
-            <!-- Quick Actions -->
-            <div class="section-header">
-                <h2 class="section-title">
-                    <i class="fas fa-bolt"></i> Quick Actions
-                </h2>
+            <h2 class="card-value">{{ total_enrollments }}</h2>
+            <p class="card-label">Total Enrollments</p>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <div class="card-icon danger">
+                    <i class="fas fa-inbox"></i>
+                </div>
             </div>
-            <div class="quick-actions-grid">
-                <a href="{% url 'main:manage_courses' %}" class="action-card">
+            <h2 class="card-value">{{ unread_reports }}</h2>
+            <p class="card-label">Pending Reports</p>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-bolt"></i> Quick Actions
+        </h2>
+    </div>
+    <div class="quick-actions-grid">
+        <a href="{% url 'main:manage_courses' %}" class="action-card">
+            <i class="fas fa-book-open"></i>
+            <span>Manage Courses</span>
+        </a>
+        <a href="{% url 'main:manage_assignments' %}" class="action-card">
+            <i class="fas fa-file-signature"></i>
+            <span>Manage Assignments</span>
+        </a>
+        <a href="{% url 'main:manage_enrollments' %}" class="action-card">
+            <i class="fas fa-user-check"></i>
+            <span>Enroll Students</span>
+        </a>
+        <a href="{% url 'main:manage_transcripts' %}" class="action-card">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Manage Grades</span>
+        </a>
+    </div>
+
+    <div class="content-grid">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h3 class="content-card-title">
+                    <i class="fas fa-book"></i> My Courses
+                </h3>
+                <a href="{% url 'main:manage_courses' %}" class="view-all-link">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% if courses %}
+                <div class="list-items">
+                    {% for course in courses|slice:":3" %}
+                        <div class="list-item">
+                            <div class="item-details">
+                                <h4>{{ course.name }}</h4>
+                                <p>{{ course.code }}</p>
+                            </div>
+                            <a href="{% url 'main:edit_course' course.id %}" class="btn-action">Edit</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
                     <i class="fas fa-book-open"></i>
-                    <span>Manage Courses</span>
-                </a>
-                <a href="{% url 'main:manage_assignments' %}" class="action-card">
-                    <i class="fas fa-file-signature"></i>
-                    <span>Manage Assignments</span>
-                </a>
-                <a href="{% url 'main:manage_enrollments' %}" class="action-card">
-                    <i class="fas fa-user-check"></i>
-                    <span>Enroll Students</span>
-                </a>
-                <a href="{% url 'main:manage_transcripts' %}" class="action-card">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Manage Grades</span>
-                </a>
-            </div>
-            
-            <!-- Content Grid -->
-            <div class="content-grid">
-                <!-- My Courses -->
-                <div class="content-card">
-                    <div class="content-card-header">
-                        <h3 class="content-card-title">
-                            <i class="fas fa-book"></i> My Courses
-                        </h3>
-                        <a href="{% url 'main:manage_courses' %}" class="view-all-link">
-                            View All <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                    {% if courses %}
-                        <div class="list-items">
-                            {% for course in courses|slice:":3" %}
-                                <div class="list-item">
-                                    <div class="item-details">
-                                        <h4>{{ course.name }}</h4>
-                                        <p>{{ course.code }}</p>
-                                    </div>
-                                    <a href="{% url 'main:edit_course' course.id %}" class="btn-action">Edit</a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-book-open"></i>
-                            <p>No courses yet. Create your first course!</p>
-                        </div>
-                    {% endif %}
+                    <p>No courses yet. Create your first course!</p>
                 </div>
-                
-                <!-- Recent Reports -->
-                <div class="content-card">
-                    <div class="content-card-header">
-                        <h3 class="content-card-title">
-                            <i class="fas fa-comments"></i> Recent Reports
-                        </h3>
-                        <a href="{% url 'main:view_reports' %}" class="view-all-link">
-                            View All <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                    {% if recent_reports %}
-                        <div class="list-items">
-                            {% for report in recent_reports|slice:":3" %}
-                                <div class="list-item {% if report.status == 'pending' %}pending{% endif %}">
-                                    <div class="item-details">
-                                        <h4>{{ report.student.get_full_name }}</h4>
-                                        <p>{{ report.transcript.enrollment.course.name }}</p>
-                                        <p class="small">{{ report.message|truncatewords:10 }}</p>
-                                    </div>
-                                    <a href="{% url 'main:report_detail' report.id %}" class="btn-action">Reply</a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-comments"></i>
-                            <p>No reports yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+            {% endif %}
         </div>
-    </main>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'js/teacher.js' %}"></script>
+        <div class="content-card">
+            <div class="content-card-header">
+                <h3 class="content-card-title">
+                    <i class="fas fa-comments"></i> Recent Reports
+                </h3>
+                <a href="{% url 'main:view_reports' %}" class="view-all-link">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% if recent_reports %}
+                <div class="list-items">
+                    {% for report in recent_reports|slice:":3" %}
+                        <div class="list-item {% if report.status == 'pending' %}pending{% endif %}">
+                            <div class="item-details">
+                                <h4>{{ report.student.get_full_name }}</h4>
+                                <p>{{ report.transcript.enrollment.course.name }}</p>
+                                <p class="small">{{ report.message|truncatewords:10 }}</p>
+                            </div>
+                            <a href="{% url 'main:report_detail' report.id %}" class="btn-action">Reply</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>No reports yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}
