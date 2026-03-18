@@ -68,6 +68,32 @@
     font-size: 0.9rem;
 }
 
+.chat-header-avatar-wrap {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+}
+
+.chat-avatar-status-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 2px solid #f2f5ff;
+    box-sizing: content-box;
+}
+
+.chat-avatar-status-dot.online {
+    background: #2563eb;
+}
+
+.chat-avatar-status-dot.offline {
+    background: #9ca3af;
+}
+
 .chat-header-avatar img {
     width: 100%;
     height: 100%;

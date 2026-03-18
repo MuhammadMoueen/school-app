@@ -197,16 +197,18 @@
                 <div class="chat-header-main">
                     <h3 class="chat-peer-title">{{ chat_title }}</h3>
                     <div class="chat-presence-row">
-                        <span class="presence-dot {% if teacher_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
                         <span class="presence-text" data-chat-status-text>{{ teacher_status_text|default:'Offline' }}</span>
                     </div>
                 </div>
-                <div class="chat-header-avatar">
-                    {% if chat_peer_avatar_url %}
-                    <img src="{{ chat_peer_avatar_url }}" alt="{{ chat_title }}">
-                    {% else %}
-                    <i class="fas fa-user-graduate"></i>
-                    {% endif %}
+                <div class="chat-header-avatar-wrap">
+                    <div class="chat-header-avatar">
+                        {% if chat_peer_avatar_url %}
+                        <img src="{{ chat_peer_avatar_url }}" alt="{{ chat_title }}">
+                        {% else %}
+                        <i class="fas fa-user-graduate"></i>
+                        {% endif %}
+                    </div>
+                    <span class="chat-avatar-status-dot {% if teacher_online %}online{% else %}offline{% endif %}" data-chat-status-dot></span>
                 </div>
             </div>
 
