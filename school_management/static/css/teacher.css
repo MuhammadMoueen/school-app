@@ -1968,6 +1968,65 @@ main .container .alert {
     }
 }
 
+/* Teacher report chat enhancements */
+.chat-headline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.chat-presence-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.presence-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.presence-dot.online {
+    background: #22c55e;
+}
+
+.presence-dot.offline {
+    background: #9ca3af;
+}
+
+.presence-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+.message-time-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.chat-tick {
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.chat-tick.sent,
+.chat-tick.delivered {
+    color: #64748b;
+}
+
+.chat-tick.seen {
+    color: #0ea5e9;
+}
+
 @media (max-width: 576px) {
     .stats-grid {
         grid-template-columns: 1fr;

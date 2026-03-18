@@ -55,18 +55,31 @@
     </div>
     
     <div class="conversation-section">
-        <h4>Conversation Thread</h4>
+        <div class="chat-headline">
+            <h4>Conversation Thread</h4>
+            <div class="chat-presence-row">
+                <span class="presence-dot {% if student_online %}online{% else %}offline{% endif %}"></span>
+                <span class="presence-text">Student is {% if student_online %}Online{% else %}Offline{% endif %}</span>
+            </div>
+        </div>
         
-        {% if replies %}
+        {% if reply_rows %}
         <div class="conversation-thread">
-            {% for reply in replies %}
-            <div class="message-bubble {% if reply.sender == report.student %}student{% else %}teacher{% endif %}">
+            {% for row in reply_rows %}
+            <div class="message-bubble {% if row.reply.sender == report.student %}student{% else %}teacher{% endif %}">
                 <div class="message-sender">
-                    {{ reply.sender.get_full_name }}
-                    {% if reply.sender == report.teacher %}(Teacher){% else %}(Student){% endif %}
+                    {{ row.reply.sender.get_full_name }}
+                    {% if row.reply.sender == report.teacher %}(Teacher){% else %}(Student){% endif %}
                 </div>
-                <p class="message-text">{{ reply.message }}</p>
-                <div class="message-time">{{ reply.created_at|date:"M d, Y • h:i A" }}</div>
+                <p class="message-text">{{ row.reply.message }}</p>
+                <div class="message-time-row">
+                    <span class="message-time">{{ row.reply.created_at|date:"M d, Y • h:i A" }}</span>
+                    {% if row.is_outgoing and row.tick_data %}
+                    <span class="chat-tick {{ row.tick_data.state }}" title="{{ row.tick_data.label }}">
+                        <i class="{{ row.tick_data.icon }}"></i>
+                    </span>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>

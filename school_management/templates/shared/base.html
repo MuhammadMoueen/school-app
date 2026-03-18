@@ -400,7 +400,7 @@
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body {% if user.is_authenticated %}data-presence-ping-url="{% url 'main:presence_ping' %}"{% endif %}>
     <div id="globalPageLoader" class="global-loader" role="status" aria-live="polite" aria-label="Loading page">
         <div class="global-loader-inner">
             <div class="global-loader-spinner" aria-hidden="true"></div>
@@ -714,6 +714,7 @@
     
     <script src="{% static 'js/global-loader.js' %}"></script>
     <script src="{% static 'js/flash-messages.js' %}"></script>
+    <script src="{% static 'js/presence-heartbeat.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

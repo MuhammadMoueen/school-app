@@ -7,6 +7,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
+from django.core.cache import cache
 from datetime import datetime
 import json
 import csv
@@ -22,6 +23,59 @@ from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, Mar
                     TeacherActivityLog, TeacherActivityNotification, TeacherActivityResponse,
                     LectureAttachment, LectureView, LectureDownload, LectureNotification,
                     Assignment, AssignmentAttachment, AssignmentSubmission)
+
+ONLINE_PRESENCE_WINDOW_SECONDS = 90
+ONLINE_PRESENCE_KEY_PREFIX = 'presence:user:'
+
+
+def _presence_cache_key(user_id):
+    return f"{ONLINE_PRESENCE_KEY_PREFIX}{user_id}"
+
+
+def _mark_user_online(user_id):
+    if not user_id:
+        return
+    cache.set(
+        _presence_cache_key(user_id),
+        timezone.now().timestamp(),
+        ONLINE_PRESENCE_WINDOW_SECONDS * 2,
+    )
+
+
+def _is_user_online(user_id):
+    if not user_id:
+        return False
+
+    last_seen_timestamp = cache.get(_presence_cache_key(user_id))
+    if not last_seen_timestamp:
+        return False
+
+    try:
+        delta = timezone.now().timestamp() - float(last_seen_timestamp)
+    except (TypeError, ValueError):
+        return False
+
+    return delta <= ONLINE_PRESENCE_WINDOW_SECONDS
+
+
+def _build_tick_data(is_read=False, recipient_online=False):
+    if is_read:
+        return {
+            'state': 'seen',
+            'icon': 'fas fa-check-double',
+            'label': 'Seen',
+        }
+    if recipient_online:
+        return {
+            'state': 'delivered',
+            'icon': 'fas fa-check-double',
+            'label': 'Delivered',
+        }
+    return {
+        'state': 'sent',
+        'icon': 'fas fa-check',
+        'label': 'Sent',
+    }
 
 def home(request):
     """Home page view"""
@@ -353,6 +407,8 @@ def teacher_admin_chat(request):
         messages.error(request, 'Access denied. Teacher only.')
         return redirect('main:dashboard')
 
+    _mark_user_online(request.user.id)
+
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -368,13 +424,15 @@ def teacher_admin_chat(request):
                 return redirect('main:teacher_admin_chat')
             messages.error(request, 'Please write a message before sending.')
 
-        elif action == 'mark_admin_messages_read':
-            TeacherActivityResponse.objects.filter(
-                notification__activity__teacher=request.user,
-                is_read_by_teacher=False,
-            ).update(is_read_by_teacher=True)
-            messages.success(request, 'Admin messages marked as read.')
-            return redirect('main:teacher_admin_chat')
+    TeacherActivityResponse.objects.filter(
+        notification__activity__teacher=request.user,
+        is_read_by_teacher=False,
+    ).update(is_read_by_teacher=True)
+
+    admin_ids = list(
+        User.objects.filter(role='admin', is_active=True).values_list('id', flat=True)
+    )
+    admin_online = any(_is_user_online(admin_id) for admin_id in admin_ids)
 
     teacher_messages = TeacherActivityLog.objects.filter(
         teacher=request.user,
@@ -389,12 +447,18 @@ def teacher_admin_chat(request):
     chat_messages = []
 
     for msg in teacher_messages:
+        seen_by_admin = msg.notifications.filter(is_seen=True).exists()
+        tick_data = _build_tick_data(is_read=seen_by_admin, recipient_online=admin_online)
         chat_messages.append({
             'sender': 'teacher',
             'name': request.user.get_full_name() or request.user.username,
             'message': msg.description.replace('Teacher message to admin:', '', 1).strip(),
             'created_at': msg.timestamp,
             'is_unread': False,
+            'is_outgoing': True,
+            'tick_state': tick_data['state'],
+            'tick_icon': tick_data['icon'],
+            'tick_label': tick_data['label'],
         })
 
     for response in admin_responses:
@@ -404,6 +468,7 @@ def teacher_admin_chat(request):
             'message': response.message,
             'created_at': response.created_at,
             'is_unread': not response.is_read_by_teacher,
+            'is_outgoing': False,
         })
 
     chat_messages.sort(key=lambda item: item['created_at'])
@@ -413,6 +478,7 @@ def teacher_admin_chat(request):
         'teacher_messages': teacher_messages,
         'admin_responses': admin_responses,
         'chat_messages': chat_messages,
+        'admin_online': admin_online,
     }
     return render(request, 'teacher/teacher_admin_chat.html', context)
 
@@ -2384,8 +2450,11 @@ def report_detail(request, report_id):
     """View and reply to a specific report"""
     if request.user.role != 'teacher':
         return redirect('main:dashboard')
+
+    _mark_user_online(request.user.id)
     
     report = get_object_or_404(MarksReport, id=report_id, teacher=request.user)
+    student_online = _is_user_online(report.student_id)
     
     # Mark as read when teacher views it
     if not report.is_read_by_teacher:
@@ -2417,11 +2486,30 @@ def report_detail(request, report_id):
             return redirect('main:report_detail', report_id=report.id)
     else:
         form = ReportReplyForm()
+
+    replies = report.replies.select_related('sender').all()
+    reply_rows = []
+    for reply in replies:
+        is_outgoing = reply.sender_id == request.user.id
+        tick_data = None
+        if is_outgoing:
+            tick_data = _build_tick_data(
+                is_read=reply.is_read_by_student,
+                recipient_online=student_online,
+            )
+
+        reply_rows.append({
+            'reply': reply,
+            'is_outgoing': is_outgoing,
+            'tick_data': tick_data,
+        })
     
     context = {
         'report': report,
         'form': form,
-        'replies': report.replies.all()
+        'replies': replies,
+        'reply_rows': reply_rows,
+        'student_online': student_online,
     }
     return render(request, 'teacher/report_detail.html', context)
 
@@ -2571,8 +2659,11 @@ def student_report_detail(request, report_id):
     """View report details and replies"""
     if request.user.role != 'student':
         return redirect('main:dashboard')
+
+    _mark_user_online(request.user.id)
     
     report = get_object_or_404(MarksReport, id=report_id, student=request.user)
+    teacher_online = _is_user_online(report.teacher_id)
     
     # Mark all teacher replies as read when student views them
     report.replies.exclude(sender=request.user).update(is_read_by_student=True)
@@ -2592,11 +2683,30 @@ def student_report_detail(request, report_id):
             return redirect('main:student_report_detail', report_id=report.id)
     else:
         form = ReportReplyForm()
+
+    replies = report.replies.select_related('sender').all()
+    reply_rows = []
+    for reply in replies:
+        is_outgoing = reply.sender_id == request.user.id
+        tick_data = None
+        if is_outgoing:
+            tick_data = _build_tick_data(
+                is_read=report.is_read_by_teacher,
+                recipient_online=teacher_online,
+            )
+
+        reply_rows.append({
+            'reply': reply,
+            'is_outgoing': is_outgoing,
+            'tick_data': tick_data,
+        })
     
     context = {
         'report': report,
         'form': form,
-        'replies': report.replies.all()
+        'replies': replies,
+        'reply_rows': reply_rows,
+        'teacher_online': teacher_online,
     }
     return render(request, 'student/student_report_detail.html', context)
 
@@ -2615,6 +2725,13 @@ def _relative_time_text(reference_time):
         minutes = time_diff.seconds // 60
         return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
     return "Just now"
+
+
+@login_required
+@require_http_methods(["GET"])
+def presence_ping(request):
+    _mark_user_online(request.user.id)
+    return JsonResponse({'success': True})
 
 @login_required
 @require_http_methods(["GET"])
@@ -3482,6 +3599,8 @@ def admin_notification_detail(request, notification_id):
         messages.error(request, 'Access denied. Admin only.')
         return redirect('main:home')
 
+    _mark_user_online(request.user.id)
+
     notification = get_object_or_404(
         TeacherActivityNotification.objects.select_related('activity', 'activity__teacher', 'activity__course'),
         id=notification_id,
@@ -3521,10 +3640,24 @@ def admin_notification_detail(request, notification_id):
     else:
         form = TeacherActivityResponseForm()
 
+    teacher_online = _is_user_online(notification.activity.teacher_id)
+    response_rows = []
+    for response in notification.responses.select_related('admin').order_by('created_at'):
+        tick_data = _build_tick_data(
+            is_read=response.is_read_by_teacher,
+            recipient_online=teacher_online,
+        )
+        response_rows.append({
+            'response': response,
+            'tick_data': tick_data,
+        })
+
     context = {
         'notification_item': notification,
         'activity': notification.activity,
         'responses': notification.responses.select_related('admin').all(),
+        'response_rows': response_rows,
+        'teacher_online': teacher_online,
         'response_form': form,
     }
     return render(request, 'admin/admin_notification_detail.html', context)

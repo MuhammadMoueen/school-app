@@ -11,16 +11,15 @@
 {% block page_content %}
 <div class="dashboard-content chat-page-wrap">
     <div class="section-header chat-page-header">
-        <h2 class="section-title">
-            <i class="fas fa-headset"></i> Chat With Admin
-        </h2>
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="mark_admin_messages_read">
-            <button type="submit" class="chat-mark-btn">
-                <i class="fas fa-check-double"></i> Mark Admin Messages
-            </button>
-        </form>
+        <div>
+            <h2 class="section-title">
+                <i class="fas fa-headset"></i> Chat With Admin
+            </h2>
+            <div class="chat-presence-row">
+                <span class="presence-dot {% if admin_online %}online{% else %}offline{% endif %}"></span>
+                <span class="presence-text">Admin is {% if admin_online %}Online{% else %}Offline{% endif %}</span>
+            </div>
+        </div>
     </div>
 
     <div class="chat-shell">
@@ -36,7 +35,14 @@
                                 {% endif %}
                             </div>
                             <p class="chat-message-text">{{ item.message }}</p>
-                            <div class="chat-time">{{ item.created_at|date:"M d, Y - H:i" }}</div>
+                            <div class="chat-time">
+                                <span>{{ item.created_at|date:"M d, Y - H:i" }}</span>
+                                {% if item.is_outgoing %}
+                                <span class="chat-tick {{ item.tick_state }}" title="{{ item.tick_label }}">
+                                    <i class="{{ item.tick_icon }}"></i>
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}

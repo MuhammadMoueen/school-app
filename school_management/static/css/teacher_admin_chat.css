@@ -10,20 +10,33 @@
     gap: 12px;
 }
 
-.chat-mark-btn {
-    border: 1px solid #cfdaf4;
-    border-radius: 10px;
-    background: #edf3ff;
-    color: #3f4f78;
-    padding: 8px 12px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
+.chat-presence-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
 }
 
-.chat-mark-btn:hover {
-    background: #dce8ff;
+.presence-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.presence-dot.online {
+    background: #22c55e;
+}
+
+.presence-dot.offline {
+    background: #9ca3af;
+}
+
+.presence-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #4b5d87;
 }
 
 .chat-shell {
@@ -106,9 +119,36 @@
 }
 
 .chat-time {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
     margin-top: 6px;
     font-size: 0.72rem;
     opacity: 0.8;
+}
+
+.chat-tick {
+    font-size: 0.78rem;
+    line-height: 1;
+}
+
+.chat-tick.sent,
+.chat-tick.delivered {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-tick.seen {
+    color: #7dd3fc;
+}
+
+.chat-bubble.theirs .chat-tick.sent,
+.chat-bubble.theirs .chat-tick.delivered {
+    color: #64748b;
+}
+
+.chat-bubble.theirs .chat-tick.seen {
+    color: #0ea5e9;
 }
 
 .chat-bubble.mine .chat-unread {
@@ -141,12 +181,13 @@
 .chat-send-btn {
     border: none;
     border-radius: 10px;
-    padding: 0 14px;
+    padding: 0 12px;
     min-height: 46px;
+    min-width: 132px;
     background: linear-gradient(140deg, #667eea 0%, #7b56cc 100%);
     color: #ffffff;
-    font-weight: 700;
-    font-size: 0.88rem;
+    font-weight: 600;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
