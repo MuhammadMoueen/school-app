@@ -10,6 +10,7 @@ class User(AbstractUser):
         ('student', 'Student'),
     )
     
+    
     STATUS_CHOICES = (
         ('active', 'Active'),
         ('inactive', 'Inactive'),
