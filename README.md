@@ -4,6 +4,7 @@ A comprehensive Django-based School Management System with a modern admin panel.
 
 ## Features   
 
+
 ### Admin Panel
 - **Student Management**: Create, edit, delete student accounts
 - **Teacher Management**: Create, edit, delete teacher accounts
