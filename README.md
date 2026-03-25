@@ -168,6 +168,15 @@ This project is for educational purposes.
 
 ## Acknowledgments
 
+
+
+
+
+
+
+
+
+
 - Bootstrap for the UI framework
 - Chart.js for data visualization
 - Django framework for rapid development
