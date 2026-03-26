@@ -391,8 +391,9 @@ class Attendance(models.Model):
 # Quiz model - create quizzes/tests
 class Quiz(models.Model):
     QUIZ_TYPE_CHOICES = (
-        ('auto', 'Auto-Graded (MCQs / OMR)'),
-        ('manual', 'Manual (Subjective)'),
+        ('auto', 'MCQ Only (Auto-Graded)'),
+        ('manual', 'Subjective Only (Manual)'),
+        ('mixed', 'Mixed Mode (MCQ + Subjective)'),
     )
 
     QUESTION_SOURCE_CHOICES = (
@@ -418,6 +419,7 @@ class Quiz(models.Model):
     duration_minutes = models.PositiveIntegerField(help_text='Quiz duration in minutes')
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
+    allow_late_submission = models.BooleanField(default=False)
     auto_submit_on_timeout = models.BooleanField(default=True)
     question_display_mode = models.CharField(max_length=20, choices=QUESTION_DISPLAY_CHOICES, default='full')
     total_marks_mode = models.CharField(max_length=20, choices=TOTAL_MARKS_MODE_CHOICES, default='manual')
@@ -507,13 +509,16 @@ class QuizAttempt(models.Model):
     STATUS_CHOICES = (
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
-        ('pending_check', 'Pending Check'),
+        ('pending_review', 'Pending Review'),
+        ('submitted_late', 'Submitted Late'),
+        ('not_submitted', 'Not Submitted'),
     )
 
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts', limit_choices_to={'role': 'student'})
     started_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    is_late = models.BooleanField(default=False)
     answers_json = models.JSONField(default=dict, blank=True)
     score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     obtained_marks = models.DecimalField(max_digits=6, decimal_places=2, default=0)

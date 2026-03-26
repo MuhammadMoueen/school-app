@@ -20,8 +20,15 @@
                     <p class="mb-0 text-muted">
                         {{ quiz.course.code }} - {{ quiz.course.name }} | Duration: {{ quiz.duration_minutes }} minutes
                     </p>
+                    {% if quiz_is_late_window %}
+                    <p class="mb-0 text-warning"><strong>Late submission mode:</strong> this attempt will be marked as Submitted Late.</p>
+                    {% endif %}
                 </div>
                 <div class="quiz-timer">Time Left: <span id="quizTimer">--:--</span></div>
+            </div>
+
+            <div id="quizTimerWarning" class="alert alert-warning mt-3 quiz-hidden" role="alert">
+                Less than 5 minutes remaining. Please review and submit your attempt.
             </div>
 
             <div class="quiz-progress-wrap">
@@ -103,6 +110,8 @@
   "autosave_url": "{% url 'main:autosave_quiz_attempt' quiz.id %}",
   "display_mode": "{{ quiz.question_display_mode }}",
   "csrf_token": "{{ csrf_token }}",
+    "allow_late_submission": {% if quiz.allow_late_submission %}true{% else %}false{% endif %},
+    "warning_seconds": 300,
   "existing_answers": {{ existing_payload_json|safe }}
 }
 </script>

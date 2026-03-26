@@ -15,22 +15,31 @@
 
         var autoSection = byId('autoQuizSection');
         var manualSection = byId('manualQuizSection');
+        var mixedSection = byId('mixedQuizSection');
         var omrSection = byId('omrUploadSection');
 
         var isAuto = quizTypeEl.value === 'auto';
+        var isManual = quizTypeEl.value === 'manual';
+        var isMixed = quizTypeEl.value === 'mixed';
         var isOmr = sourceEl && sourceEl.value === 'omr_upload';
 
         if (autoSection) {
             autoSection.classList.toggle('quiz-hidden', !isAuto);
         }
         if (manualSection) {
-            manualSection.classList.toggle('quiz-hidden', isAuto);
+            manualSection.classList.toggle('quiz-hidden', !isManual);
+        }
+        if (mixedSection) {
+            mixedSection.classList.toggle('quiz-hidden', !isMixed);
         }
         if (omrSection) {
             omrSection.classList.toggle('quiz-hidden', !(isAuto && isOmr));
         }
         if (sourceEl) {
             sourceEl.disabled = !isAuto;
+            if (!isAuto) {
+                sourceEl.value = 'manual';
+            }
         }
         if (totalMarksWrap && totalMarksModeEl) {
             totalMarksWrap.classList.toggle('quiz-hidden', totalMarksModeEl.value === 'auto');

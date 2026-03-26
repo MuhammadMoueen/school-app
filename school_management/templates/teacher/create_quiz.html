@@ -56,6 +56,11 @@
                 <div class="quiz-helper-text">Manual quizzes support descriptive questions and teacher checking with feedback.</div>
             </div>
 
+            <div id="mixedQuizSection" class="quiz-section quiz-hidden">
+                <div class="quiz-section-title">Mixed Mode Setup</div>
+                <div class="quiz-helper-text">Use this mode when the quiz has both MCQ and subjective questions. MCQs are auto-graded while subjective answers remain pending review.</div>
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Course</label>
                 {{ form.course }}
@@ -102,6 +107,12 @@
                 <div class="col-md-4 mb-3" id="quizTotalMarksWrap">
                     <label class="form-label">Total Marks</label>
                     {{ form.total_marks }}
+                </div>
+                <div class="col-md-4 mb-3 form-check d-flex align-items-end">
+                    <div>
+                        {{ form.allow_late_submission }}
+                        <label class="form-check-label">Allow Late Submission</label>
+                    </div>
                 </div>
                 <div class="col-md-4 mb-3 form-check d-flex align-items-end">
                     <div>

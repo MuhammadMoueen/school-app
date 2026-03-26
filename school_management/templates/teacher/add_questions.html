@@ -33,6 +33,11 @@
                         OMR answer-key based questions are already generated. You can still add or edit questions manually here.
                     </div>
                     {% endif %}
+                    {% if quiz.quiz_type == 'mixed' %}
+                    <div class="alert alert-info mb-3">
+                        Mixed mode supports both objective and subjective questions in the same quiz.
+                    </div>
+                    {% endif %}
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">

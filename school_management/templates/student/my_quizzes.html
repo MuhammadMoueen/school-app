@@ -44,17 +44,21 @@
                                 <span class="badge bg-success">Available</span>
                                 {% elif row.availability == 'Upcoming' %}
                                 <span class="badge bg-info text-dark">Upcoming</span>
+                                {% elif row.availability == 'Late Submission Open' %}
+                                <span class="badge bg-warning text-dark">Late Submission Open</span>
                                 {% else %}
                                 <span class="badge bg-secondary">Closed</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                {% if row.status == 'Checked' %}
-                                <span class="badge bg-success">Checked</span>
-                                {% elif row.status == 'Pending Manual Check' %}
-                                <span class="badge bg-warning text-dark">Pending Manual Check</span>
+                                {% if row.status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif row.status == 'Pending Review' %}
+                                <span class="badge bg-warning text-dark">Pending Review</span>
+                                {% elif row.status == 'Submitted Late' %}
+                                <span class="badge bg-danger">Submitted Late</span>
                                 {% else %}
-                                <span class="badge bg-secondary">Not Attempted</span>
+                                <span class="badge bg-secondary">Not Submitted</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">

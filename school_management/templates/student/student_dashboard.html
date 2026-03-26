@@ -139,12 +139,14 @@
                         <td>{{ row.quiz.title }}</td>
                         <td>{{ row.quiz.course.code }} - {{ row.quiz.course.name }}</td>
                         <td class="text-center">
-                            {% if row.status == 'Checked' %}
-                                <span class="badge bg-success">Checked</span>
-                            {% elif row.status == 'Pending Manual Check' %}
-                                <span class="badge bg-warning text-dark">Pending Manual Check</span>
+                            {% if row.status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif row.status == 'Pending Review' %}
+                                <span class="badge bg-warning text-dark">Pending Review</span>
+                            {% elif row.status == 'Submitted Late' %}
+                                <span class="badge bg-danger">Submitted Late</span>
                             {% else %}
-                                <span class="badge bg-secondary">Not Attempted</span>
+                                <span class="badge bg-secondary">Not Submitted</span>
                             {% endif %}
                         </td>
                         <td class="text-center">

@@ -25,7 +25,15 @@
                             <label class="form-label">Filter by Student</label>
                             <input type="text" name="student" value="{{ student_filter }}" class="form-control" placeholder="Name or username">
                         </div>
-                        <div class="col-md-7 d-flex gap-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Submission</label>
+                            <select name="late" class="form-control">
+                                <option value="all" {% if late_filter == 'all' %}selected{% endif %}>All</option>
+                                <option value="on_time" {% if late_filter == 'on_time' %}selected{% endif %}>On Time</option>
+                                <option value="late" {% if late_filter == 'late' %}selected{% endif %}>Late</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Apply</button>
                             <a href="{% url 'main:quiz_results' quiz.id %}" class="btn btn-secondary">Reset</a>
                         </div>
@@ -42,6 +50,7 @@
                                 <th>Score</th>
                                 <th>Percentage</th>
                                 <th>Result</th>
+                                <th>Submission</th>
                                 <th>Grading</th>
                                 <th>Submitted At</th>
                                 <th>Actions</th>
@@ -57,6 +66,11 @@
                                 <td>
                                     <span class="badge bg-{% if attempt.is_passed %}success{% else %}danger{% endif %}">
                                         {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if row.submission_status == 'Submitted Late' %}danger{% else %}success{% endif %}">
+                                        {{ row.submission_status }}
                                     </span>
                                 </td>
                                 <td>
@@ -78,7 +92,7 @@
                             {% endwith %}
                             {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">No attempts yet</td>
+                                <td colspan="8" class="text-center">No attempts yet</td>
                             </tr>
                             {% endfor %}
                         </tbody>

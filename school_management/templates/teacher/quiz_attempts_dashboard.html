@@ -17,7 +17,7 @@
 <div class="content-card mb-25">
     <div class="card-body card-body-pad-20">
         <form method="get" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Course</label>
                 <select name="course" class="form-control">
                     <option value="">All Courses</option>
@@ -28,7 +28,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Quiz</label>
                 <select name="quiz" class="form-control">
                     <option value="">All Quizzes</option>
@@ -42,6 +42,14 @@
             <div class="col-md-3">
                 <label class="form-label">Student</label>
                 <input type="text" name="student" class="form-control" value="{{ student_filter }}" placeholder="Name or username">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Submission</label>
+                <select name="late" class="form-control">
+                    <option value="all" {% if late_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="on_time" {% if late_filter == 'on_time' %}selected{% endif %}>On Time</option>
+                    <option value="late" {% if late_filter == 'late' %}selected{% endif %}>Late</option>
+                </select>
             </div>
             <div class="col-md-3 d-flex align-items-end gap-2">
                 <button type="submit" class="btn btn-primary">Apply Filters</button>
@@ -63,6 +71,7 @@
                         <th class="text-center">Score</th>
                         <th class="text-center">Percentage</th>
                         <th class="text-center">Submitted At</th>
+                        <th class="text-center">Submission</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Action</th>
                     </tr>
@@ -77,14 +86,21 @@
                         <td class="text-center">{{ attempt.percentage|floatformat:2 }}%</td>
                         <td class="text-center">{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
                         <td class="text-center">
-                            {% if attempt.status == 'pending_check' %}
-                            <span class="badge badge-warning">Pending</span>
+                            {% if attempt.is_late %}
+                            <span class="badge badge-danger">Submitted Late</span>
                             {% else %}
-                            <span class="badge badge-success">Checked</span>
+                            <span class="badge badge-success">On Time</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if attempt.status == 'pending_check' %}
+                            {% if attempt.status == 'pending_review' %}
+                            <span class="badge badge-warning">Pending Review</span>
+                            {% else %}
+                            <span class="badge badge-success">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if attempt.status == 'pending_review' %}
                             <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">Check</a>
                             {% else %}
                             <a href="{% url 'main:quiz_results' attempt.quiz.id %}" class="btn btn-sm btn-info">View</a>
@@ -93,7 +109,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center">No attempts found for current filters.</td>
+                        <td colspan="9" class="text-center">No attempts found for current filters.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

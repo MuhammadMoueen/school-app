@@ -1145,6 +1145,7 @@ class QuizForm(forms.ModelForm):
             'duration_minutes',
             'start_time',
             'end_time',
+            'allow_late_submission',
             'question_display_mode',
             'auto_submit_on_timeout',
             'total_marks_mode',
@@ -1181,6 +1182,9 @@ class QuizForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local'
             }, format='%Y-%m-%dT%H:%M'),
+            'allow_late_submission': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
             'question_display_mode': forms.Select(attrs={'class': 'form-control'}),
             'auto_submit_on_timeout': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -1247,6 +1251,9 @@ class QuizForm(forms.ModelForm):
         if quiz_type == 'manual':
             cleaned_data['question_source'] = 'manual'
             cleaned_data['answer_key_text'] = ''
+
+        if quiz_type == 'mixed':
+            cleaned_data['question_source'] = 'manual'
 
         if quiz_type == 'auto' and question_source == 'omr_upload':
             if not omr_file and not self.instance.pk:

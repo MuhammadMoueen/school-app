@@ -139,11 +139,13 @@
         var autosaveUrl = config.autosave_url || '';
         var displayMode = config.display_mode || 'full';
         var csrfToken = config.csrf_token || '';
+        var warningSeconds = Number(config.warning_seconds || 300);
         var existingAnswers = config.existing_answers || {};
 
         var saveIndicator = document.getElementById('quizSaveIndicator');
         var submitBtn = document.getElementById('submitQuizBtn');
         var timerEl = document.getElementById('quizTimer');
+        var warningEl = document.getElementById('quizTimerWarning');
 
         fillExistingAnswers(formEl, existingAnswers);
         updateProgress(formEl);
@@ -206,10 +208,18 @@
 
         function tick() {
             renderTimer();
+            if (warningEl) {
+                warningEl.classList.toggle('quiz-hidden', remainingSeconds > warningSeconds || remainingSeconds <= 0);
+            }
             if (remainingSeconds <= 0) {
                 if (submitBtn) {
                     submitBtn.disabled = true;
                 }
+                formEl.querySelectorAll('input, textarea, button').forEach(function (el) {
+                    if (el !== submitBtn) {
+                        el.disabled = true;
+                    }
+                });
                 autosave();
                 formEl.submit();
                 return;

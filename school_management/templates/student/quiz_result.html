@@ -27,7 +27,9 @@
                     <span class="detail-label">Status</span>
                     <span class="detail-value">
                         {% if has_pending_manual %}
-                            Pending Manual Check
+                            Pending Review
+                        {% elif is_late %}
+                            Submitted Late
                         {% elif attempt.is_passed %}
                             Passed
                         {% else %}
@@ -108,7 +110,7 @@
                             <td class="text-center">{{ row.obtained_marks }}</td>
                             <td class="text-center">
                                 {% if row.pending_manual %}
-                                    <span class="badge bg-warning text-dark">Pending Manual Check</span>
+                                    <span class="badge bg-warning text-dark">Pending Review</span>
                                 {% elif row.status_label == 'Correct' %}
                                     <span class="badge bg-success">Correct</span>
                                 {% elif row.status_label == 'Wrong' %}

@@ -2156,7 +2156,7 @@ def _upsert_quiz_result(attempt):
     obtained = float(attempt.obtained_marks or 0)
     percentage = round((obtained / quiz_total) * 100, 2) if quiz_total > 0 else 0
 
-    if attempt.status == 'pending_check':
+    if attempt.status == 'pending_review':
         result_status = 'pending'
     elif attempt.is_passed:
         result_status = 'passed'
@@ -2252,27 +2252,24 @@ def _calculate_attempt_score(attempt):
     pending_manual = False
 
     answers = attempt.answers.select_related('question').all()
-    objective_answers = [item for item in answers if item.question.question_type != 'subjective']
-
-    if attempt.quiz.quiz_type == 'auto':
-        total_objective = len(objective_answers)
-        correct_count = sum(1 for item in objective_answers if item.is_correct)
-        if total_objective > 0:
-            total_score = (correct_count / total_objective) * float(attempt.quiz.total_marks)
-    else:
-        for answer in answers:
-            question = answer.question
-            if question.question_type == 'subjective':
-                if answer.is_manually_checked:
-                    total_score += float(answer.manual_marks or 0)
-                else:
-                    pending_manual = True
-            elif answer.is_correct:
-                total_score += float(question.marks)
+    for answer in answers:
+        question = answer.question
+        if question.question_type == 'subjective':
+            if answer.is_manually_checked:
+                total_score += float(answer.manual_marks or 0)
+            else:
+                pending_manual = True
+        elif answer.is_correct:
+            total_score += float(question.marks)
 
     attempt.score = round(total_score, 2)
     attempt.obtained_marks = attempt.score
-    attempt.status = 'pending_check' if pending_manual else 'completed'
+    if pending_manual:
+        attempt.status = 'pending_review'
+    elif attempt.is_late:
+        attempt.status = 'submitted_late'
+    else:
+        attempt.status = 'completed'
     attempt.is_passed = False if pending_manual else attempt.score >= float(attempt.quiz.passing_marks)
     attempt.save(update_fields=['score', 'obtained_marks', 'status', 'is_passed'])
     _upsert_quiz_result(attempt)
@@ -2281,6 +2278,8 @@ def _calculate_attempt_score(attempt):
 
 def _get_attempt_deadline(attempt):
     duration_deadline = attempt.started_at + timedelta(minutes=attempt.quiz.duration_minutes)
+    if attempt.quiz.allow_late_submission:
+        return duration_deadline
     if attempt.quiz.end_time:
         return min(duration_deadline, attempt.quiz.end_time)
     return duration_deadline
@@ -2289,9 +2288,11 @@ def _get_attempt_deadline(attempt):
 def _finalize_attempt(attempt, payload, uploaded_files=None):
     _save_attempt_payload(attempt, payload)
     _persist_attempt_answers(attempt, payload, uploaded_files=uploaded_files)
-    attempt.submitted_at = timezone.now()
+    submitted_at = timezone.now()
+    attempt.submitted_at = submitted_at
+    attempt.is_late = bool(attempt.quiz.end_time and submitted_at > attempt.quiz.end_time)
     attempt.is_completed = True
-    attempt.save(update_fields=['submitted_at', 'is_completed'])
+    attempt.save(update_fields=['submitted_at', 'is_late', 'is_completed'])
     has_pending_manual = _calculate_attempt_score(attempt)
     _sync_quiz_attempt_to_transcript(attempt)
     return has_pending_manual
@@ -2474,10 +2475,10 @@ def add_questions(request, quiz_id):
         if form.is_valid():
             question = form.save(commit=False)
             if quiz.quiz_type == 'auto' and question.question_type == 'subjective':
-                messages.error(request, 'Auto-graded quizzes only support objective questions (MCQ/OMR).')
+                messages.error(request, 'MCQ-only quizzes only support objective questions.')
                 return redirect('main:add_questions', quiz_id=quiz.id)
             if quiz.quiz_type == 'manual' and question.question_type != 'subjective':
-                messages.error(request, 'Manual quizzes support subjective questions only.')
+                messages.error(request, 'Subjective-only quizzes only support subjective questions.')
                 return redirect('main:add_questions', quiz_id=quiz.id)
             question.quiz = quiz
             question.save()
@@ -2522,10 +2523,10 @@ def edit_question(request, question_id):
         if form.is_valid():
             updated_question = form.save(commit=False)
             if updated_question.quiz.quiz_type == 'auto' and updated_question.question_type == 'subjective':
-                messages.error(request, 'Auto-graded quizzes only support objective questions (MCQ/OMR).')
+                messages.error(request, 'MCQ-only quizzes only support objective questions.')
                 return redirect('main:edit_question', question_id=question.id)
             if updated_question.quiz.quiz_type == 'manual' and updated_question.question_type != 'subjective':
-                messages.error(request, 'Manual quizzes support subjective questions only.')
+                messages.error(request, 'Subjective-only quizzes only support subjective questions.')
                 return redirect('main:edit_question', question_id=question.id)
             updated_question.save()
             updated_question.quiz.sync_total_marks_from_questions()
@@ -2573,6 +2574,7 @@ def quiz_results(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
 
     student_filter = (request.GET.get('student') or '').strip()
+    late_filter = (request.GET.get('late') or 'all').strip()
     
     attempts = QuizAttempt.objects.filter(quiz=quiz, is_completed=True).select_related('student').order_by('-score')
     if student_filter:
@@ -2581,16 +2583,22 @@ def quiz_results(request, quiz_id):
             | Q(student__first_name__icontains=student_filter)
             | Q(student__last_name__icontains=student_filter)
         )
+    if late_filter == 'late':
+        attempts = attempts.filter(is_late=True)
+    elif late_filter == 'on_time':
+        attempts = attempts.filter(is_late=False)
 
     attempt_rows = []
     for attempt in attempts:
         pending_subjective = attempt.answers.filter(question__question_type='subjective', is_manually_checked=False).count()
-        grading_status = 'Pending Manual Check' if attempt.status == 'pending_check' or pending_subjective > 0 else 'Checked'
+        grading_status = 'Pending Review' if attempt.status == 'pending_review' or pending_subjective > 0 else 'Completed'
+        submission_status = 'Submitted Late' if attempt.is_late else 'On Time'
 
         attempt_rows.append({
             'attempt': attempt,
             'pending_subjective': pending_subjective,
             'grading_status': grading_status,
+            'submission_status': submission_status,
         })
     
     context = {
@@ -2598,6 +2606,7 @@ def quiz_results(request, quiz_id):
         'attempts': attempts,
         'attempt_rows': attempt_rows,
         'student_filter': student_filter,
+        'late_filter': late_filter,
     }
     
     return render(request, 'teacher/quiz_results.html', context)
@@ -2675,8 +2684,10 @@ def student_my_quizzes(request):
         availability = 'Available'
         if quiz.start_time and now_time < quiz.start_time:
             availability = 'Upcoming'
-        elif quiz.end_time and now_time > quiz.end_time:
+        elif quiz.end_time and now_time > quiz.end_time and not quiz.allow_late_submission:
             availability = 'Closed'
+        elif quiz.end_time and now_time > quiz.end_time and quiz.allow_late_submission:
+            availability = 'Late Submission Open'
 
         attempt = QuizAttempt.objects.filter(
             quiz=quiz,
@@ -2685,14 +2696,19 @@ def student_my_quizzes(request):
         ).order_by('-submitted_at').first()
 
         if not attempt:
-            status = 'Not Attempted'
+            status = 'Not Submitted' if availability == 'Closed' else 'Not Submitted'
             pending_subjective = 0
         else:
             pending_subjective = attempt.answers.filter(
                 question__question_type='subjective',
                 is_manually_checked=False,
             ).count()
-            status = 'Pending Manual Check' if pending_subjective > 0 else 'Checked'
+            if attempt.is_late:
+                status = 'Submitted Late'
+            elif pending_subjective > 0 or attempt.status == 'pending_review':
+                status = 'Pending Review'
+            else:
+                status = 'Completed'
 
         rows.append({
             'quiz': quiz,
@@ -2721,7 +2737,7 @@ def take_quiz(request, quiz_id):
         messages.warning(request, 'This quiz has not started yet.')
         return redirect('main:student_my_quizzes')
 
-    if quiz.end_time and now_time > quiz.end_time:
+    if quiz.end_time and now_time > quiz.end_time and not quiz.allow_late_submission:
         messages.warning(request, 'This quiz is closed.')
         return redirect('main:student_my_quizzes')
 
@@ -2758,11 +2774,26 @@ def take_quiz(request, quiz_id):
         messages.info(request, 'Quiz auto-submitted because time ended.')
         return redirect('main:student_quiz_result', attempt_id=attempt.id)
 
+    if remaining_seconds <= 0 and not quiz.auto_submit_on_timeout and not quiz.allow_late_submission:
+        attempt.status = 'not_submitted'
+        attempt.save(update_fields=['status'])
+        messages.warning(request, 'Time is over and this quiz does not allow late submissions.')
+        return redirect('main:student_my_quizzes')
+
     if request.method == 'POST':
+        now_time = timezone.now()
+        if quiz.end_time and now_time > quiz.end_time and not quiz.allow_late_submission:
+            messages.error(request, 'Submission blocked. Late submission is disabled for this quiz.')
+            return redirect('main:student_my_quizzes')
+
         payload = _normalize_attempt_payload(questions, request.POST)
         has_pending_manual = _finalize_attempt(attempt, payload, uploaded_files=request.FILES)
 
-        if has_pending_manual:
+        if attempt.is_late and has_pending_manual:
+            messages.info(request, 'Submitted late. MCQs are auto-graded and subjective answers are waiting for teacher review.')
+        elif attempt.is_late:
+            messages.info(request, 'Quiz submitted late. Result generated from auto-graded answers.')
+        elif has_pending_manual:
             messages.info(request, 'Quiz submitted. Subjective answers are pending manual checking.')
         else:
             messages.success(request, 'Quiz submitted and auto-graded successfully.')
@@ -2776,6 +2807,7 @@ def take_quiz(request, quiz_id):
         'questions': questions,
         'remaining_seconds': remaining_seconds,
         'deadline_iso': deadline.isoformat(),
+        'quiz_is_late_window': bool(quiz.end_time and timezone.now() > quiz.end_time),
         'existing_payload_json': json.dumps(existing_payload),
     })
 
@@ -2796,6 +2828,9 @@ def autosave_quiz_attempt(request, quiz_id):
 
     if not attempt:
         return JsonResponse({'success': False, 'error': 'No active attempt'}, status=404)
+
+    if quiz.end_time and timezone.now() > quiz.end_time and not quiz.allow_late_submission:
+        return JsonResponse({'success': False, 'error': 'Quiz closed. Late submission not allowed.'}, status=403)
 
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
@@ -2847,7 +2882,7 @@ def student_quiz_result(request, attempt_id):
             has_pending = not answer.is_manually_checked
             has_pending_manual = has_pending_manual or has_pending
             obtained = float(answer.manual_marks or 0) if answer.is_manually_checked else 0
-            status_label = 'Pending Manual Check' if has_pending else 'Checked'
+            status_label = 'Pending Review' if has_pending else 'Checked'
         else:
             objective_total += 1
             has_pending = False
@@ -2882,6 +2917,7 @@ def student_quiz_result(request, attempt_id):
         'quiz': attempt.quiz,
         'answer_rows': answer_rows,
         'has_pending_manual': has_pending_manual,
+        'is_late': attempt.is_late,
         'result_components': result_components,
         'correct_count': correct_count,
         'wrong_count': wrong_count,
@@ -2900,6 +2936,7 @@ def teacher_quiz_attempts_dashboard(request):
     course_filter = (request.GET.get('course') or '').strip()
     quiz_filter = (request.GET.get('quiz') or '').strip()
     student_filter = (request.GET.get('student') or '').strip()
+    late_filter = (request.GET.get('late') or 'all').strip()
 
     teacher_courses = Course.objects.filter(teacher=request.user).order_by('name')
     teacher_quizzes = Quiz.objects.filter(created_by=request.user).select_related('course').order_by('-created_at')
@@ -2923,6 +2960,11 @@ def teacher_quiz_attempts_dashboard(request):
             | Q(student__last_name__icontains=student_filter)
         )
 
+    if late_filter == 'late':
+        attempts = attempts.filter(is_late=True)
+    elif late_filter == 'on_time':
+        attempts = attempts.filter(is_late=False)
+
     return render(request, 'teacher/quiz_attempts_dashboard.html', {
         'attempts': attempts,
         'teacher_courses': teacher_courses,
@@ -2930,6 +2972,7 @@ def teacher_quiz_attempts_dashboard(request):
         'course_filter': course_filter,
         'quiz_filter': quiz_filter,
         'student_filter': student_filter,
+        'late_filter': late_filter,
     })
 
 
@@ -3610,9 +3653,14 @@ def student_dashboard(request):
                 question__question_type='subjective',
                 is_manually_checked=False,
             ).exists()
-            status = 'Pending Manual Check' if pending_manual else 'Checked'
+            if pending_manual or completed_attempt.status == 'pending_review':
+                status = 'Pending Review'
+            elif completed_attempt.is_late:
+                status = 'Submitted Late'
+            else:
+                status = 'Completed'
         else:
-            status = 'Not Attempted'
+            status = 'Not Submitted'
 
         quiz_rows.append({
             'quiz': quiz,
