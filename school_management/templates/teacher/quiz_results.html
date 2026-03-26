@@ -18,6 +18,21 @@
         </header>
 
         <main class="page-content">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Filter by Student</label>
+                            <input type="text" name="student" value="{{ student_filter }}" class="form-control" placeholder="Name or username">
+                        </div>
+                        <div class="col-md-7 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Apply</button>
+                            <a href="{% url 'main:quiz_results' quiz.id %}" class="btn btn-secondary">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <table class="table">

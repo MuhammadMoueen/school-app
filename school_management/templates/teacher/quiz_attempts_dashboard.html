@@ -1,0 +1,104 @@
+{% extends 'teacher/teacher_base.html' %}
+{% load static %}
+
+{% block page_title %}Quiz Attempts Dashboard{% endblock %}
+{% block topbar_title %}Teacher Quiz Attempts Dashboard{% endblock %}
+
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-chart-line"></i> Quiz Attempts Dashboard
+        </h2>
+        <p class="page-subtitle">Filter by course, quiz, and student to review submissions and status</p>
+    </div>
+</div>
+
+<div class="content-card mb-25">
+    <div class="card-body card-body-pad-20">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Course</label>
+                <select name="course" class="form-control">
+                    <option value="">All Courses</option>
+                    {% for course in teacher_courses %}
+                    <option value="{{ course.id }}" {% if course_filter == course.id|stringformat:'s' %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Quiz</label>
+                <select name="quiz" class="form-control">
+                    <option value="">All Quizzes</option>
+                    {% for quiz in teacher_quizzes %}
+                    <option value="{{ quiz.id }}" {% if quiz_filter == quiz.id|stringformat:'s' %}selected{% endif %}>
+                        {{ quiz.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Student</label>
+                <input type="text" name="student" class="form-control" value="{{ student_filter }}" placeholder="Name or username">
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'main:teacher_quiz_attempts_dashboard' %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Quiz</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center">Percentage</th>
+                        <th class="text-center">Submitted At</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                    <tr>
+                        <td>{{ attempt.student.get_full_name|default:attempt.student.username }}</td>
+                        <td>{{ attempt.quiz.course.code }}</td>
+                        <td>{{ attempt.quiz.title }}</td>
+                        <td class="text-center">{{ attempt.obtained_marks }}/{{ attempt.quiz.total_marks }}</td>
+                        <td class="text-center">{{ attempt.percentage|floatformat:2 }}%</td>
+                        <td class="text-center">{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
+                        <td class="text-center">
+                            {% if attempt.status == 'pending_check' %}
+                            <span class="badge badge-warning">Pending</span>
+                            {% else %}
+                            <span class="badge badge-success">Checked</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if attempt.status == 'pending_check' %}
+                            <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">Check</a>
+                            {% else %}
+                            <a href="{% url 'main:quiz_results' attempt.quiz.id %}" class="btn btn-sm btn-info">View</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center">No attempts found for current filters.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

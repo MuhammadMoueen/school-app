@@ -21,7 +21,7 @@
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Percentage</span>
-                    <span class="detail-value">{{ attempt.percentage|floatformat:2 }}%</span>
+                    <span class="detail-value">{{ percentage|floatformat:2 }}%</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Status</span>
@@ -38,6 +38,14 @@
                 <div class="detail-item">
                     <span class="detail-label">Attempt Date</span>
                     <span class="detail-value">{{ attempt.submitted_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Correct Answers</span>
+                    <span class="detail-value">{{ correct_count }}/{{ objective_total }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Wrong Answers</span>
+                    <span class="detail-value">{{ wrong_count }}</span>
                 </div>
             </div>
         </div>

@@ -1136,9 +1136,29 @@ class QuizForm(forms.ModelForm):
     
     class Meta:
         model = Quiz
-        fields = ['course', 'title', 'description', 'duration_minutes', 'total_marks', 'passing_marks', 'is_published']
+        fields = [
+            'course',
+            'quiz_type',
+            'question_source',
+            'title',
+            'description',
+            'duration_minutes',
+            'start_time',
+            'end_time',
+            'question_display_mode',
+            'auto_submit_on_timeout',
+            'total_marks_mode',
+            'total_marks',
+            'passing_marks',
+            'omr_source_file',
+            'answer_key_text',
+            'answer_key_file',
+            'is_published',
+        ]
         widgets = {
             'course': forms.Select(attrs={'class': 'form-control'}),
+            'quiz_type': forms.Select(attrs={'class': 'form-control'}),
+            'question_source': forms.Select(attrs={'class': 'form-control'}),
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Quiz Title (e.g., Midterm Exam, Chapter 1 Quiz)'
@@ -1153,6 +1173,19 @@ class QuizForm(forms.ModelForm):
                 'min': 1,
                 'placeholder': 'Duration in minutes'
             }),
+            'start_time': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }, format='%Y-%m-%dT%H:%M'),
+            'end_time': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }, format='%Y-%m-%dT%H:%M'),
+            'question_display_mode': forms.Select(attrs={'class': 'form-control'}),
+            'auto_submit_on_timeout': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'total_marks_mode': forms.Select(attrs={'class': 'form-control'}),
             'total_marks': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
@@ -1163,6 +1196,19 @@ class QuizForm(forms.ModelForm):
                 'step': '0.01',
                 'placeholder': 'Passing marks'
             }),
+            'omr_source_file': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.png,.jpg,.jpeg,.docx'
+            }),
+            'answer_key_text': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Q1: A\nQ2: C\nQ3: B'
+            }),
+            'answer_key_file': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': '.txt,.csv,.docx'
+            }),
             'is_published': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             })
@@ -1172,6 +1218,46 @@ class QuizForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if teacher:
             self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+
+        self.fields['start_time'].input_formats = ['%Y-%m-%dT%H:%M']
+        self.fields['end_time'].input_formats = ['%Y-%m-%dT%H:%M']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        quiz_type = cleaned_data.get('quiz_type')
+        question_source = cleaned_data.get('question_source')
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        duration_minutes = cleaned_data.get('duration_minutes')
+        total_marks_mode = cleaned_data.get('total_marks_mode')
+        total_marks = cleaned_data.get('total_marks')
+        passing_marks = cleaned_data.get('passing_marks')
+        omr_file = cleaned_data.get('omr_source_file')
+
+        if start_time and end_time and end_time <= start_time:
+            raise forms.ValidationError('End time must be later than start time.')
+
+        if duration_minutes and duration_minutes < 1:
+            self.add_error('duration_minutes', 'Duration must be at least 1 minute.')
+
+        if total_marks_mode == 'manual' and total_marks is not None and passing_marks is not None:
+            if passing_marks > total_marks:
+                self.add_error('passing_marks', 'Passing marks cannot be greater than total marks.')
+
+        if quiz_type == 'manual':
+            cleaned_data['question_source'] = 'manual'
+            cleaned_data['answer_key_text'] = ''
+
+        if quiz_type == 'auto' and question_source == 'omr_upload':
+            if not omr_file and not self.instance.pk:
+                self.add_error('omr_source_file', 'Upload an OMR/MCQ source file for OMR mode.')
+
+            if omr_file:
+                filename = (omr_file.name or '').lower()
+                if not filename.endswith(('.pdf', '.png', '.jpg', '.jpeg', '.docx')):
+                    self.add_error('omr_source_file', 'Supported formats: PDF, JPG, PNG, DOCX.')
+
+        return cleaned_data
 
 
 class QuestionForm(forms.ModelForm):
@@ -1221,7 +1307,7 @@ class QuestionForm(forms.ModelForm):
         option_b = (cleaned_data.get('option_b') or '').strip()
         correct_answer = (cleaned_data.get('correct_answer') or '').strip()
 
-        if question_type in {'mcq', 'true_false'}:
+        if question_type in {'mcq', 'omr', 'true_false'}:
             if not option_a or not option_b:
                 raise forms.ValidationError('Option A and Option B are required for objective questions.')
             if not correct_answer:
@@ -1234,7 +1320,26 @@ class QuestionForm(forms.ModelForm):
             cleaned_data['option_c'] = ''
             cleaned_data['option_d'] = ''
 
+        cleaned_data['options'] = [
+            cleaned_data.get('option_a') or '',
+            cleaned_data.get('option_b') or '',
+            cleaned_data.get('option_c') or '',
+            cleaned_data.get('option_d') or '',
+        ]
+
         return cleaned_data
+
+    def save(self, commit=True):
+        question = super().save(commit=False)
+        question.options = [
+            self.cleaned_data.get('option_a') or '',
+            self.cleaned_data.get('option_b') or '',
+            self.cleaned_data.get('option_c') or '',
+            self.cleaned_data.get('option_d') or '',
+        ]
+        if commit:
+            question.save()
+        return question
 
 
 # ==================== DISCUSSION FORMS ====================

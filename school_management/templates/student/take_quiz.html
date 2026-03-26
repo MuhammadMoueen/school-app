@@ -5,13 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
-<style>
-.quiz-timer {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1f3a68;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -23,17 +17,37 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h3>{{ quiz.title }}</h3>
-                    <p class="mb-0 text-muted">{{ quiz.course.code }} - {{ quiz.course.name }} | Duration: {{ quiz.duration_minutes }} minutes</p>
+                    <p class="mb-0 text-muted">
+                        {{ quiz.course.code }} - {{ quiz.course.name }} | Duration: {{ quiz.duration_minutes }} minutes
+                    </p>
                 </div>
                 <div class="quiz-timer">Time Left: <span id="quizTimer">--:--</span></div>
             </div>
+
+            <div class="quiz-progress-wrap">
+                <div class="quiz-progress-head">
+                    <span id="quizProgressLabel">0 / {{ questions|length }} answered</span>
+                    <span id="quizSaveIndicator" class="quiz-save-indicator">Autosave active</span>
+                </div>
+                <div class="quiz-progress">
+                    <div class="quiz-progress-bar" id="quizProgressBar"></div>
+                </div>
+            </div>
+
+            {% if quiz.question_display_mode == 'one_by_one' %}
+            <div class="quiz-step-actions">
+                <button type="button" class="btn btn-outline-secondary" id="quizPrevBtn">Previous</button>
+                <span id="quizStepIndex" class="text-muted"></span>
+                <button type="button" class="btn btn-outline-secondary" id="quizNextBtn">Next</button>
+            </div>
+            {% endif %}
         </div>
 
         <div class="conversation-section">
-            <form method="post" id="quizForm">
+            <form method="post" id="quizForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 {% for question in questions %}
-                <div class="report-card mb-3">
+                <div class="quiz-question-card" data-question-id="{{ question.id }}">
                     <div class="report-header">
                         <h4>Q{{ question.order }}. {{ question.question_text }}</h4>
                         <span class="status-badge graded">{{ question.marks }} marks</span>
@@ -43,6 +57,10 @@
                     <div class="form-field">
                         <label>Your Answer</label>
                         <textarea name="question_{{ question.id }}" class="form-control" rows="4" placeholder="Write your detailed answer..."></textarea>
+                        <div class="quiz-answer-file">
+                            <label class="form-label">Attach File (Optional)</label>
+                            <input type="file" name="question_file_{{ question.id }}" class="form-control" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
+                        </div>
                     </div>
                     {% else %}
                     <div class="form-check mb-2">
@@ -78,36 +96,18 @@
         </div>
     </div>
 </div>
+
+<script id="quizRuntimeConfig" type="application/json">
+{
+  "remaining_seconds": {{ remaining_seconds|default:0 }},
+  "autosave_url": "{% url 'main:autosave_quiz_attempt' quiz.id %}",
+  "display_mode": "{{ quiz.question_display_mode }}",
+  "csrf_token": "{{ csrf_token }}",
+  "existing_answers": {{ existing_payload_json|safe }}
+}
+</script>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-(function () {
-    var secondsLeft = {{ remaining_seconds|default:0 }};
-    var timerEl = document.getElementById('quizTimer');
-    var formEl = document.getElementById('quizForm');
-    var submitBtn = document.getElementById('submitQuizBtn');
-
-    function renderTimer() {
-        var mins = Math.floor(secondsLeft / 60);
-        var secs = secondsLeft % 60;
-        timerEl.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-    }
-
-    function tick() {
-        renderTimer();
-        if (secondsLeft <= 0) {
-            if (submitBtn) {
-                submitBtn.disabled = true;
-            }
-            formEl.submit();
-            return;
-        }
-        secondsLeft -= 1;
-        setTimeout(tick, 1000);
-    }
-
-    tick();
-})();
-</script>
+<script src="{% static 'js/student-quiz-attempt.js' %}"></script>
 {% endblock %}

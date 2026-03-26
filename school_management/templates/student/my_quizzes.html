@@ -27,6 +27,7 @@
                             <th>Course</th>
                             <th class="text-center">Duration</th>
                             <th class="text-center">Total Marks</th>
+                            <th class="text-center">Window</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Action</th>
                         </tr>
@@ -39,6 +40,15 @@
                             <td class="text-center">{{ row.quiz.duration_minutes }} min</td>
                             <td class="text-center">{{ row.quiz.total_marks }}</td>
                             <td class="text-center">
+                                {% if row.availability == 'Available' %}
+                                <span class="badge bg-success">Available</span>
+                                {% elif row.availability == 'Upcoming' %}
+                                <span class="badge bg-info text-dark">Upcoming</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Closed</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
                                 {% if row.status == 'Checked' %}
                                 <span class="badge bg-success">Checked</span>
                                 {% elif row.status == 'Pending Manual Check' %}
@@ -50,6 +60,8 @@
                             <td class="text-center">
                                 {% if row.attempt %}
                                 <a href="{% url 'main:student_quiz_result' row.attempt.id %}" class="btn btn-sm btn-primary">View Result</a>
+                                {% elif row.availability != 'Available' %}
+                                <span class="text-muted">Not Available</span>
                                 {% else %}
                                 <a href="{% url 'main:take_quiz' row.quiz.id %}" class="btn btn-sm btn-success">Start Quiz</a>
                                 {% endif %}

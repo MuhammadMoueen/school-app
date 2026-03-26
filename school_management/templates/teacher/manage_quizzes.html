@@ -17,6 +17,9 @@
 <!-- Create Quiz Button -->
 <div class="content-card mb-25">
     <div class="card-body card-body-pad-20 text-right">
+        <a href="{% url 'main:teacher_quiz_attempts_dashboard' %}" class="btn-action btn-secondary">
+            <i class="fas fa-filter"></i> Attempts Dashboard
+        </a>
         <a href="{% url 'main:create_quiz' %}" class="btn-action">
             <i class="fas fa-plus"></i> Create New Quiz
         </a>
@@ -41,6 +44,7 @@
                         <tr>
                             <th>Quiz Title</th>
                             <th>Course</th>
+                            <th class="text-center">Type</th>
                             <th class="text-center">Questions</th>
                             <th class="text-center">Attempts</th>
                             <th class="text-center">Manual Pending</th>
@@ -57,6 +61,11 @@
                             <td>
                                 <span class="badge badge-primary">{{ quiz.course.code }}</span>
                                 <small class="text-muted d-block">{{ quiz.course.name }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-{% if quiz.quiz_type == 'auto' %}info{% else %}warning{% endif %}">
+                                    {{ quiz.get_quiz_type_display }}
+                                </span>
                             </td>
                             <td class="text-center">
                                 <span class="badge badge-info">{{ quiz.question_count }}</span>

@@ -5,10 +5,12 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+<link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/teacher.js' %}"></script>
+<script src="{% static 'js/quiz-create.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -26,6 +28,11 @@
             <div class="card mb-4">
                 <div class="card-header"><h5>Add New Question</h5></div>
                 <div class="card-body">
+                    {% if quiz.quiz_type == 'auto' and quiz.question_source == 'omr_upload' and questions.count > 0 %}
+                    <div class="alert alert-info mb-3">
+                        OMR answer-key based questions are already generated. You can still add or edit questions manually here.
+                    </div>
+                    {% endif %}
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -46,6 +53,7 @@
                                 {{ form.order }}
                             </div>
                         </div>
+                        <div id="questionOptionsSection">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Option A</label>
@@ -66,7 +74,8 @@
                                 {{ form.option_d }}
                             </div>
                         </div>
-                        <div class="mb-3">
+                        </div>
+                        <div class="mb-3" id="questionCorrectAnswerWrap">
                             <label class="form-label">Correct Answer</label>
                             {{ form.correct_answer }}
                         </div>

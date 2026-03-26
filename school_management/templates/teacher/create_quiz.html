@@ -4,6 +4,10 @@
 {% block page_title %}Create Quiz{% endblock %}
 {% block topbar_title %}The City School - Create Quiz{% endblock %}
 
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
+{% endblock %}
+
 {% block page_content %}
 <div class="page-header-section">
     <div class="page-header-content">
@@ -16,8 +20,42 @@
 
 <div class="content-card">
     <div class="card-body card-body-pad-20">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Quiz Type</label>
+                {{ form.quiz_type }}
+            </div>
+
+            <div id="autoQuizSection" class="quiz-section">
+                <div class="quiz-section-title">Auto-Graded Setup</div>
+                <div class="mb-3">
+                    <label class="form-label">MCQ Source</label>
+                    {{ form.question_source }}
+                </div>
+                <div id="omrUploadSection" class="quiz-hidden">
+                    <div class="mb-3">
+                        <label class="form-label">Upload MCQ File (PDF, JPG, PNG, DOCX)</label>
+                        {{ form.omr_source_file }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Answer Key (Text)</label>
+                        {{ form.answer_key_text }}
+                        <div class="quiz-helper-text">Use format like: Q1: A, Q2: C, Q3: B</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Answer Key File (TXT, CSV, DOCX)</label>
+                        {{ form.answer_key_file }}
+                    </div>
+                    <div class="quiz-helper-text">Basic parsing is applied for text-based keys. For scanned OMR files, this is stored as a reference file.</div>
+                </div>
+            </div>
+
+            <div id="manualQuizSection" class="quiz-section quiz-hidden">
+                <div class="quiz-section-title">Manual Quiz Setup</div>
+                <div class="quiz-helper-text">Manual quizzes support descriptive questions and teacher checking with feedback.</div>
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Course</label>
                 {{ form.course }}
@@ -36,12 +74,40 @@
                     {{ form.duration_minutes }}
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Total Marks</label>
-                    {{ form.total_marks }}
+                    <label class="form-label">Start Time</label>
+                    {{ form.start_time }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">End Time</label>
+                    {{ form.end_time }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Quiz View Mode</label>
+                    {{ form.question_display_mode }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Total Marks Mode</label>
+                    {{ form.total_marks_mode }}
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Passing Marks</label>
                     {{ form.passing_marks }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3" id="quizTotalMarksWrap">
+                    <label class="form-label">Total Marks</label>
+                    {{ form.total_marks }}
+                </div>
+                <div class="col-md-4 mb-3 form-check d-flex align-items-end">
+                    <div>
+                        {{ form.auto_submit_on_timeout }}
+                        <label class="form-check-label">Auto Submit on Timeout</label>
+                    </div>
                 </div>
             </div>
             <div class="mb-3 form-check">
@@ -55,4 +121,8 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'js/quiz-create.js' %}"></script>
 {% endblock %}

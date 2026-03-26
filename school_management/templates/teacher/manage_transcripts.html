@@ -35,6 +35,7 @@
                             <th>Subject Code</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Grade & Marks</th>
+                            <th>Quiz Section</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -66,6 +67,18 @@
                                         </small>
                                     {% else %}
                                         <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if enrollment.quiz_marks.all|length %}
+                                        {% for quiz_mark in enrollment.quiz_marks.all %}
+                                            <div class="mb-1">
+                                                <strong>{{ quiz_mark.quiz.title }}</strong>
+                                                <small class="text-muted d-block">{{ quiz_mark.obtained_marks }}/{{ quiz_mark.total_marks }} on {{ quiz_mark.attempt_date|date:"M d, Y" }}</small>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">No quiz marks yet</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">

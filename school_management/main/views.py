@@ -9,6 +9,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.core.cache import cache
 from datetime import datetime, timedelta
+from decimal import Decimal
+import io
+import re
+import zipfile
 import json
 import csv
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
@@ -22,7 +26,7 @@ from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, Mar
                     AuditLog,
                     TeacherActivityLog, TeacherActivityNotification, TeacherActivityResponse,
                     LectureAttachment, LectureView, LectureDownload, LectureNotification,
-                    Assignment, AssignmentAttachment, AssignmentSubmission, TranscriptQuizMark)
+                    Assignment, AssignmentAttachment, AssignmentSubmission, TranscriptQuizMark, QuizResult)
 
 ONLINE_PRESENCE_WINDOW_SECONDS = 90
 ONLINE_PRESENCE_KEY_PREFIX = 'presence:user:'
@@ -2030,6 +2034,102 @@ def attendance_report(request, course_id):
 
 # ==================== QUIZ VIEWS ====================
 
+def _parse_answer_key_text(raw_text):
+    """Parse answer-key text into a map of question order to option letter."""
+    if not raw_text:
+        return {}
+
+    parsed = {}
+    for line in raw_text.splitlines():
+        match = re.search(r'(?:Q\s*)?(\d+)\s*[:\-.)]?\s*([ABCD])', line.strip(), flags=re.IGNORECASE)
+        if match:
+            parsed[str(int(match.group(1)))] = match.group(2).upper()
+    return parsed
+
+
+def _extract_text_from_docx_bytes(content_bytes):
+    try:
+        with zipfile.ZipFile(io.BytesIO(content_bytes)) as archive:
+            document_xml = archive.read('word/document.xml').decode('utf-8', errors='ignore')
+    except Exception:
+        return ''
+    return re.sub(r'<[^>]+>', ' ', document_xml)
+
+
+def _extract_answer_key_from_bytes(content_bytes, filename):
+    filename_lower = (filename or '').lower()
+
+    try:
+        if filename_lower.endswith(('.txt', '.csv')):
+            text = content_bytes.decode('utf-8', errors='ignore')
+            return _parse_answer_key_text(text)
+        if filename_lower.endswith('.docx'):
+            text = _extract_text_from_docx_bytes(content_bytes)
+            return _parse_answer_key_text(text)
+    except Exception:
+        return {}
+
+    return {}
+
+
+def _read_field_file_bytes(field_file):
+    if not field_file:
+        return b''
+    try:
+        field_file.open('rb')
+        return field_file.read()
+    except Exception:
+        return b''
+    finally:
+        try:
+            field_file.close()
+        except Exception:
+            pass
+
+
+def _sync_quiz_answer_key(quiz):
+    text_map = _parse_answer_key_text(quiz.answer_key_text or '')
+    file_map = {}
+    if quiz.answer_key_file:
+        raw_bytes = _read_field_file_bytes(quiz.answer_key_file)
+        file_map = _extract_answer_key_from_bytes(raw_bytes, quiz.answer_key_file.name)
+
+    merged = {}
+    merged.update(text_map)
+    merged.update(file_map)
+
+    quiz.answer_key_map = merged
+    quiz.save(update_fields=['answer_key_map', 'updated_at'])
+
+
+def _create_placeholder_questions_from_answer_key(quiz):
+    if quiz.questions.exists() or not quiz.answer_key_map:
+        return 0
+
+    created_count = 0
+    for order in sorted((int(key) for key in quiz.answer_key_map.keys())):
+        correct = quiz.answer_key_map.get(str(order), '')
+        Question.objects.create(
+            quiz=quiz,
+            question_text=f'Question {order} (from uploaded OMR source)',
+            question_type='omr',
+            options=['Option A', 'Option B', 'Option C', 'Option D'],
+            option_a='Option A',
+            option_b='Option B',
+            option_c='Option C',
+            option_d='Option D',
+            correct_answer=correct if correct in ['A', 'B', 'C', 'D'] else '',
+            marks=1,
+            order=order,
+        )
+        created_count += 1
+
+    if created_count > 0 and quiz.total_marks_mode == 'auto':
+        quiz.sync_total_marks_from_questions()
+
+    return created_count
+
+
 def _sync_quiz_attempt_to_transcript(attempt):
     """Persist per-quiz marks under transcript context for later aggregate calculations."""
     enrollment = Enrollment.objects.filter(
@@ -2044,33 +2144,157 @@ def _sync_quiz_attempt_to_transcript(attempt):
         quiz=attempt.quiz,
         defaults={
             'attempt': attempt,
-            'obtained_marks': attempt.score,
+            'obtained_marks': attempt.obtained_marks,
             'total_marks': attempt.quiz.total_marks,
             'attempt_date': attempt.submitted_at or timezone.now(),
         },
     )
 
 
+def _upsert_quiz_result(attempt):
+    quiz_total = float(attempt.quiz.total_marks or 0)
+    obtained = float(attempt.obtained_marks or 0)
+    percentage = round((obtained / quiz_total) * 100, 2) if quiz_total > 0 else 0
+
+    if attempt.status == 'pending_check':
+        result_status = 'pending'
+    elif attempt.is_passed:
+        result_status = 'passed'
+    else:
+        result_status = 'failed'
+
+    QuizResult.objects.update_or_create(
+        attempt=attempt,
+        defaults={
+            'percentage': percentage,
+            'result_status': result_status,
+        },
+    )
+
+
+def _get_question_correct_answer(question, quiz):
+    if question.correct_answer:
+        return question.correct_answer
+    return (quiz.answer_key_map or {}).get(str(question.order), '')
+
+
+def _normalize_attempt_payload(questions, source_data):
+    payload = {}
+    for question in questions:
+        field_name = f'question_{question.id}'
+        payload[str(question.id)] = {
+            'selected_answer': (source_data.get(field_name) or '').strip().upper(),
+            'answer_text': (source_data.get(field_name) or '').strip(),
+        }
+    return payload
+
+
+def _save_attempt_payload(attempt, payload):
+    current = dict(attempt.answers_json or {})
+    current.update(payload)
+    attempt.answers_json = current
+    attempt.save(update_fields=['answers_json'])
+
+
+def _persist_attempt_answers(attempt, payload, uploaded_files=None):
+    questions = attempt.quiz.questions.all().order_by('order')
+    uploaded_files = uploaded_files or {}
+
+    for question in questions:
+        question_payload = payload.get(str(question.id), {})
+
+        if question.question_type == 'subjective':
+            answer_text = (question_payload.get('answer_text') or '').strip()
+            answer_file = uploaded_files.get(f'question_file_{question.id}')
+            defaults = {
+                'selected_answer': '',
+                'answer_text': answer_text,
+                'is_correct': False,
+                'manual_marks': None,
+                'feedback': '',
+                'is_manually_checked': False,
+                'checked_by': None,
+                'checked_at': None,
+            }
+            if answer_file:
+                defaults['answer_file'] = answer_file
+
+            QuizAnswer.objects.update_or_create(
+                attempt=attempt,
+                question=question,
+                defaults=defaults,
+            )
+            continue
+
+        selected = (question_payload.get('selected_answer') or '').strip().upper()
+        correct_answer = _get_question_correct_answer(question, attempt.quiz)
+        is_correct = bool(selected) and selected == correct_answer
+
+        QuizAnswer.objects.update_or_create(
+            attempt=attempt,
+            question=question,
+            defaults={
+                'selected_answer': selected,
+                'answer_text': '',
+                'is_correct': is_correct,
+                'manual_marks': None,
+                'feedback': '',
+                'is_manually_checked': True,
+                'checked_by': None,
+                'checked_at': None,
+            },
+        )
+
+
 def _calculate_attempt_score(attempt):
     """Recalculate attempt score from objective correctness and subjective manual marks."""
-    total_score = 0
+    total_score = 0.0
     pending_manual = False
 
     answers = attempt.answers.select_related('question').all()
-    for answer in answers:
-        question = answer.question
-        if question.question_type == 'subjective':
-            if answer.is_manually_checked:
-                total_score += float(answer.manual_marks or 0)
-            else:
-                pending_manual = True
-        elif answer.is_correct:
-            total_score += float(question.marks)
+    objective_answers = [item for item in answers if item.question.question_type != 'subjective']
+
+    if attempt.quiz.quiz_type == 'auto':
+        total_objective = len(objective_answers)
+        correct_count = sum(1 for item in objective_answers if item.is_correct)
+        if total_objective > 0:
+            total_score = (correct_count / total_objective) * float(attempt.quiz.total_marks)
+    else:
+        for answer in answers:
+            question = answer.question
+            if question.question_type == 'subjective':
+                if answer.is_manually_checked:
+                    total_score += float(answer.manual_marks or 0)
+                else:
+                    pending_manual = True
+            elif answer.is_correct:
+                total_score += float(question.marks)
 
     attempt.score = round(total_score, 2)
-    attempt.is_passed = attempt.score >= float(attempt.quiz.passing_marks)
-    attempt.save(update_fields=['score', 'is_passed'])
+    attempt.obtained_marks = attempt.score
+    attempt.status = 'pending_check' if pending_manual else 'completed'
+    attempt.is_passed = False if pending_manual else attempt.score >= float(attempt.quiz.passing_marks)
+    attempt.save(update_fields=['score', 'obtained_marks', 'status', 'is_passed'])
+    _upsert_quiz_result(attempt)
     return pending_manual
+
+
+def _get_attempt_deadline(attempt):
+    duration_deadline = attempt.started_at + timedelta(minutes=attempt.quiz.duration_minutes)
+    if attempt.quiz.end_time:
+        return min(duration_deadline, attempt.quiz.end_time)
+    return duration_deadline
+
+
+def _finalize_attempt(attempt, payload, uploaded_files=None):
+    _save_attempt_payload(attempt, payload)
+    _persist_attempt_answers(attempt, payload, uploaded_files=uploaded_files)
+    attempt.submitted_at = timezone.now()
+    attempt.is_completed = True
+    attempt.save(update_fields=['submitted_at', 'is_completed'])
+    has_pending_manual = _calculate_attempt_score(attempt)
+    _sync_quiz_attempt_to_transcript(attempt)
+    return has_pending_manual
 
 
 def _build_course_result_components(student, course):
@@ -2155,11 +2379,16 @@ def create_quiz(request):
     teacher = request.user
     
     if request.method == 'POST':
-        form = QuizForm(request.POST, teacher=teacher)
+        form = QuizForm(request.POST, request.FILES, teacher=teacher)
         if form.is_valid():
             quiz = form.save(commit=False)
             quiz.created_by = teacher
             quiz.save()
+            _sync_quiz_answer_key(quiz)
+            placeholder_count = 0
+            if quiz.quiz_type == 'auto' and quiz.question_source == 'omr_upload':
+                placeholder_count = _create_placeholder_questions_from_answer_key(quiz)
+
             teacher_name = teacher.get_full_name() or teacher.username
             log_teacher_activity(
                 teacher=teacher,
@@ -2167,6 +2396,10 @@ def create_quiz(request):
                 description=f'Teacher {teacher_name} created a quiz for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
                 course=quiz.course,
             )
+            if placeholder_count > 0:
+                messages.success(request, f'Quiz "{quiz.title}" created and {placeholder_count} OMR questions generated from the answer key.')
+                return redirect('main:manage_quizzes')
+
             messages.success(request, f'Quiz "{quiz.title}" created successfully! Now add questions.')
             return redirect('main:add_questions', quiz_id=quiz.id)
     else:
@@ -2190,9 +2423,12 @@ def edit_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
     
     if request.method == 'POST':
-        form = QuizForm(request.POST, instance=quiz, teacher=teacher)
+        form = QuizForm(request.POST, request.FILES, instance=quiz, teacher=teacher)
         if form.is_valid():
-            form.save()
+            quiz = form.save()
+            _sync_quiz_answer_key(quiz)
+            if quiz.quiz_type == 'auto' and quiz.question_source == 'omr_upload':
+                _create_placeholder_questions_from_answer_key(quiz)
             messages.success(request, f'Quiz "{quiz.title}" updated successfully!')
             return redirect('main:manage_quizzes')
     else:
@@ -2237,8 +2473,15 @@ def add_questions(request, quiz_id):
         form = QuestionForm(request.POST)
         if form.is_valid():
             question = form.save(commit=False)
+            if quiz.quiz_type == 'auto' and question.question_type == 'subjective':
+                messages.error(request, 'Auto-graded quizzes only support objective questions (MCQ/OMR).')
+                return redirect('main:add_questions', quiz_id=quiz.id)
+            if quiz.quiz_type == 'manual' and question.question_type != 'subjective':
+                messages.error(request, 'Manual quizzes support subjective questions only.')
+                return redirect('main:add_questions', quiz_id=quiz.id)
             question.quiz = quiz
             question.save()
+            quiz.sync_total_marks_from_questions()
             teacher_name = teacher.get_full_name() or teacher.username
             log_teacher_activity(
                 teacher=teacher,
@@ -2277,7 +2520,15 @@ def edit_question(request, question_id):
     if request.method == 'POST':
         form = QuestionForm(request.POST, instance=question)
         if form.is_valid():
-            form.save()
+            updated_question = form.save(commit=False)
+            if updated_question.quiz.quiz_type == 'auto' and updated_question.question_type == 'subjective':
+                messages.error(request, 'Auto-graded quizzes only support objective questions (MCQ/OMR).')
+                return redirect('main:edit_question', question_id=question.id)
+            if updated_question.quiz.quiz_type == 'manual' and updated_question.question_type != 'subjective':
+                messages.error(request, 'Manual quizzes support subjective questions only.')
+                return redirect('main:edit_question', question_id=question.id)
+            updated_question.save()
+            updated_question.quiz.sync_total_marks_from_questions()
             messages.success(request, 'Question updated successfully!')
             return redirect('main:add_questions', quiz_id=question.quiz.id)
     else:
@@ -2303,7 +2554,9 @@ def delete_question(request, question_id):
     question = get_object_or_404(Question, id=question_id, quiz__created_by=teacher)
     
     quiz_id = question.quiz.id
+    quiz = question.quiz
     question.delete()
+    quiz.sync_total_marks_from_questions()
     
     messages.success(request, 'Question deleted successfully!')
     return redirect('main:add_questions', quiz_id=quiz_id)
@@ -2318,20 +2571,21 @@ def quiz_results(request, quiz_id):
     
     teacher = request.user
     quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
+
+    student_filter = (request.GET.get('student') or '').strip()
     
     attempts = QuizAttempt.objects.filter(quiz=quiz, is_completed=True).select_related('student').order_by('-score')
+    if student_filter:
+        attempts = attempts.filter(
+            Q(student__username__icontains=student_filter)
+            | Q(student__first_name__icontains=student_filter)
+            | Q(student__last_name__icontains=student_filter)
+        )
 
     attempt_rows = []
     for attempt in attempts:
-        pending_subjective = attempt.answers.filter(
-            question__question_type='subjective',
-            is_manually_checked=False,
-        ).count()
-
-        if pending_subjective > 0:
-            grading_status = 'Pending Manual Check'
-        else:
-            grading_status = 'Checked'
+        pending_subjective = attempt.answers.filter(question__question_type='subjective', is_manually_checked=False).count()
+        grading_status = 'Pending Manual Check' if attempt.status == 'pending_check' or pending_subjective > 0 else 'Checked'
 
         attempt_rows.append({
             'attempt': attempt,
@@ -2343,6 +2597,7 @@ def quiz_results(request, quiz_id):
         'quiz': quiz,
         'attempts': attempts,
         'attempt_rows': attempt_rows,
+        'student_filter': student_filter,
     }
     
     return render(request, 'teacher/quiz_results.html', context)
@@ -2369,6 +2624,7 @@ def grade_quiz_attempt(request, attempt_id):
     if request.method == 'POST':
         for answer in subjective_answers:
             raw_marks = (request.POST.get(f'manual_marks_{answer.id}') or '0').strip()
+            feedback = (request.POST.get(f'feedback_{answer.id}') or '').strip()
             try:
                 manual_marks = float(raw_marks)
             except ValueError:
@@ -2378,10 +2634,11 @@ def grade_quiz_attempt(request, attempt_id):
             manual_marks = max(0, min(manual_marks, max_marks))
 
             answer.manual_marks = manual_marks
+            answer.feedback = feedback
             answer.is_manually_checked = True
             answer.checked_by = request.user
             answer.checked_at = timezone.now()
-            answer.save(update_fields=['manual_marks', 'is_manually_checked', 'checked_by', 'checked_at'])
+            answer.save(update_fields=['manual_marks', 'feedback', 'is_manually_checked', 'checked_by', 'checked_at'])
 
         _calculate_attempt_score(attempt)
         _sync_quiz_attempt_to_transcript(attempt)
@@ -2414,6 +2671,13 @@ def student_my_quizzes(request):
 
     rows = []
     for quiz in quizzes:
+        now_time = timezone.now()
+        availability = 'Available'
+        if quiz.start_time and now_time < quiz.start_time:
+            availability = 'Upcoming'
+        elif quiz.end_time and now_time > quiz.end_time:
+            availability = 'Closed'
+
         attempt = QuizAttempt.objects.filter(
             quiz=quiz,
             student=request.user,
@@ -2435,6 +2699,7 @@ def student_my_quizzes(request):
             'attempt': attempt,
             'status': status,
             'pending_subjective': pending_subjective,
+            'availability': availability,
         })
 
     return render(request, 'student/my_quizzes.html', {
@@ -2450,6 +2715,15 @@ def take_quiz(request, quiz_id):
         return redirect('main:home')
 
     quiz = get_object_or_404(Quiz.objects.select_related('course', 'created_by'), id=quiz_id, is_published=True)
+
+    now_time = timezone.now()
+    if quiz.start_time and now_time < quiz.start_time:
+        messages.warning(request, 'This quiz has not started yet.')
+        return redirect('main:student_my_quizzes')
+
+    if quiz.end_time and now_time > quiz.end_time:
+        messages.warning(request, 'This quiz is closed.')
+        return redirect('main:student_my_quizzes')
 
     if not Enrollment.objects.filter(student=request.user, course=quiz.course).exists():
         messages.error(request, 'You are not enrolled in this course.')
@@ -2472,80 +2746,76 @@ def take_quiz(request, quiz_id):
         attempt = QuizAttempt.objects.create(
             quiz=quiz,
             student=request.user,
+            status='in_progress',
         )
 
     questions = quiz.questions.all().order_by('order')
+    deadline = _get_attempt_deadline(attempt)
+    remaining_seconds = max(0, int((deadline - timezone.now()).total_seconds()))
+
+    if remaining_seconds <= 0 and quiz.auto_submit_on_timeout and not attempt.is_completed:
+        _finalize_attempt(attempt, attempt.answers_json or {})
+        messages.info(request, 'Quiz auto-submitted because time ended.')
+        return redirect('main:student_quiz_result', attempt_id=attempt.id)
 
     if request.method == 'POST':
-        auto_score = 0
-        has_subjective = False
+        payload = _normalize_attempt_payload(questions, request.POST)
+        has_pending_manual = _finalize_attempt(attempt, payload, uploaded_files=request.FILES)
 
-        for question in questions:
-            field_name = f'question_{question.id}'
-
-            if question.question_type == 'subjective':
-                answer_text = (request.POST.get(field_name) or '').strip()
-                has_subjective = True
-                QuizAnswer.objects.update_or_create(
-                    attempt=attempt,
-                    question=question,
-                    defaults={
-                        'selected_answer': '',
-                        'answer_text': answer_text,
-                        'is_correct': False,
-                        'manual_marks': None,
-                        'is_manually_checked': False,
-                        'checked_by': None,
-                        'checked_at': None,
-                    },
-                )
-                continue
-
-            selected = (request.POST.get(field_name) or '').strip().upper()
-            is_correct = bool(selected) and selected == question.correct_answer
-            if is_correct:
-                auto_score += float(question.marks)
-
-            QuizAnswer.objects.update_or_create(
-                attempt=attempt,
-                question=question,
-                defaults={
-                    'selected_answer': selected,
-                    'answer_text': '',
-                    'is_correct': is_correct,
-                    'manual_marks': None,
-                    'is_manually_checked': True,
-                    'checked_by': None,
-                    'checked_at': None,
-                },
-            )
-
-        attempt.submitted_at = timezone.now()
-        attempt.score = round(auto_score, 2)
-        attempt.is_completed = True
-        if has_subjective:
-            attempt.is_passed = False
-        else:
-            attempt.is_passed = attempt.score >= float(quiz.passing_marks)
-        attempt.save(update_fields=['submitted_at', 'score', 'is_completed', 'is_passed'])
-
-        if has_subjective:
+        if has_pending_manual:
             messages.info(request, 'Quiz submitted. Subjective answers are pending manual checking.')
         else:
             messages.success(request, 'Quiz submitted and auto-graded successfully.')
-
-        _sync_quiz_attempt_to_transcript(attempt)
         return redirect('main:student_quiz_result', attempt_id=attempt.id)
 
-    end_time = attempt.started_at + timedelta(minutes=quiz.duration_minutes)
-    remaining_seconds = max(0, int((end_time - timezone.now()).total_seconds()))
+    existing_payload = attempt.answers_json or {}
 
     return render(request, 'student/take_quiz.html', {
         'quiz': quiz,
         'attempt': attempt,
         'questions': questions,
         'remaining_seconds': remaining_seconds,
+        'deadline_iso': deadline.isoformat(),
+        'existing_payload_json': json.dumps(existing_payload),
     })
+
+
+@login_required
+@require_http_methods(['POST'])
+def autosave_quiz_attempt(request, quiz_id):
+    """Autosave quiz answers to prevent refresh loss and support timeout submit."""
+    if request.user.role != 'student':
+        return JsonResponse({'success': False, 'error': 'Access denied'}, status=403)
+
+    quiz = get_object_or_404(Quiz, id=quiz_id, is_published=True)
+    attempt = QuizAttempt.objects.filter(
+        quiz=quiz,
+        student=request.user,
+        is_completed=False,
+    ).order_by('-started_at').first()
+
+    if not attempt:
+        return JsonResponse({'success': False, 'error': 'No active attempt'}, status=404)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid payload'}, status=400)
+
+    submitted_answers = payload.get('answers', {})
+    sanitized = {}
+    valid_question_ids = set(str(item.id) for item in quiz.questions.all())
+
+    for question_id, answer_data in submitted_answers.items():
+        if str(question_id) not in valid_question_ids:
+            continue
+        sanitized[str(question_id)] = {
+            'selected_answer': (answer_data.get('selected_answer') or '').strip().upper(),
+            'answer_text': (answer_data.get('answer_text') or '').strip(),
+        }
+
+    _save_attempt_payload(attempt, sanitized)
+    return JsonResponse({'success': True, 'saved_at': timezone.now().isoformat()})
 
 
 @login_required
@@ -2564,10 +2834,13 @@ def student_quiz_result(request, attempt_id):
 
     answer_rows = []
     has_pending_manual = False
+    correct_count = 0
+    wrong_count = 0
+    objective_total = 0
 
     for answer in attempt.answers.select_related('question').order_by('question__order'):
         question = answer.question
-        correct_option = question.correct_answer
+        correct_option = _get_question_correct_answer(question, attempt.quiz)
         selected_option = answer.selected_answer
 
         if question.question_type == 'subjective':
@@ -2576,7 +2849,12 @@ def student_quiz_result(request, attempt_id):
             obtained = float(answer.manual_marks or 0) if answer.is_manually_checked else 0
             status_label = 'Pending Manual Check' if has_pending else 'Checked'
         else:
+            objective_total += 1
             has_pending = False
+            if answer.is_correct:
+                correct_count += 1
+            elif selected_option:
+                wrong_count += 1
             obtained = float(question.marks) if answer.is_correct else 0
             status_label = 'Correct' if answer.is_correct else 'Wrong'
 
@@ -2595,6 +2873,9 @@ def student_quiz_result(request, attempt_id):
         _sync_quiz_attempt_to_transcript(attempt)
 
     result_components = _build_course_result_components(request.user, attempt.quiz.course)
+    attempt_result = getattr(attempt, 'result', None)
+    percentage = float(attempt_result.percentage) if attempt_result else float(attempt.percentage)
+    wrong_count = max(0, objective_total - correct_count)
 
     return render(request, 'student/quiz_result.html', {
         'attempt': attempt,
@@ -2602,6 +2883,53 @@ def student_quiz_result(request, attempt_id):
         'answer_rows': answer_rows,
         'has_pending_manual': has_pending_manual,
         'result_components': result_components,
+        'correct_count': correct_count,
+        'wrong_count': wrong_count,
+        'objective_total': objective_total,
+        'percentage': percentage,
+    })
+
+
+@login_required
+def teacher_quiz_attempts_dashboard(request):
+    """Teacher dashboard for all attempts with course/quiz/student filters."""
+    if request.user.role != 'teacher':
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('main:home')
+
+    course_filter = (request.GET.get('course') or '').strip()
+    quiz_filter = (request.GET.get('quiz') or '').strip()
+    student_filter = (request.GET.get('student') or '').strip()
+
+    teacher_courses = Course.objects.filter(teacher=request.user).order_by('name')
+    teacher_quizzes = Quiz.objects.filter(created_by=request.user).select_related('course').order_by('-created_at')
+
+    attempts = QuizAttempt.objects.filter(
+        quiz__created_by=request.user,
+        is_completed=True,
+    ).select_related('student', 'quiz', 'quiz__course').order_by('-submitted_at')
+
+    if course_filter:
+        attempts = attempts.filter(quiz__course_id=course_filter)
+        teacher_quizzes = teacher_quizzes.filter(course_id=course_filter)
+
+    if quiz_filter:
+        attempts = attempts.filter(quiz_id=quiz_filter)
+
+    if student_filter:
+        attempts = attempts.filter(
+            Q(student__username__icontains=student_filter)
+            | Q(student__first_name__icontains=student_filter)
+            | Q(student__last_name__icontains=student_filter)
+        )
+
+    return render(request, 'teacher/quiz_attempts_dashboard.html', {
+        'attempts': attempts,
+        'teacher_courses': teacher_courses,
+        'teacher_quizzes': teacher_quizzes,
+        'course_filter': course_filter,
+        'quiz_filter': quiz_filter,
+        'student_filter': student_filter,
     })
 
 
@@ -2982,7 +3310,7 @@ def manage_transcripts(request):
     
     enrollments = Enrollment.objects.filter(course__teacher=request.user).select_related(
         'student', 'course'
-    ).prefetch_related('transcript')
+    ).prefetch_related('transcript', 'quiz_marks__quiz')
     
     context = {
         'enrollments': enrollments

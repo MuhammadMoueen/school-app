@@ -83,12 +83,21 @@
                     <h5>Q{{ answer.question.order }}. {{ answer.question.question_text }}</h5>
                     <p class="text-muted mb-2"><strong>Student Answer:</strong></p>
                     <div class="p-3 rounded" style="background:#f8f9fc; border:1px solid #e4e9f6; white-space:pre-wrap;">{{ answer.answer_text|default:'(No answer submitted)' }}</div>
+                    {% if answer.answer_file %}
+                    <div class="mt-2">
+                        <a href="{{ answer.answer_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">View Uploaded File</a>
+                    </div>
+                    {% endif %}
                     <div class="row mt-3 align-items-end">
                         <div class="col-md-4">
                             <label class="form-label">Marks (Max {{ answer.question.marks }})</label>
                             <input type="number" step="0.01" min="0" max="{{ answer.question.marks }}" name="manual_marks_{{ answer.id }}" class="form-control" value="{{ answer.manual_marks|default:'0' }}" required>
                         </div>
-                        <div class="col-md-8 text-muted">
+                        <div class="col-md-4">
+                            <label class="form-label">Feedback (Optional)</label>
+                            <input type="text" name="feedback_{{ answer.id }}" class="form-control" value="{{ answer.feedback }}" placeholder="Add feedback for student">
+                        </div>
+                        <div class="col-md-4 text-muted">
                             {% if answer.is_manually_checked %}
                                 Checked on {{ answer.checked_at|date:"M d, Y H:i" }}
                             {% else %}

@@ -81,6 +81,7 @@ urlpatterns = [
     path('teacher/questions/<int:question_id>/delete/', views.delete_question, name='delete_question'),
     path('teacher/quizzes/<int:quiz_id>/results/', views.quiz_results, name='quiz_results'),
     path('teacher/quiz-attempts/<int:attempt_id>/grade/', views.grade_quiz_attempt, name='grade_quiz_attempt'),
+    path('teacher/quiz-attempts/dashboard/', views.teacher_quiz_attempts_dashboard, name='teacher_quiz_attempts_dashboard'),
     
     # Analytics & Performance URLs
     path('teacher/analytics/', views.course_analytics, name='course_analytics'),
@@ -112,6 +113,7 @@ urlpatterns = [
     path('student/assignments/<int:assignment_id>/submit/', views.submit_assignment, name='submit_assignment'),
     path('student/quizzes/', views.student_my_quizzes, name='student_my_quizzes'),
     path('student/quizzes/<int:quiz_id>/take/', views.take_quiz, name='take_quiz'),
+    path('student/quizzes/<int:quiz_id>/autosave/', views.autosave_quiz_attempt, name='autosave_quiz_attempt'),
     path('student/quiz-attempts/<int:attempt_id>/result/', views.student_quiz_result, name='student_quiz_result'),
     
     # Notification URLs

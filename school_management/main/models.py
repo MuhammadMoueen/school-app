@@ -390,12 +390,43 @@ class Attendance(models.Model):
 
 # Quiz model - create quizzes/tests
 class Quiz(models.Model):
+    QUIZ_TYPE_CHOICES = (
+        ('auto', 'Auto-Graded (MCQs / OMR)'),
+        ('manual', 'Manual (Subjective)'),
+    )
+
+    QUESTION_SOURCE_CHOICES = (
+        ('manual', 'Manual MCQ Entry'),
+        ('omr_upload', 'Upload MCQ File (OMR Style)'),
+    )
+
+    QUESTION_DISPLAY_CHOICES = (
+        ('full', 'Show Full Quiz'),
+        ('one_by_one', 'Show One by One'),
+    )
+
+    TOTAL_MARKS_MODE_CHOICES = (
+        ('manual', 'Manual'),
+        ('auto', 'Auto from Questions'),
+    )
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quizzes')
+    quiz_type = models.CharField(max_length=20, choices=QUIZ_TYPE_CHOICES, default='auto')
+    question_source = models.CharField(max_length=20, choices=QUESTION_SOURCE_CHOICES, default='manual')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     duration_minutes = models.PositiveIntegerField(help_text='Quiz duration in minutes')
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    auto_submit_on_timeout = models.BooleanField(default=True)
+    question_display_mode = models.CharField(max_length=20, choices=QUESTION_DISPLAY_CHOICES, default='full')
+    total_marks_mode = models.CharField(max_length=20, choices=TOTAL_MARKS_MODE_CHOICES, default='manual')
     total_marks = models.DecimalField(max_digits=5, decimal_places=2, default=100)
     passing_marks = models.DecimalField(max_digits=5, decimal_places=2, default=40)
+    omr_source_file = models.FileField(upload_to='quiz_sources/%Y/%m/', blank=True, null=True)
+    answer_key_text = models.TextField(blank=True)
+    answer_key_file = models.FileField(upload_to='quiz_answer_keys/%Y/%m/', blank=True, null=True)
+    answer_key_map = models.JSONField(default=dict, blank=True)
     is_published = models.BooleanField(default=False, help_text='Whether students can take this quiz')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_quizzes')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -412,11 +443,23 @@ class Quiz(models.Model):
     def question_count(self):
         return self.questions.count()
 
+    @property
+    def computed_total_marks(self):
+        aggregate_total = self.questions.aggregate(total=models.Sum('marks')).get('total')
+        return aggregate_total or 0
+
+    def sync_total_marks_from_questions(self):
+        if self.total_marks_mode != 'auto':
+            return
+        self.total_marks = self.computed_total_marks
+        self.save(update_fields=['total_marks', 'updated_at'])
+
 
 # Question model - quiz questions
 class Question(models.Model):
     QUESTION_TYPE_CHOICES = (
         ('mcq', 'Multiple Choice'),
+        ('omr', 'OMR MCQ'),
         ('true_false', 'True/False'),
         ('subjective', 'Subjective'),
     )
@@ -424,6 +467,7 @@ class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='mcq')
+    options = models.JSONField(default=list, blank=True)
     option_a = models.CharField(max_length=500, blank=True)
     option_b = models.CharField(max_length=500, blank=True)
     option_c = models.CharField(max_length=500, blank=True)
@@ -438,14 +482,42 @@ class Question(models.Model):
     def __str__(self):
         return f"Q{self.order}: {self.question_text[:50]}"
 
+    def save(self, *args, **kwargs):
+        if self.options:
+            normalized_options = [str(item).strip() for item in self.options][:4]
+            while len(normalized_options) < 4:
+                normalized_options.append('')
+            self.option_a, self.option_b, self.option_c, self.option_d = normalized_options[:4]
+        elif any([self.option_a, self.option_b, self.option_c, self.option_d]):
+            self.options = [self.option_a, self.option_b, self.option_c, self.option_d]
+
+        if self.question_type == 'subjective':
+            self.correct_answer = ''
+            self.options = []
+            self.option_a = ''
+            self.option_b = ''
+            self.option_c = ''
+            self.option_d = ''
+
+        super().save(*args, **kwargs)
+
 
 # Quiz Attempt model - student attempts
 class QuizAttempt(models.Model):
+    STATUS_CHOICES = (
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('pending_check', 'Pending Check'),
+    )
+
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts', limit_choices_to={'role': 'student'})
     started_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    answers_json = models.JSONField(default=dict, blank=True)
     score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    obtained_marks = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')
     is_passed = models.BooleanField(default=False)
     is_completed = models.BooleanField(default=False)
     
@@ -468,8 +540,10 @@ class QuizAnswer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='student_answers')
     selected_answer = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')], blank=True)
     answer_text = models.TextField(blank=True)
+    answer_file = models.FileField(upload_to='quiz_answers/%Y/%m/', blank=True, null=True)
     is_correct = models.BooleanField(default=False)
     manual_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    feedback = models.TextField(blank=True)
     is_manually_checked = models.BooleanField(default=False)
     checked_by = models.ForeignKey(
         User,
@@ -486,6 +560,26 @@ class QuizAnswer(models.Model):
     
     def __str__(self):
         return f"{self.attempt.student.username} - Q{self.question.order} - {self.selected_answer}"
+
+
+class QuizResult(models.Model):
+    RESULT_STATUS_CHOICES = (
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
+        ('pending', 'Pending Check'),
+    )
+
+    attempt = models.OneToOneField(QuizAttempt, on_delete=models.CASCADE, related_name='result')
+    percentage = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    result_status = models.CharField(max_length=20, choices=RESULT_STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Result - Attempt {self.attempt_id} ({self.result_status})"
 
 
 # Lecture Progress model - track lecture completion
