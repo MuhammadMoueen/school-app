@@ -14,11 +14,6 @@ class MultipleFileInput(forms.ClearableFileInput):
 
 
 
-
-
-
-
-
 class MultipleFileField(forms.FileField):
     def clean(self, data, initial=None):
         single_file_clean = super().clean
