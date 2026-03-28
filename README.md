@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 # School Management System
 
 A comprehensive Django-based School Management System with a modern admin panel.
