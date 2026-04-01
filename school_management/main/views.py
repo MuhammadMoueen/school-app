@@ -2462,7 +2462,7 @@ def delete_quiz(request, quiz_id):
 
 @login_required
 def add_questions(request, quiz_id):
-    """Add questions to a quiz"""
+    """Add questions to a quiz - supports auto, manual, and mixed types"""
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('main:home')
@@ -2486,15 +2486,23 @@ def add_questions(request, quiz_id):
             form = QuestionForm(request.POST, request.FILES)
             if form.is_valid():
                 question = form.save(commit=False)
-                if quiz.quiz_type == 'auto' and question.question_type == 'subjective':
-                    messages.error(request, 'MCQ-only quizzes only support objective questions.')
+                question_type = request.POST.get('question_type', 'mcq')
+                
+                # Validate question type against quiz type
+                if quiz.quiz_type == 'auto' and question_type == 'subjective':
+                    messages.error(request, 'MCQ-only quizzes support objective questions only.')
                     return redirect('main:add_questions', quiz_id=quiz.id)
-                if quiz.quiz_type == 'manual' and question.question_type != 'subjective':
-                    messages.error(request, 'Subjective-only quizzes only support subjective questions.')
+                
+                if quiz.quiz_type == 'manual' and question_type != 'subjective':
+                    messages.error(request, 'Subjective-only quizzes support subjective questions only.')
                     return redirect('main:add_questions', quiz_id=quiz.id)
+                
+                # Mixed quizzes support both types
                 question.quiz = quiz
+                question.question_type = question_type
                 question.save()
                 quiz.sync_total_marks_from_questions()
+                
                 teacher_name = teacher.get_full_name() or teacher.username
                 log_teacher_activity(
                     teacher=teacher,
@@ -2502,19 +2510,26 @@ def add_questions(request, quiz_id):
                     description=f'Teacher {teacher_name} added quiz questions for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
                     course=quiz.course,
                 )
-                messages.success(request, 'Question added successfully!')
+                
+                question_type_display = 'MCQ' if question_type == 'mcq' else 'Subjective'
+                messages.success(request, f'{question_type_display} question added successfully!')
                 return redirect('main:add_questions', quiz_id=quiz.id)
     else:
         # Set default order to next number
         next_order = quiz.questions.count() + 1
-        form = QuestionForm(initial={'order': next_order, 'question_type': 'subjective'})
+        default_type = 'subjective' if quiz.quiz_type != 'auto' else 'mcq'
+        form = QuestionForm(initial={'order': next_order, 'question_type': default_type})
     
     questions = quiz.questions.all().order_by('order')
+    mcq_questions = questions.filter(question_type__in=['mcq', 'omr', 'true_false'])
+    subjective_questions = questions.filter(question_type='subjective')
     
     context = {
         'quiz': quiz,
         'form': form,
         'questions': questions,
+        'mcq_questions': mcq_questions,
+        'subjective_questions': subjective_questions,
     }
     
     return render(request, 'teacher/add_questions.html', context)
