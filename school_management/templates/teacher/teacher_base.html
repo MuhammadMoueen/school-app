@@ -53,6 +53,10 @@
                 <i class="fas fa-tasks nav-icon"></i>
                 <span class="nav-text">Quizzes</span>
             </a>
+            <a href="{% url 'main:manage_assignments' %}" class="nav-item {% if 'assignment' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-file-alt nav-icon"></i>
+                <span class="nav-text">Assignments</span>
+            </a>
             <a href="{% url 'main:manage_enrollments' %}" class="nav-item {% if 'enrollment' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-user-check nav-icon"></i>
                 <span class="nav-text">Enrollments</span>
