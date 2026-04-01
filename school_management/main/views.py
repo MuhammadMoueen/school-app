@@ -2471,31 +2471,43 @@ def add_questions(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
     
     if request.method == 'POST':
-        form = QuestionForm(request.POST)
-        if form.is_valid():
-            question = form.save(commit=False)
-            if quiz.quiz_type == 'auto' and question.question_type == 'subjective':
-                messages.error(request, 'MCQ-only quizzes only support objective questions.')
+        form_type = request.POST.get('form_type', 'add_question')
+        
+        # Handle paper file upload
+        if form_type == 'upload_paper':
+            if 'paper_file' in request.FILES:
+                quiz.paper_file = request.FILES['paper_file']
+                quiz.save()
+                messages.success(request, 'Question paper uploaded successfully!')
                 return redirect('main:add_questions', quiz_id=quiz.id)
-            if quiz.quiz_type == 'manual' and question.question_type != 'subjective':
-                messages.error(request, 'Subjective-only quizzes only support subjective questions.')
+        
+        # Handle individual question addition
+        else:
+            form = QuestionForm(request.POST, request.FILES)
+            if form.is_valid():
+                question = form.save(commit=False)
+                if quiz.quiz_type == 'auto' and question.question_type == 'subjective':
+                    messages.error(request, 'MCQ-only quizzes only support objective questions.')
+                    return redirect('main:add_questions', quiz_id=quiz.id)
+                if quiz.quiz_type == 'manual' and question.question_type != 'subjective':
+                    messages.error(request, 'Subjective-only quizzes only support subjective questions.')
+                    return redirect('main:add_questions', quiz_id=quiz.id)
+                question.quiz = quiz
+                question.save()
+                quiz.sync_total_marks_from_questions()
+                teacher_name = teacher.get_full_name() or teacher.username
+                log_teacher_activity(
+                    teacher=teacher,
+                    action_type='create_assessment',
+                    description=f'Teacher {teacher_name} added quiz questions for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
+                    course=quiz.course,
+                )
+                messages.success(request, 'Question added successfully!')
                 return redirect('main:add_questions', quiz_id=quiz.id)
-            question.quiz = quiz
-            question.save()
-            quiz.sync_total_marks_from_questions()
-            teacher_name = teacher.get_full_name() or teacher.username
-            log_teacher_activity(
-                teacher=teacher,
-                action_type='create_assessment',
-                description=f'Teacher {teacher_name} added quiz questions for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
-                course=quiz.course,
-            )
-            messages.success(request, 'Question added successfully!')
-            return redirect('main:add_questions', quiz_id=quiz.id)
     else:
         # Set default order to next number
         next_order = quiz.questions.count() + 1
-        form = QuestionForm(initial={'order': next_order})
+        form = QuestionForm(initial={'order': next_order, 'question_type': 'subjective'})
     
     questions = quiz.questions.all().order_by('order')
     
@@ -2673,18 +2685,18 @@ def student_my_quizzes(request):
         return redirect('main:home')
 
     course_ids = Enrollment.objects.filter(student=request.user).values_list('course_id', flat=True)
+    now_time = timezone.now()
     quizzes = Quiz.objects.filter(
         course_id__in=course_ids,
         is_published=True,
+    ).filter(
+        Q(start_time__isnull=True) | Q(start_time__lte=now_time)
     ).select_related('course', 'created_by').order_by('-created_at')
 
     rows = []
     for quiz in quizzes:
-        now_time = timezone.now()
         availability = 'Available'
-        if quiz.start_time and now_time < quiz.start_time:
-            availability = 'Upcoming'
-        elif quiz.end_time and now_time > quiz.end_time and not quiz.allow_late_submission:
+        if quiz.end_time and now_time > quiz.end_time and not quiz.allow_late_submission:
             availability = 'Closed'
         elif quiz.end_time and now_time > quiz.end_time and quiz.allow_late_submission:
             availability = 'Late Submission Open'
