@@ -83,6 +83,23 @@
             questionTypeEl.addEventListener('change', toggleQuestionFields);
         }
 
+        // Add form submission logging
+        var forms = document.querySelectorAll('form');
+        forms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Processing...';
+                }
+                console.log('Quiz form submitted with values:', {
+                    quiz_type: quizTypeEl ? quizTypeEl.value : 'N/A',
+                    question_source: sourceEl ? sourceEl.value : 'N/A',
+                    total_marks_mode: totalMarksModeEl ? totalMarksModeEl.value : 'N/A'
+                });
+            });
+        });
+
         toggleCreateQuizSections();
         toggleQuestionFields();
     });
