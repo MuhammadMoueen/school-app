@@ -1284,7 +1284,7 @@ class QuestionForm(forms.ModelForm):
     
     class Meta:
         model = Question
-        fields = ['question_text', 'question_type', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'marks', 'order', 'question_file']
+        fields = ['question_text', 'question_type', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'marks', 'order']
         widgets = {
             'question_text': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1316,10 +1316,6 @@ class QuestionForm(forms.ModelForm):
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0
-            }),
-            'question_file': forms.ClearableFileInput(attrs={
-                'class': 'form-control',
-                'accept': '.pdf,.png,.jpg,.jpeg,.docx,.doc,.xlsx,.xls'
             })
         }
 
