@@ -1,77 +1,148 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Edit Question{% endblock %}
+{% block page_title %}Edit Question{% endblock %}
+{% block topbar_title %}The City School - Edit Question - {{ quiz.title }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/add-questions.css' %}">
 {% endblock %}
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Edit Question</h1></div>
-        </header>
-        
-        <main class="page-content">
-            <div class="card">
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Question Text</label>
-                            {{ form.question_text }}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-edit"></i> Edit Question
+        </h2>
+        <p class="page-subtitle">Modify question details</p>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+
+        <!-- EDIT QUESTION FORM -->
+        <div class="premium-card">
+            <div class="section-header">
+                <div class="section-header-icon">
+                    <i class="fas fa-pencil-alt"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h3>Question Details</h3>
+                    <p>Edit the question information</p>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="form-group-section">
+                    <label class="form-label"><i class="fas fa-pencil-alt"></i> Question Text</label>
+                    {{ form.question_text }}
+                    <span class="help-text">Write the question clearly and concisely.</span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-list-ul"></i> Question Type</label>
+                            {{ form.question_type }}
                         </div>
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                <label class="form-label">Question Type</label>
-                                {{ form.question_type }}
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label">Marks</label>
-                                {{ form.marks }}
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label">Order</label>
-                                {{ form.order }}
-                            </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-star"></i> Marks</label>
+                            {{ form.marks }}
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Option A</label>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-list-ol"></i> Order</label>
+                            {{ form.order }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MCQ OPTIONS (Hidden for subjective) -->
+                <div id="mcqOptions">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-section">
+                                <label class="form-label"><i class="fas fa-a"></i> Option A</label>
                                 {{ form.option_a }}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Option B</label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-section">
+                                <label class="form-label"><i class="fas fa-b"></i> Option B</label>
                                 {{ form.option_b }}
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Option C (optional)</label>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-section">
+                                <label class="form-label"><i class="fas fa-c"></i> Option C (optional)</label>
                                 {{ form.option_c }}
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Option D (optional)</label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-section">
+                                <label class="form-label"><i class="fas fa-d"></i> Option D (optional)</label>
                                 {{ form.option_d }}
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Correct Answer</label>
-                            {{ form.correct_answer }}
-                        </div>
-                        <div class="text-end">
-                            <a href="{% url 'main:add_questions' quiz.id %}" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-gradient">Update Question</button>
-                        </div>
-                    </form>
+                    </div>
+
+                    <div class="form-group-section">
+                        <label class="form-label"><i class="fas fa-check"></i> Correct Answer</label>
+                        {{ form.correct_answer }}
+                    </div>
                 </div>
-            </div>
-        </main>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <a href="{% url 'main:add_questions' quiz.id %}" class="btn btn-cancel">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-add-question">
+                        <i class="fas fa-check"></i> Update Question
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+            <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Quizzes
+            </a>
+        </div>
+
     </div>
 </div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'js/add-questions.js' %}"></script>
+<script>
+    // Show/hide MCQ options based on question type
+    document.addEventListener('DOMContentLoaded', function() {
+        const questionTypeSelect = document.querySelector('[name="question_type"]');
+        const mcqOptions = document.getElementById('mcqOptions');
+        
+        function toggleMCQOptions() {
+            const questionType = questionTypeSelect.value;
+            if (questionType === 'subjective') {
+                mcqOptions.style.display = 'none';
+            } else {
+                mcqOptions.style.display = 'block';
+            }
+        }
+        
+        toggleMCQOptions();
+        questionTypeSelect.addEventListener('change', toggleMCQOptions);
+    });
+</script>
 {% endblock %}

@@ -1,105 +1,124 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Quiz Results{% endblock %}
+{% block page_title %}Quiz Results{% endblock %}
+{% block topbar_title %}The City School – Quiz Results: {{ quiz.title }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% block page_css %}
+<link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
 {% endblock %}
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Quiz Results: {{ quiz.title }}</h1></div>
-        </header>
-
-        <main class="page-content">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <form method="get" class="row g-3 align-items-end">
-                        <div class="col-md-5">
-                            <label class="form-label">Filter by Student</label>
-                            <input type="text" name="student" value="{{ student_filter }}" class="form-control" placeholder="Name or username">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Submission</label>
-                            <select name="late" class="form-control">
-                                <option value="all" {% if late_filter == 'all' %}selected{% endif %}>All</option>
-                                <option value="on_time" {% if late_filter == 'on_time' %}selected{% endif %}>On Time</option>
-                                <option value="late" {% if late_filter == 'late' %}selected{% endif %}>Late</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Apply</button>
-                            <a href="{% url 'main:quiz_results' quiz.id %}" class="btn btn-secondary">Reset</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Score</th>
-                                <th>Percentage</th>
-                                <th>Result</th>
-                                <th>Submission</th>
-                                <th>Grading</th>
-                                <th>Submitted At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in attempt_rows %}
-                            {% with attempt=row.attempt %}
-                            <tr>
-                                <td>{{ attempt.student.get_full_name }}</td>
-                                <td>{{ attempt.score }}/{{ quiz.total_marks }}</td>
-                                <td>{{ attempt.percentage|floatformat:2 }}%</td>
-                                <td>
-                                    <span class="badge bg-{% if attempt.is_passed %}success{% else %}danger{% endif %}">
-                                        {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{% if row.submission_status == 'Submitted Late' %}danger{% else %}success{% endif %}">
-                                        {{ row.submission_status }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{% if row.pending_subjective > 0 %}warning text-dark{% else %}success{% endif %}">
-                                        {{ row.grading_status }}
-                                    </span>
-                                </td>
-                                <td>{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
-                                <td>
-                                    {% if row.pending_subjective > 0 %}
-                                    <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">
-                                        Manual Check
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted">Completed</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endwith %}
-                            {% empty %}
-                            <tr>
-                                <td colspan="8" class="text-center">No attempts yet</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-chart-bar"></i> Quiz Results
+        </h2>
+        <p class="page-subtitle">Review student submissions for {{ quiz.title }}</p>
     </div>
 </div>
+
+<!-- Filter Card -->
+<div class="content-card mb-25">
+    <div class="card-body card-body-pad-20">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Filter by Student</label>
+                <input type="text" name="student" value="{{ student_filter }}" class="form-control" placeholder="Name or username">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Submission</label>
+                <select name="late" class="form-control">
+                    <option value="all" {% if late_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="on_time" {% if late_filter == 'on_time' %}selected{% endif %}>On Time</option>
+                    <option value="late" {% if late_filter == 'late' %}selected{% endif %}>Late</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-action"><i class="fas fa-filter"></i> Apply</button>
+                <a href="{% url 'main:quiz_results' quiz.id %}" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results Table Card -->
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-list"></i> Student Submissions
+        </h3>
+        <div class="card-header-actions">
+            <span class="badge badge-info">{{ attempt_rows|length }} Total</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Score</th>
+                    <th>Percentage</th>
+                    <th>Result</th>
+                    <th>Submission</th>
+                    <th>Grading</th>
+                    <th>Submitted At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attempt_rows %}
+                {% with attempt=row.attempt %}
+                <tr>
+                    <td>{{ attempt.student.get_full_name }}</td>
+                    <td>{{ attempt.score }}/{{ quiz.total_marks }}</td>
+                    <td>{{ attempt.percentage|floatformat:2 }}%</td>
+                    <td>
+                        <span class="badge bg-{% if attempt.is_passed %}success{% else %}danger{% endif %}">
+                            {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-{% if row.submission_status == 'Submitted Late' %}danger{% else %}success{% endif %}">
+                            {{ row.submission_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-{% if row.pending_subjective > 0 %}warning text-dark{% else %}success{% endif %}">
+                            {{ row.grading_status }}
+                        </span>
+                    </td>
+                    <td>{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                        {% if row.pending_subjective > 0 %}
+                        <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">
+                            Manual Check
+                        </a>
+                        {% else %}
+                        <span class="text-muted">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No attempts yet</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Back to Quizzes -->
+<div style="margin-top: 20px;">
+    <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Quizzes
+    </a>
+</div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'js/quiz-create.js' %}"></script>
 {% endblock %}
