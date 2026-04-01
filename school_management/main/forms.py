@@ -1151,6 +1151,7 @@ class QuizForm(forms.ModelForm):
             'total_marks_mode',
             'total_marks',
             'passing_marks',
+            'paper_file',
             'omr_source_file',
             'answer_key_text',
             'answer_key_file',
@@ -1200,6 +1201,10 @@ class QuizForm(forms.ModelForm):
                 'step': '0.01',
                 'placeholder': 'Passing marks'
             }),
+            'paper_file': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.png,.jpg,.jpeg,.docx,.xlsx'
+            }),
             'omr_source_file': forms.ClearableFileInput(attrs={
                 'class': 'form-control',
                 'accept': '.pdf,.png,.jpg,.jpeg,.docx'
@@ -1229,13 +1234,14 @@ class QuizForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         quiz_type = cleaned_data.get('quiz_type')
-        question_source = cleaned_data.get('question_source')
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
         duration_minutes = cleaned_data.get('duration_minutes')
         total_marks_mode = cleaned_data.get('total_marks_mode')
         total_marks = cleaned_data.get('total_marks')
         passing_marks = cleaned_data.get('passing_marks')
+        allow_late_submission = cleaned_data.get('allow_late_submission')
+        auto_submit_on_timeout = cleaned_data.get('auto_submit_on_timeout')
         omr_file = cleaned_data.get('omr_source_file')
 
         if start_time and end_time and end_time <= start_time:
@@ -1243,6 +1249,9 @@ class QuizForm(forms.ModelForm):
 
         if duration_minutes and duration_minutes < 1:
             self.add_error('duration_minutes', 'Duration must be at least 1 minute.')
+
+        if allow_late_submission and auto_submit_on_timeout:
+            self.add_error('auto_submit_on_timeout', 'Auto-submit and late submission cannot both be enabled at the same time.')
 
         if total_marks_mode == 'manual' and total_marks is not None and passing_marks is not None:
             if passing_marks > total_marks:
@@ -1255,7 +1264,10 @@ class QuizForm(forms.ModelForm):
         if quiz_type == 'mixed':
             cleaned_data['question_source'] = 'manual'
 
-        if quiz_type == 'auto' and question_source == 'omr_upload':
+        if quiz_type == 'auto':
+            cleaned_data['question_source'] = 'omr_upload' if omr_file else 'manual'
+
+        if quiz_type == 'auto' and cleaned_data.get('question_source') == 'omr_upload':
             if not omr_file and not self.instance.pk:
                 self.add_error('omr_source_file', 'Upload an OMR/MCQ source file for OMR mode.')
 
@@ -1272,7 +1284,7 @@ class QuestionForm(forms.ModelForm):
     
     class Meta:
         model = Question
-        fields = ['question_text', 'question_type', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'marks', 'order']
+        fields = ['question_text', 'question_type', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'marks', 'order', 'question_file']
         widgets = {
             'question_text': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1304,6 +1316,10 @@ class QuestionForm(forms.ModelForm):
             'order': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0
+            }),
+            'question_file': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.png,.jpg,.jpeg,.docx,.doc,.xlsx,.xls'
             })
         }
 
