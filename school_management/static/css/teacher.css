@@ -708,31 +708,213 @@ main .container .alert {
     color: #667eea;
 }
 
+/* Standardized Button Styles - Applied across all teacher pages */
+
+.btn {
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    text-decoration: none !important;
+    line-height: 1.4 !important;
+}
+
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 8px 18px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.4;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    color: white;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
 }
 
 .btn-primary:active {
-    transform: translateY(0);
+    transform: translateY(0) !important;
+}
+
+.btn-add, 
+.btn-new, 
+.btn-create {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-add:hover,
+.btn-new:hover,
+.btn-create:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
+}
+
+.btn-add:active,
+.btn-new:active,
+.btn-create:active {
+    transform: translateY(0) !important;
+}
+
+.btn-update, 
+.btn-submit,
+.btn-save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-update:hover,
+.btn-submit:hover,
+.btn-save:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
+}
+
+.btn-update:active,
+.btn-submit:active,
+.btn-save:active {
+    transform: translateY(0) !important;
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-edit:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
+}
+
+.btn-edit:active {
+    transform: translateY(0) !important;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-delete:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4) !important;
+    color: white !important;
+}
+
+.btn-delete:active {
+    transform: translateY(0) !important;
+}
+
+.btn-action {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    color: white !important;
+}
+
+.btn-action:active {
+    transform: translateY(0) !important;
+}
+
+.btn-cancel,
+.btn-secondary {
+    background: #6c757d !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-cancel:hover,
+.btn-secondary:hover {
+    background: #5a6268 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4) !important;
+    color: white !important;
+}
+
+.btn-cancel:active,
+.btn-secondary:active {
+    transform: translateY(0) !important;
+}
+
+.btn-sm {
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
 }
 
 /* Quick Actions Grid */
@@ -883,33 +1065,6 @@ main .container .alert {
     font-size: 0.85rem;
     color: #95a5a6;
     margin-top: 5px;
-}
-
-.btn-action {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 6px 16px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.4;
-}
-
-.btn-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    color: white;
-}
-
-.btn-action:active {
-    transform: translateY(0);
 }
 
 /* Empty State */
@@ -1745,58 +1900,6 @@ main .container .alert {
     margin-top: 25px;
     padding-top: 20px;
     border-top: 1px solid #f0f0f0;
-}
-
-/* Button Styles */
-.btn {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-sm {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-}
-
-.btn-edit {
-    background: #3498db;
-    color: white;
-}
-
-.btn-edit:hover {
-    background: #2980b9;
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
-}
-
-.btn-delete {
-    background: #e74c3c;
-    color: white;
-}
-
-.btn-delete:hover {
-    background: #c0392b;
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
 }
 
 /* Table Styles */
