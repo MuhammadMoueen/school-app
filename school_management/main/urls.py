@@ -11,7 +11,7 @@ urlpatterns = [
     
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
-    
+
     # Profile Management
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('profile/change-password/', views.change_password, name='change_password'),
@@ -118,7 +118,7 @@ urlpatterns = [
     
     # Notification URLs
     path('presence/ping/', views.presence_ping, name='presence_ping'),
-    path('notifications/get/', views.get_notifications, name='get_notifications'),
+    path('notifications/get/', views.get_notifications, name='get_notifications')
     path('notifications/mark-read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
 ]
