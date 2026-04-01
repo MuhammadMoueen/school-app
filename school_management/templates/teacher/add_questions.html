@@ -6,174 +6,7 @@
 
 {% block page_css %}
 <link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
-<style>
-    .premium-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 28px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 2px solid #f0f4f8;
-    }
-
-    .section-header-icon {
-        font-size: 1.8rem;
-        color: #5a67d8;
-        margin-right: 12px;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f0f4ff;
-        border-radius: 10px;
-    }
-
-    .section-header h3 {
-        margin: 0;
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: #1a202c;
-    }
-
-    .section-header p {
-        margin: 0;
-        font-size: 0.9rem;
-        color: #718096;
-    }
-
-    .form-group-section {
-        margin-bottom: 20px;
-    }
-
-    .form-control, .form-select {
-        border-radius: 10px !important;
-        border: 1px solid #e2e8f0;
-        padding: 10px 14px;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #5a67d8 !important;
-        box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1) !important;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: #2d3748;
-        margin-bottom: 8px;
-    }
-
-    .help-text {
-        font-size: 0.85rem;
-        color: #718096;
-        margin-top: 6px;
-        display: block;
-    }
-
-    .file-upload-wrapper {
-        border: 2px dashed #cbd5e0;
-        border-radius: 10px;
-        padding: 20px;
-        text-align: center;
-        background: #f9fafb;
-        cursor: pointer;
-    }
-
-    .file-upload-wrapper:hover {
-        border-color: #5a67d8;
-        background: #f0f4ff;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #5a67d8 0%, #667ee9 100%) !important;
-        border: none !important;
-        color: white !important;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(90, 103, 216, 0.3) !important;
-    }
-
-    .btn-secondary {
-        background: #e2e8f0 !important;
-        color: #2d3748 !important;
-        border: none !important;
-    }
-
-    .btn-danger {
-        background: #fed7d7 !important;
-        color: #c53030 !important;
-        border: none !important;
-    }
-
-    .question-card {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 18px;
-        margin-bottom: 16px;
-    }
-
-    .question-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #5a67d8 0%, #667ee9 100%);
-        color: white;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        font-weight: 600;
-        margin-right: 10px;
-        font-size: 0.9rem;
-    }
-
-    .question-meta {
-        display: flex;
-        gap: 20px;
-        margin-top: 10px;
-        font-size: 0.9rem;
-        color: #718096;
-    }
-
-    .file-preview {
-        background: #f7fafc;
-        padding: 12px;
-        border-radius: 8px;
-        margin-top: 10px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .file-preview a {
-        color: #5a67d8;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #a0aec0;
-    }
-
-    .info-banner {
-        background: #f0f7ff;
-        border-left: 4px solid #5a67d8;
-        padding: 14px 16px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/add-questions.css' %}">
 {% endblock %}
 
 {% block page_content %}
@@ -182,15 +15,15 @@
         <h2 class="page-main-title">
             <i class="fas fa-question-circle"></i> Add Questions
         </h2>
-        <p class="page-subtitle">Create and manage questions for your subjective quiz</p>
+        <p class="page-subtitle">Create and manage questions for your {{ quiz.get_quiz_type_display }}</p>
     </div>
 </div>
 
 <div class="content-card">
     <div class="card-body card-body-pad-20">
 
-        <!-- SECTION 1: UPLOAD FULL QUESTION PAPER -->
-        {% if quiz.quiz_type == 'manual' %}
+        <!-- SECTION 1: UPLOAD FULL QUESTION PAPER (Manual & Mixed) -->
+        {% if quiz.quiz_type == 'manual' or quiz.quiz_type == 'mixed' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -240,33 +73,128 @@
         </div>
         {% endif %}
 
-        <!-- SECTION 2: ADD QUESTIONS MANUALLY -->
+        <!-- SECTION 2: MCQ QUESTIONS (Auto & Mixed) -->
+        {% if quiz.quiz_type == 'auto' or quiz.quiz_type == 'mixed' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
-                    <i class="fas fa-plus-circle"></i>
+                    <i class="fas fa-tasks"></i>
                 </div>
                 <div style="flex: 1;">
-                    <h3>Add Questions Manually</h3>
-                    <p>Add individual questions one by one</p>
+                    <h3>Add MCQ Questions</h3>
+                    <p>Add multiple choice questions with options</p>
                 </div>
             </div>
 
-            {% if quiz.quiz_type == 'manual' and quiz.paper_file %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="add_question">
+                <input type="hidden" name="question_type" value="mcq">
+
+                <div class="form-group-section">
+                    <label class="form-label"><i class="fas fa-pencil-alt"></i> Question Text</label>
+                    {{ form.question_text }}
+                    <span class="help-text">Write the MCQ question clearly and concisely.</span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-star"></i> Marks</label>
+                            {{ form.marks }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-list-ol"></i> Order</label>
+                            {{ form.order }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-list-ul"></i> Question Type</label>
+                            <select name="mcq_type" class="form-control">
+                                <option value="mcq">Multiple Choice</option>
+                                <option value="true_false">True/False</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MCQ Options -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-a"></i> Option A</label>
+                            {{ form.option_a }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-b"></i> Option B</label>
+                            {{ form.option_b }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-c"></i> Option C (optional)</label>
+                            {{ form.option_c }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-section">
+                            <label class="form-label"><i class="fas fa-d"></i> Option D (optional)</label>
+                            {{ form.option_d }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group-section">
+                    <label class="form-label"><i class="fas fa-check"></i> Correct Answer</label>
+                    {{ form.correct_answer }}
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-add-question">
+                        <i class="fas fa-plus"></i> Add MCQ
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- SECTION 3: SUBJECTIVE QUESTIONS (Manual & Mixed) -->
+        {% if quiz.quiz_type == 'manual' or quiz.quiz_type == 'mixed' %}
+        <div class="premium-card">
+            <div class="section-header">
+                <div class="section-header-icon">
+                    <i class="fas fa-pen-fancy"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h3>Add Subjective Questions</h3>
+                    <p>Add open-ended questions for manual grading</p>
+                </div>
+            </div>
+
+            {% if quiz.quiz_type == 'mixed' and quiz.paper_file %}
             <div class="info-banner">
                 <i class="fas fa-lightbulb"></i>
-                <p><strong>Hybrid Mode Active:</strong> You can use both the full paper and individual questions together.</p>
+                <p><strong>Hybrid Mode Active:</strong> You can use both the full paper, MCQs, and individual questions together.</p>
             </div>
             {% endif %}
 
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="form_type" value="add_question">
+                <input type="hidden" name="question_type" value="subjective">
 
                 <div class="form-group-section">
                     <label class="form-label"><i class="fas fa-pencil-alt"></i> Question Text</label>
                     {{ form.question_text }}
-                    <span class="help-text">Write the question or leave blank if uploading a file.</span>
+                    <span class="help-text">Write the subjective question clearly and concisely.</span>
                 </div>
 
                 <div class="row">
@@ -284,73 +212,96 @@
                     </div>
                 </div>
 
-                <div class="form-group-section">
-                    <label class="form-label"><i class="fas fa-image"></i> Upload Question File (Optional)</label>
-                    <div class="file-upload-wrapper" onclick="document.getElementById('questionFileInput').click()">
-                        <div style="font-size: 2rem; color: #5a67d8; margin-bottom: 10px;">
-                            <i class="fas fa-paperclip"></i>
-                        </div>
-                        <p style="margin: 10px 0 0 0; color: #2d3748; font-weight: 500;">Click to upload</p>
-                        <p style="margin: 4px 0; font-size: 0.85rem; color: #718096;">Image, PDF, Word, Excel (Max 10MB)</p>
-                    </div>
-                    <input type="file" id="questionFileInput" name="question_file" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx" style="display: none;">
-                </div>
-
-                <div style="display: none;">{{ form.question_type }}</div>
-
-                <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Add Question</button>
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-add-question">
+                        <i class="fas fa-plus"></i> Add Subjective Question
+                    </button>
                 </div>
             </form>
         </div>
+        {% endif %}
 
-        <!-- SECTION 3: EXISTING QUESTIONS -->
+        <!-- SECTION 4: EXISTING QUESTIONS -->
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
                     <i class="fas fa-list-check"></i>
                 </div>
                 <div style="flex: 1;">
-                    <h3>Existing Questions</h3>
+                    <h3>Questions Overview</h3>
                     <p>{{ questions.count }} question(s) added</p>
                 </div>
             </div>
 
             {% if questions %}
-                {% for question in questions %}
-                <div class="question-card">
-                    <div style="display: flex; justify-content: space-between;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <!-- MCQ Questions Section -->
+                {% if mcq_questions %}
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2d3748; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-tasks" style="color: #5a67d8;"></i> MCQ Questions ({{ mcq_questions.count }})
+                    </h4>
+                    {% for question in mcq_questions %}
+                    <div class="question-card">
+                        <div class="question-card-content">
+                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
                                 <span class="question-number">{{ question.order }}</span>
-                                <div style="font-size: 1rem; color: #2d3748; font-weight: 500;">
+                                <div style="font-size: 1.05rem; color: #2d3748; font-weight: 500;">
                                     {{ question.question_text|truncatewords:20 }}
                                 </div>
                             </div>
 
-                            {% if question.question_file %}
-                            <div class="file-preview">
-                                <i class="fas fa-file"></i>
-                                <a href="{{ question.question_file.url }}" target="_blank">View file</a>
+                            <div class="question-meta">
+                                <span><i class="fas fa-star"></i> {{ question.marks }} marks</span>
+                                <span><i class="fas fa-tasks"></i> MCQ</span>
+                                <span><i class="fas fa-check-circle"></i> Correct: {{ question.correct_answer }}</span>
                             </div>
-                            {% endif %}
+                        </div>
+                        <div class="question-card-actions">
+                            <a href="{% url 'main:edit_question' question.id %}" class="btn btn-edit">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'main:delete_question' question.id %}" class="btn btn-delete js-confirm" data-confirm-message="Delete?">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Subjective Questions Section -->
+                {% if subjective_questions %}
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2d3748; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-pen-fancy" style="color: #667eea;"></i> Subjective Questions ({{ subjective_questions.count }})
+                    </h4>
+                    {% for question in subjective_questions %}
+                    <div class="question-card">
+                        <div class="question-card-content">
+                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                                <span class="question-number">{{ question.order }}</span>
+                                <div style="font-size: 1.05rem; color: #2d3748; font-weight: 500;">
+                                    {{ question.question_text|truncatewords:20 }}
+                                </div>
+                            </div>
 
                             <div class="question-meta">
                                 <span><i class="fas fa-star"></i> {{ question.marks }} marks</span>
                                 <span><i class="fas fa-file-alt"></i> Subjective</span>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 8px;">
-                            <a href="{% url 'main:edit_question' question.id %}" class="btn btn-sm btn-primary" style="padding: 6px 12px; font-size: 0.85rem;">
+                        <div class="question-card-actions">
+                            <a href="{% url 'main:edit_question' question.id %}" class="btn btn-edit">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <a href="{% url 'main:delete_question' question.id %}" class="btn btn-sm btn-danger js-confirm" data-confirm-message="Delete?" style="padding: 6px 12px; font-size: 0.85rem;">
+                            <a href="{% url 'main:delete_question' question.id %}" class="btn btn-delete js-confirm" data-confirm-message="Delete?">
                                 <i class="fas fa-trash"></i> Delete
                             </a>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% endif %}
             {% else %}
                 <div class="empty-state">
                     <i class="fas fa-inbox" style="font-size: 4rem; opacity: 0.4; margin-bottom: 16px;"></i>
@@ -373,12 +324,5 @@
 
 {% block page_scripts %}
 <script src="{% static 'js/quiz-create.js' %}"></script>
-<script>
-    // Auto-click file input on wrapper click
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('[onclick*="FileInput"]')) {
-            e.preventDefault();
-        }
-    });
-</script>
+<script src="{% static 'js/add-questions.js' %}"></script>
 {% endblock %}
