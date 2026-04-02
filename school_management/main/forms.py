@@ -1244,8 +1244,10 @@ class QuizForm(forms.ModelForm):
         auto_submit_on_timeout = cleaned_data.get('auto_submit_on_timeout')
         omr_file = cleaned_data.get('omr_source_file')
 
-        if start_time and end_time and end_time <= start_time:
-            raise forms.ValidationError('End time must be later than start time.')
+        # Only validate times if both are provided
+        if start_time and end_time:
+            if end_time <= start_time:
+                raise forms.ValidationError('End time must be later than start time.')
 
         if duration_minutes and duration_minutes < 1:
             self.add_error('duration_minutes', 'Duration must be at least 1 minute.')
@@ -1253,6 +1255,7 @@ class QuizForm(forms.ModelForm):
         if allow_late_submission and auto_submit_on_timeout:
             self.add_error('auto_submit_on_timeout', 'Auto-submit and late submission cannot both be enabled at the same time.')
 
+        # Only validate marks comparison if BOTH are provided
         if total_marks_mode == 'manual' and total_marks is not None and passing_marks is not None:
             if passing_marks > total_marks:
                 self.add_error('passing_marks', 'Passing marks cannot be greater than total marks.')
