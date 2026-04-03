@@ -15,12 +15,10 @@
 
         var autoSection = byId('autoQuizSection');
         var manualSection = byId('manualQuizSection');
-        var mixedSection = byId('mixedQuizSection');
         var omrSection = byId('omrUploadSection');
 
         var isAuto = quizTypeEl.value === 'auto';
         var isManual = quizTypeEl.value === 'manual';
-        var isMixed = quizTypeEl.value === 'mixed';
         var isOmr = sourceEl && sourceEl.value === 'omr_upload';
 
         if (autoSection) {
@@ -28,9 +26,6 @@
         }
         if (manualSection) {
             manualSection.classList.toggle('quiz-hidden', !isManual);
-        }
-        if (mixedSection) {
-            mixedSection.classList.toggle('quiz-hidden', !isMixed);
         }
         if (omrSection) {
             omrSection.classList.toggle('quiz-hidden', !(isAuto && isOmr));

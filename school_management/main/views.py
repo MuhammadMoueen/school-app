@@ -2490,7 +2490,7 @@ def delete_quiz(request, quiz_id):
 
 @login_required
 def add_questions(request, quiz_id):
-    """Add questions to a quiz - supports auto, manual, and mixed types"""
+    """Add questions to a quiz - supports auto and manual types"""
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('main:home')
@@ -2508,19 +2508,6 @@ def add_questions(request, quiz_id):
                 quiz.save()
                 messages.success(request, 'Question paper uploaded successfully!')
                 return redirect('main:add_questions', quiz_id=quiz.id)
-        
-        # Handle publish/draft buttons
-        elif form_type == 'publish':
-            quiz.is_published = True
-            quiz.save()
-            messages.success(request, f'Quiz "{quiz.title}" published successfully! Students can now take this quiz.')
-            return redirect('main:manage_quizzes')
-        
-        elif form_type == 'save_draft':
-            quiz.is_published = False
-            quiz.save()
-            messages.success(request, f'Quiz "{quiz.title}" saved as draft.')
-            return redirect('main:add_questions', quiz_id=quiz.id)
         
         # Handle individual question addition
         else:
