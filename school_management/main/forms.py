@@ -1155,7 +1155,6 @@ class QuizForm(forms.ModelForm):
             'omr_source_file',
             'answer_key_text',
             'answer_key_file',
-            'is_published',
         ]
         widgets = {
             'course': forms.Select(attrs={'class': 'form-control'}),
