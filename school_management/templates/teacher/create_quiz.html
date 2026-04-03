@@ -21,12 +21,20 @@
 
 <div class="content-card">
     <div class="card-body card-body-pad-20">
+        <div style="background-color: #e8f4f8; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+            <p style="margin: 0; color: #0c4a6e; font-size: 0.95rem;">
+                <i class="fas fa-info-circle"></i> <strong>Required fields are marked with <span class="text-danger">*</span></strong>
+            </p>
+        </div>
+
         {% if form.non_field_errors %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h4 class="alert-heading"><i class="fas fa-exclamation-circle"></i> Form Errors</h4>
-            {% for error in form.non_field_errors %}
-                <p>{{ error }}</p>
-            {% endfor %}
+            <i class="fas fa-exclamation-circle"></i> <strong>Form Errors:</strong>
+            <ul style="margin-bottom: 0; margin-top: 10px;">
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endif %}
@@ -34,8 +42,15 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="mb-3">
-                <label class="form-label">Quiz Type</label>
+                <label class="form-label">Quiz Type <span class="text-danger">*</span></label>
                 {{ form.quiz_type }}
+                {% if form.quiz_type.errors %}
+                <div class="text-danger small mt-2">
+                    {% for error in form.quiz_type.errors %}
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
 
             <div id="autoQuizSection" class="quiz-section">
@@ -43,20 +58,48 @@
                 <div class="mb-3">
                     <label class="form-label">MCQ Source</label>
                     {{ form.question_source }}
+                    {% if form.question_source.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.question_source.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div id="omrUploadSection" class="quiz-hidden">
                     <div class="mb-3">
                         <label class="form-label">Upload MCQ File (PDF, JPG, PNG, DOCX)</label>
                         {{ form.omr_source_file }}
+                        {% if form.omr_source_file.errors %}
+                        <div class="text-danger small mt-2">
+                            {% for error in form.omr_source_file.errors %}
+                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Answer Key (Text)</label>
                         {{ form.answer_key_text }}
+                        {% if form.answer_key_text.errors %}
+                        <div class="text-danger small mt-2">
+                            {% for error in form.answer_key_text.errors %}
+                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         <div class="quiz-helper-text">Use format like: Q1: A, Q2: C, Q3: B</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Answer Key File (TXT, CSV, DOCX)</label>
                         {{ form.answer_key_file }}
+                        {% if form.answer_key_file.errors %}
+                        <div class="text-danger small mt-2">
+                            {% for error in form.answer_key_file.errors %}
+                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="quiz-helper-text">Basic parsing is applied for text-based keys. For scanned OMR files, this is stored as a reference file.</div>
                 </div>
@@ -73,29 +116,71 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Course</label>
+                <label class="form-label">Course <span class="text-danger">*</span></label>
                 {{ form.course }}
+                {% if form.course.errors %}
+                <div class="text-danger small mt-2">
+                    {% for error in form.course.errors %}
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             <div class="mb-3">
-                <label class="form-label">Quiz Title</label>
+                <label class="form-label">Quiz Title <span class="text-danger">*</span></label>
                 {{ form.title }}
+                {% if form.title.errors %}
+                <div class="text-danger small mt-2">
+                    {% for error in form.title.errors %}
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             <div class="mb-3">
                 <label class="form-label">Description</label>
                 {{ form.description }}
+                {% if form.description.errors %}
+                <div class="text-danger small mt-2">
+                    {% for error in form.description.errors %}
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Duration (minutes)</label>
+                    <label class="form-label">Duration (minutes) <span class="text-danger">*</span></label>
                     {{ form.duration_minutes }}
+                    {% if form.duration_minutes.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.duration_minutes.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Start Time</label>
                     {{ form.start_time }}
+                    {% if form.start_time.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.start_time.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">End Time</label>
                     {{ form.end_time }}
+                    {% if form.end_time.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.end_time.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -103,14 +188,35 @@
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Quiz View Mode</label>
                     {{ form.question_display_mode }}
+                    {% if form.question_display_mode.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.question_display_mode.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Total Marks Mode</label>
                     {{ form.total_marks_mode }}
+                    {% if form.total_marks_mode.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.total_marks_mode.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Passing Marks</label>
-                    {{ form.passing_marks }}
+                    <label class="form-label">Paper File (Optional)</label>
+                    {{ form.paper_file }}
+                    {% if form.paper_file.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.paper_file.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -118,23 +224,64 @@
                 <div class="col-md-4 mb-3" id="quizTotalMarksWrap">
                     <label class="form-label">Total Marks</label>
                     {{ form.total_marks }}
+                    {% if form.total_marks.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.total_marks.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Passing Marks</label>
+                    {{ form.passing_marks }}
+                    {% if form.passing_marks.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.passing_marks.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3 form-check d-flex align-items-end">
                     <div>
                         {{ form.allow_late_submission }}
                         <label class="form-check-label">Allow Late Submission</label>
+                        {% if form.allow_late_submission.errors %}
+                        <div class="text-danger small mt-2">
+                            {% for error in form.allow_late_submission.errors %}
+                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="col-md-4 mb-3 form-check d-flex align-items-end">
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3 form-check d-flex align-items-end">
                     <div>
                         {{ form.auto_submit_on_timeout }}
                         <label class="form-check-label">Auto Submit on Timeout</label>
+                        {% if form.auto_submit_on_timeout.errors %}
+                        <div class="text-danger small mt-2">
+                            {% for error in form.auto_submit_on_timeout.errors %}
+                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             <div class="mb-3 form-check">
                 {{ form.is_published }}
                 <label class="form-check-label">Publish (students can take quiz)</label>
+                {% if form.is_published.errors %}
+                <div class="text-danger small mt-2">
+                    {% for error in form.is_published.errors %}
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
                 <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">

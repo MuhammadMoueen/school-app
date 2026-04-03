@@ -2402,7 +2402,16 @@ def create_quiz(request):
                 return redirect('main:manage_quizzes')
 
             messages.success(request, f'Quiz "{quiz.title}" created successfully! Now add questions.')
+            # Redirect for ALL quiz types including mixed
             return redirect('main:add_questions', quiz_id=quiz.id)
+        else:
+            # DEBUG: Print form errors to console
+            print(f"❌ FORM VALIDATION ERRORS:")
+            print(f"Non-field errors: {form.non_field_errors()}")
+            for field, errors in form.errors.items():
+                print(f"  - {field}: {errors}")
+            # Show user-friendly error message
+            messages.error(request, 'Please fix the errors below.')
     else:
         form = QuizForm(teacher=teacher)
     
