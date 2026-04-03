@@ -394,12 +394,6 @@ class Quiz(models.Model):
     QUIZ_TYPE_CHOICES = (
         ('auto', 'MCQ Only (Auto-Graded)'),
         ('manual', 'Subjective Only (Manual)'),
-        ('mixed', 'Mixed (MCQ + Subjective)'),
-    )
-
-    STATUS_CHOICES = (
-        ('draft', 'Draft'),
-        ('published', 'Published'),
     )
 
     QUESTION_SOURCE_CHOICES = (
@@ -419,7 +413,6 @@ class Quiz(models.Model):
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quizzes')
     quiz_type = models.CharField(max_length=20, choices=QUIZ_TYPE_CHOICES, default='auto')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', help_text='Quiz can be saved as draft and published later')
     question_source = models.CharField(max_length=20, choices=QUESTION_SOURCE_CHOICES, default='manual')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)

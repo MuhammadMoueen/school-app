@@ -53,19 +53,6 @@
                 {% endif %}
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Status</label>
-                {{ form.status }}
-                {% if form.status.errors %}
-                <div class="text-danger small mt-2">
-                    {% for error in form.status.errors %}
-                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                <small class="form-text text-muted">Save as Draft or Publish to make it available for students</small>
-            </div>
-
             <div id="autoQuizSection" class="quiz-section">
                 <div class="quiz-section-title">Auto-Graded Setup</div>
                 <div class="mb-3">
@@ -121,15 +108,6 @@
             <div id="manualQuizSection" class="quiz-section quiz-hidden">
                 <div class="quiz-section-title">Manual Quiz Setup</div>
                 <div class="quiz-helper-text">Manual quizzes support descriptive questions and teacher checking with feedback.</div>
-            </div>
-
-            <div id="mixedQuizSection" class="quiz-section quiz-hidden">
-                <div class="quiz-section-title">Mixed Quiz Setup</div>
-                <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 12px; margin-bottom: 15px; border-radius: 4px;">
-                    <p style="margin: 0; color: #664d03; font-size: 0.95rem;">
-                        <i class="fas fa-lightbulb"></i> <strong>Mixed quizzes combine MCQ (auto-graded) and Subjective (manual) questions.</strong> You can add both types on the next page.
-                    </p>
-                </div>
             </div>
 
             <div class="mb-3">

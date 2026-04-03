@@ -22,8 +22,8 @@
 <div class="content-card">
     <div class="card-body card-body-pad-20">
 
-        <!-- SECTION 1: UPLOAD FULL QUESTION PAPER (Manual & Mixed) -->
-        {% if quiz.quiz_type == 'manual' or quiz.quiz_type == 'mixed' %}
+        <!-- SECTION 1: UPLOAD FULL QUESTION PAPER (Manual) -->
+        {% if quiz.quiz_type == 'manual' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -73,8 +73,8 @@
         </div>
         {% endif %}
 
-        <!-- SECTION 2: MCQ QUESTIONS (Auto & Mixed) -->
-        {% if quiz.quiz_type == 'auto' or quiz.quiz_type == 'mixed' %}
+        <!-- SECTION 2: MCQ QUESTIONS (Auto) -->
+        {% if quiz.quiz_type == 'auto' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -166,8 +166,8 @@
         </div>
         {% endif %}
 
-        <!-- SECTION 3: SUBJECTIVE QUESTIONS (Manual & Mixed) -->
-        {% if quiz.quiz_type == 'manual' or quiz.quiz_type == 'mixed' %}
+        <!-- SECTION 3: SUBJECTIVE QUESTIONS (Manual) -->
+        {% if quiz.quiz_type == 'manual' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -308,28 +308,6 @@
             <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Quizzes
             </a>
-            <div style="display: flex; gap: 10px;">
-                {% if quiz.status == 'draft' %}
-                <form method="post" style="display: inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="save_draft">
-                    <button type="submit" class="btn btn-outline-secondary">
-                        <i class="fas fa-save"></i> Save as Draft
-                    </button>
-                </form>
-                <form method="post" style="display: inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="publish">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-rocket"></i> Publish Quiz
-                    </button>
-                </form>
-                {% else %}
-                <span class="badge bg-success" style="padding: 8px 12px; font-size: 0.95rem;">
-                    <i class="fas fa-check-circle"></i> Published
-                </span>
-                {% endif %}
-            </div>
         </div>
 
     </div>

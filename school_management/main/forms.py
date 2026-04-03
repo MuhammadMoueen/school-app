@@ -1139,7 +1139,6 @@ class QuizForm(forms.ModelForm):
         fields = [
             'course',
             'quiz_type',
-            'status',
             'question_source',
             'title',
             'description',
@@ -1161,7 +1160,6 @@ class QuizForm(forms.ModelForm):
         widgets = {
             'course': forms.Select(attrs={'class': 'form-control'}),
             'quiz_type': forms.Select(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
             'question_source': forms.Select(attrs={'class': 'form-control'}),
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -1280,10 +1278,6 @@ class QuizForm(forms.ModelForm):
         if quiz_type == 'manual':
             cleaned_data['question_source'] = 'manual'
             cleaned_data['answer_key_text'] = ''
-
-        if quiz_type == 'mixed':
-            # Mixed quizzes can have both MCQ and Subjective questions
-            cleaned_data['question_source'] = 'manual'  # Manual MCQ entry only for mixed
 
         if quiz_type == 'auto':
             cleaned_data['question_source'] = 'omr_upload' if omr_file else 'manual'
