@@ -394,6 +394,7 @@ class Quiz(models.Model):
     QUIZ_TYPE_CHOICES = (
         ('auto', 'MCQ Only (Auto-Graded)'),
         ('manual', 'Subjective Only (Manual)'),
+        ('mixed', 'Mixed Mode (MCQ + Subjective)'),
     )
 
     QUESTION_SOURCE_CHOICES = (
@@ -409,6 +410,11 @@ class Quiz(models.Model):
     TOTAL_MARKS_MODE_CHOICES = (
         ('manual', 'Manual'),
         ('auto', 'Auto from Questions'),
+    )
+
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
     )
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quizzes')
