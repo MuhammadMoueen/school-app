@@ -2405,11 +2405,31 @@ def create_quiz(request):
             # Redirect for ALL quiz types including mixed
             return redirect('main:add_questions', quiz_id=quiz.id)
         else:
-            # DEBUG: Print form errors to console
-            print(f"❌ FORM VALIDATION ERRORS:")
-            print(f"Non-field errors: {form.non_field_errors()}")
+            # DEBUG: Print detailed form errors to console
+            print("\n" + "="*80)
+            print("❌ FORM VALIDATION ERRORS - Quiz Creation Failed")
+            print("="*80)
+            print(f"\n📋 Form Data Received:")
+            print(f"  - Quiz Type: {request.POST.get('quiz_type')}")
+            print(f"  - Course: {request.POST.get('course')}")
+            print(f"  - Title: {request.POST.get('title')}")
+            print(f"  - Duration: {request.POST.get('duration_minutes')}")
+            print(f"  - Start Time: {request.POST.get('start_time')}")
+            print(f"  - End Time: {request.POST.get('end_time')}")
+            print(f"  - Question Display Mode: {request.POST.get('question_display_mode')}")
+            print(f"  - Total Marks Mode: {request.POST.get('total_marks_mode')}")
+            print(f"  - Total Marks: {request.POST.get('total_marks')}")
+            print(f"  - Passing Marks: {request.POST.get('passing_marks')}")
+            print(f"  - Allow Late Submission: {request.POST.get('allow_late_submission')}")
+            print(f"  - Auto Submit on Timeout: {request.POST.get('auto_submit_on_timeout')}")
+            
+            print(f"\n❌ Validation Errors:")
+            if form.non_field_errors():
+                print(f"  Non-field errors: {form.non_field_errors()}")
             for field, errors in form.errors.items():
                 print(f"  - {field}: {errors}")
+            print("="*80 + "\n")
+            
             # Show user-friendly error message
             messages.error(request, 'Please fix the errors below.')
     else:
