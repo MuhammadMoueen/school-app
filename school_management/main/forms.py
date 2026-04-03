@@ -1228,8 +1228,17 @@ class QuizForm(forms.ModelForm):
         if teacher:
             self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
 
-        self.fields['start_time'].input_formats = ['%Y-%m-%dT%H:%M']
-        self.fields['end_time'].input_formats = ['%Y-%m-%dT%H:%M']
+        # Accept multiple datetime formats for flexibility
+        datetime_formats = [
+            '%Y-%m-%dT%H:%M',           # ISO format from datetime-local input
+            '%Y-%m-%d %H:%M',           # Standard format
+            '%d/%m/%Y %H:%M',           # DD/MM/YYYY HH:MM
+            '%d/%m/%Y %H:%M %p',        # DD/MM/YYYY HH:MM AM/PM
+            '%Y-%m-%d %H:%M:%S',        # With seconds
+            '%d/%m/%Y %H:%M:%S',        # DD/MM/YYYY with seconds
+        ]
+        self.fields['start_time'].input_formats = datetime_formats
+        self.fields['end_time'].input_formats = datetime_formats
 
     def clean(self):
         cleaned_data = super().clean()
