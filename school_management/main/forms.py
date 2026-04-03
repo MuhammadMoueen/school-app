@@ -1279,10 +1279,6 @@ class QuizForm(forms.ModelForm):
             cleaned_data['question_source'] = 'manual'
             cleaned_data['answer_key_text'] = ''
 
-        if quiz_type == 'mixed':
-            cleaned_data['question_source'] = 'manual'
-            cleaned_data['answer_key_text'] = ''
-
         if quiz_type == 'auto':
             cleaned_data['question_source'] = 'omr_upload' if omr_file else 'manual'
 

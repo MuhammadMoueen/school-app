@@ -394,7 +394,6 @@ class Quiz(models.Model):
     QUIZ_TYPE_CHOICES = (
         ('auto', 'MCQ Only (Auto-Graded)'),
         ('manual', 'Subjective Only (Manual)'),
-        ('mixed', 'Mixed Mode (MCQ + Subjective)'),
     )
 
     QUESTION_SOURCE_CHOICES = (

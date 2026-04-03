@@ -2402,7 +2402,6 @@ def create_quiz(request):
                 return redirect('main:manage_quizzes')
 
             messages.success(request, f'Quiz "{quiz.title}" created successfully! Now add questions.')
-            # Redirect for ALL quiz types including mixed
             return redirect('main:add_questions', quiz_id=quiz.id)
         else:
             # DEBUG: Print detailed form errors to console
@@ -2491,7 +2490,7 @@ def delete_quiz(request, quiz_id):
 
 @login_required
 def add_questions(request, quiz_id):
-    """Add questions to a quiz - supports auto, manual, and mixed types"""
+    """Add questions to a quiz - supports auto and manual types"""
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('main:home')
@@ -2526,7 +2525,6 @@ def add_questions(request, quiz_id):
                     messages.error(request, 'Subjective-only quizzes support subjective questions only.')
                     return redirect('main:add_questions', quiz_id=quiz.id)
                 
-                # Mixed quizzes support both types
                 question.quiz = quiz
                 question.question_type = question_type
                 question.save()

@@ -22,8 +22,8 @@
 <div class="content-card">
     <div class="card-body card-body-pad-20">
 
-        <!-- SECTION 1: UPLOAD FULL QUESTION PAPER (Manual & Mixed) -->
-        {% if quiz.quiz_type == 'manual' or quiz.quiz_type == 'mixed' %}
+        <!-- SECTION 1: UPLOAD FULL QUESTION PAPER (Manual) -->
+        {% if quiz.quiz_type == 'manual' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -73,8 +73,8 @@
         </div>
         {% endif %}
 
-        <!-- SECTION 2: MCQ QUESTIONS (Auto & Mixed) -->
-        {% if quiz.quiz_type == 'auto' or quiz.quiz_type == 'mixed' %}
+        <!-- SECTION 2: MCQ QUESTIONS (Auto) -->
+        {% if quiz.quiz_type == 'auto' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -166,8 +166,8 @@
         </div>
         {% endif %}
 
-        <!-- SECTION 3: SUBJECTIVE QUESTIONS (Manual & Mixed) -->
-        {% if quiz.quiz_type == 'manual' or quiz.quiz_type == 'mixed' %}
+        <!-- SECTION 3: SUBJECTIVE QUESTIONS (Manual) -->
+        {% if quiz.quiz_type == 'manual' %}
         <div class="premium-card">
             <div class="section-header">
                 <div class="section-header-icon">
@@ -179,12 +179,7 @@
                 </div>
             </div>
 
-            {% if quiz.quiz_type == 'mixed' and quiz.paper_file %}
-            <div class="info-banner">
-                <i class="fas fa-lightbulb"></i>
-                <p><strong>Hybrid Mode Active:</strong> You can use both the full paper, MCQs, and individual questions together.</p>
-            </div>
-            {% endif %}
+
 
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
