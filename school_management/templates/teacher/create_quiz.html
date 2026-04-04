@@ -272,16 +272,18 @@
                     </div>
                 </div>
             </div>
-            <div class="mb-3 form-check">
-                {{ form.is_published }}
-                <label class="form-check-label">Publish (students can take quiz)</label>
-                {% if form.is_published.errors %}
-                <div class="text-danger small mt-2">
-                    {% for error in form.is_published.errors %}
-                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
-                    {% endfor %}
+            <div class="mb-3 form-check d-flex align-items-end">
+                <div>
+                    {{ form.is_published }}
+                    <label class="form-check-label">Publish (students can take quiz)</label>
+                    {% if form.is_published.errors %}
+                    <div class="text-danger small mt-2">
+                        {% for error in form.is_published.errors %}
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
                 <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">

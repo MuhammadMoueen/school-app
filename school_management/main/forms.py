@@ -1227,6 +1227,10 @@ class QuizForm(forms.ModelForm):
         if teacher:
             self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
 
+        # This field is disabled in UI for manual/mixed quizzes, so allow it to be empty in POST.
+        self.fields['question_source'].required = False
+        self.fields['question_source'].initial = 'manual'
+
         # Accept multiple datetime formats
         self.fields['start_time'].input_formats = [
             '%Y-%m-%dT%H:%M',              # ISO format (browser default)

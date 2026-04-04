@@ -122,9 +122,11 @@
                 </div>
             </div>
 
-            <div class="mb-3 form-check">
-                {{ form.is_published }}
-                <label class="form-check-label">Publish (students can take quiz)</label>
+            <div class="mb-3 form-check d-flex align-items-end">
+                <div>
+                    {{ form.is_published }}
+                    <label class="form-check-label">Publish (students can take quiz)</label>
+                </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
                 <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
