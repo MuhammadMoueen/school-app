@@ -761,7 +761,7 @@ def manage_lectures(request):
     ).select_related('course').annotate(
         views_count=Count('views', distinct=True),
         downloads_count=Count('downloads', distinct=True),
-    ).order_by('course', 'order', '-created_at')
+    ).order_by('lecture_date', 'course__name', 'order', 'created_at')
     
     # Filter by course if specified
     if course_filter:
@@ -926,7 +926,7 @@ def view_course_lectures(request, course_id):
     teacher = request.user
     course = get_object_or_404(Course, id=course_id, teacher=teacher)
     
-    lectures = Lecture.objects.filter(course=course).order_by('order', '-created_at')
+    lectures = Lecture.objects.filter(course=course).order_by('lecture_date', 'order', 'created_at')
     
     context = {
         'course': course,
@@ -1081,7 +1081,7 @@ def manage_assignments(request):
     status_filter = request.GET.get('status', '')
     search_query = request.GET.get('q', '').strip()
 
-    assignments = Assignment.objects.filter(created_by=teacher).select_related('course').order_by('-created_at')
+    assignments = Assignment.objects.filter(created_by=teacher).select_related('course').order_by('created_at')
 
     if course_filter:
         assignments = assignments.filter(course_id=course_filter)
@@ -1925,7 +1925,7 @@ def manage_attendance(request):
         course_records = Attendance.objects.filter(
             course=selected_course,
             date__year=archive_year,
-        ).order_by('-date')
+        ).order_by('date')
         history_map = {}
         for record in course_records:
             row = history_map.setdefault(record.date, {
@@ -1937,7 +1937,7 @@ def manage_attendance(request):
             })
             row[record.status] += 1
 
-        history_rows = sorted(history_map.values(), key=lambda row: row['date'], reverse=True)[:20]
+        history_rows = sorted(history_map.values(), key=lambda row: row['date'])[:20]
 
         today_records = Attendance.objects.filter(course=selected_course, date=today)
         today_summary['total_students'] = total_students
@@ -2345,7 +2345,7 @@ def manage_quizzes(request):
         return redirect('main:home')
     
     teacher = request.user
-    quizzes = Quiz.objects.filter(created_by=teacher).select_related('course').order_by('-created_at')
+    quizzes = Quiz.objects.filter(created_by=teacher).select_related('course').order_by('created_at')
 
     quiz_rows = []
     for quiz in quizzes:
@@ -3008,7 +3008,7 @@ def teacher_quiz_attempts_dashboard(request):
     late_filter = (request.GET.get('late') or 'all').strip()
 
     teacher_courses = Course.objects.filter(teacher=request.user).order_by('name')
-    teacher_quizzes = Quiz.objects.filter(created_by=request.user).select_related('course').order_by('-created_at')
+    teacher_quizzes = Quiz.objects.filter(created_by=request.user).select_related('course').order_by('created_at')
 
     attempts = QuizAttempt.objects.filter(
         quiz__created_by=request.user,
