@@ -57,7 +57,6 @@ def _mark_user_online(user_id):
         LAST_SEEN_CACHE_SECONDS,
     )
 
-
 def _is_user_online(user_id):
     if not user_id:
         return False
