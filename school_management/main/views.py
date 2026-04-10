@@ -118,7 +118,6 @@ def _serialize_teacher_admin_message(item):
     }
     return payload
 
-
 def _serialize_report_reply(reply, is_outgoing=False, tick_data=None):
     return {
         'sender': 'mine' if is_outgoing else 'theirs',
