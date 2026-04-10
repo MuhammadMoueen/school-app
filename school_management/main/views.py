@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.core.cache import cache
 from datetime import datetime, timedelta
-
+from decimal import Decimal
 import io
 import re
 import zipfile
