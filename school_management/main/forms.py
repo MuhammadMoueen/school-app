@@ -10,6 +10,7 @@ import random
 import re
 
 
+
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
