@@ -98,6 +98,7 @@ urlpatterns = [
     path('teacher/enrollments/', views.manage_enrollments, name='manage_enrollments'),
     path('teacher/enrollments/students/', views.get_course_students, name='get_course_students'),
     path('teacher/enrollments/<int:enrollment_id>/delete/', views.delete_enrollment, name='delete_enrollment'),
+    path('teacher/enrollments/<int:enrollment_id>/transcript/sessional/update/', views.update_enrollment_transcript_sessional, name='update_enrollment_transcript_sessional'),
     path('teacher/transcripts/', views.manage_transcripts, name='manage_transcripts'),
     path('teacher/transcripts/create/<int:enrollment_id>/', views.create_transcript, name='create_transcript'),
     path('teacher/transcripts/<int:transcript_id>/edit/', views.edit_transcript, name='edit_transcript'),

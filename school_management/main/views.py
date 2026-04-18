@@ -2204,12 +2204,21 @@ def _get_or_create_transcript_for_enrollment(enrollment):
 
 def _calculate_attendance_marks(course, student):
     attendance_qs = Attendance.objects.filter(course=course, student=student)
-    total_records = attendance_qs.count()
-    if total_records == 0:
+    status_counts = attendance_qs.values('status').annotate(total=Count('id'))
+    counts_map = {row['status']: row['total'] for row in status_counts}
+
+    present_count = Decimal(str(counts_map.get('present', 0)))
+    late_count = Decimal(str(counts_map.get('late', 0)))
+    absent_count = Decimal(str(counts_map.get('absent', 0)))
+
+    # Leave remains neutral by excluding it from both numerator and denominator.
+    effective_total = present_count + late_count + absent_count
+    if effective_total <= 0:
         return Decimal('0.00')
 
-    present_records = attendance_qs.filter(status='present').count()
-    percentage = (Decimal(present_records) / Decimal(total_records)) * Decimal('100')
+    weighted_present = present_count + (late_count * Decimal('0.5'))
+    percentage = (weighted_present / effective_total) * Decimal('100')
+
     if percentage >= Decimal('80'):
         return Decimal('5.00')
 
@@ -2259,22 +2268,34 @@ def _calculate_assignment_component_marks(enrollment):
 def _recalculate_sessional_marks_for_transcript(transcript, save=True):
     enrollment = transcript.enrollment
 
-    attendance_marks = _calculate_attendance_marks(enrollment.course, enrollment.student)
-    quiz_marks = _calculate_quiz_component_marks(enrollment)
-    assignment_marks = _calculate_assignment_component_marks(enrollment)
-    behavior_marks = _clamp_marks(transcript.behavior_marks or 0, 0, 5)
+    if transcript.sessional_auto_enabled:
+        attendance_marks = _calculate_attendance_marks(enrollment.course, enrollment.student)
+        quiz_marks = _calculate_quiz_component_marks(enrollment)
+        assignment_marks = _calculate_assignment_component_marks(enrollment)
+        behavior_marks = _clamp_marks(transcript.behavior_marks or 0, 0, 5)
 
-    auto_total = _clamp_marks(attendance_marks + quiz_marks + assignment_marks + behavior_marks, 0, 20)
-
-    transcript.attendance_marks = attendance_marks
-    transcript.quiz_marks = quiz_marks
-    transcript.assignment_marks = assignment_marks
-    transcript.behavior_marks = behavior_marks
-
-    if transcript.sessional_auto_enabled or transcript.sessional_override_marks is None:
-        transcript.sessional_marks = auto_total
+        transcript.attendance_marks = attendance_marks
+        transcript.quiz_marks = quiz_marks
+        transcript.assignment_marks = assignment_marks
+        transcript.behavior_marks = behavior_marks
     else:
+        transcript.attendance_marks = _clamp_marks(transcript.attendance_marks or 0, 0, 5)
+        transcript.quiz_marks = _clamp_marks(transcript.quiz_marks or 0, 0, 5)
+        transcript.assignment_marks = _clamp_marks(transcript.assignment_marks or 0, 0, 5)
+        transcript.behavior_marks = _clamp_marks(transcript.behavior_marks or 0, 0, 5)
+
+    component_total = _clamp_marks(
+        transcript.attendance_marks + transcript.quiz_marks + transcript.assignment_marks + transcript.behavior_marks,
+        0,
+        20,
+    )
+
+    if transcript.sessional_auto_enabled:
+        transcript.sessional_marks = component_total
+    elif transcript.sessional_override_marks is not None:
         transcript.sessional_marks = _clamp_marks(transcript.sessional_override_marks, 0, 20)
+    else:
+        transcript.sessional_marks = component_total
 
     if save:
         transcript.save(update_fields=[
@@ -3652,8 +3673,25 @@ def manage_transcripts(request):
         transcript = getattr(enrollment, 'transcript', None)
         if transcript:
             enrollment.sessional_data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+            enrollment.preview_sessional_data = None
         else:
             enrollment.sessional_data = None
+            attendance_marks = _calculate_attendance_marks(enrollment.course, enrollment.student)
+            quiz_marks = _calculate_quiz_component_marks(enrollment)
+            assignment_marks = _calculate_assignment_component_marks(enrollment)
+            behavior_marks = Decimal('0.00')
+            sessional_marks = _clamp_marks(
+                attendance_marks + quiz_marks + assignment_marks + behavior_marks,
+                0,
+                20,
+            )
+            enrollment.preview_sessional_data = {
+                'attendance_marks': attendance_marks,
+                'quiz_marks': quiz_marks,
+                'assignment_marks': assignment_marks,
+                'behavior_marks': behavior_marks,
+                'sessional_marks': sessional_marks,
+            }
     
     context = {
         'enrollments': enrollments
@@ -3772,9 +3810,34 @@ def update_transcript_sessional(request, transcript_id):
     transcript = get_object_or_404(Transcript, id=transcript_id, enrollment__course__teacher=request.user)
 
     action = (request.POST.get('action') or '').strip()
-    if action == 'behavior_delta':
+    if action == 'component_delta':
+        component = (request.POST.get('component') or '').strip()
+        if component not in {'attendance', 'quiz', 'assignment', 'behavior'}:
+            return JsonResponse({'success': False, 'error': 'Invalid component.'}, status=400)
+        delta = Decimal(str(request.POST.get('delta', '0')))
+        current_map = {
+            'attendance': transcript.attendance_marks,
+            'quiz': transcript.quiz_marks,
+            'assignment': transcript.assignment_marks,
+            'behavior': transcript.behavior_marks,
+        }
+        next_value = _clamp_marks((current_map[component] or 0) + delta, 0, 5)
+        if component == 'attendance':
+            transcript.attendance_marks = next_value
+        elif component == 'quiz':
+            transcript.quiz_marks = next_value
+        elif component == 'assignment':
+            transcript.assignment_marks = next_value
+        else:
+            transcript.behavior_marks = next_value
+
+        transcript.sessional_auto_enabled = False
+        transcript.sessional_override_marks = None
+    elif action == 'behavior_delta':
         delta = request.POST.get('delta', '0')
         transcript.behavior_marks = _clamp_marks((transcript.behavior_marks or 0) + Decimal(str(delta)), 0, 5)
+        transcript.sessional_auto_enabled = False
+        transcript.sessional_override_marks = None
     elif action == 'override_set':
         override_value = request.POST.get('value', '0')
         transcript.sessional_override_marks = _clamp_marks(override_value, 0, 20)
@@ -3788,6 +3851,67 @@ def update_transcript_sessional(request, transcript_id):
     data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
     return JsonResponse({
         'success': True,
+        'data': data,
+        'override_marks': float(transcript.sessional_override_marks) if transcript.sessional_override_marks is not None else None,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_enrollment_transcript_sessional(request, enrollment_id):
+    if request.user.role != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Access denied.'}, status=403)
+
+    enrollment = get_object_or_404(
+        Enrollment.objects.select_related('course', 'student'),
+        id=enrollment_id,
+        course__teacher=request.user,
+    )
+    transcript = _get_or_create_transcript_for_enrollment(enrollment)
+
+    action = (request.POST.get('action') or '').strip()
+    if action == 'component_delta':
+        component = (request.POST.get('component') or '').strip()
+        if component not in {'attendance', 'quiz', 'assignment', 'behavior'}:
+            return JsonResponse({'success': False, 'error': 'Invalid component.'}, status=400)
+        delta = Decimal(str(request.POST.get('delta', '0')))
+        current_map = {
+            'attendance': transcript.attendance_marks,
+            'quiz': transcript.quiz_marks,
+            'assignment': transcript.assignment_marks,
+            'behavior': transcript.behavior_marks,
+        }
+        next_value = _clamp_marks((current_map[component] or 0) + delta, 0, 5)
+        if component == 'attendance':
+            transcript.attendance_marks = next_value
+        elif component == 'quiz':
+            transcript.quiz_marks = next_value
+        elif component == 'assignment':
+            transcript.assignment_marks = next_value
+        else:
+            transcript.behavior_marks = next_value
+
+        transcript.sessional_auto_enabled = False
+        transcript.sessional_override_marks = None
+    elif action == 'behavior_delta':
+        delta = request.POST.get('delta', '0')
+        transcript.behavior_marks = _clamp_marks((transcript.behavior_marks or 0) + Decimal(str(delta)), 0, 5)
+        transcript.sessional_auto_enabled = False
+        transcript.sessional_override_marks = None
+    elif action == 'override_set':
+        override_value = request.POST.get('value', '0')
+        transcript.sessional_override_marks = _clamp_marks(override_value, 0, 20)
+        transcript.sessional_auto_enabled = False
+    elif action == 'override_reset':
+        transcript.sessional_override_marks = None
+        transcript.sessional_auto_enabled = True
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid action.'}, status=400)
+
+    data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+    return JsonResponse({
+        'success': True,
+        'transcript_id': transcript.id,
         'data': data,
         'override_marks': float(transcript.sessional_override_marks) if transcript.sessional_override_marks is not None else None,
     })

@@ -6,11 +6,53 @@
 
 {% block page_css %}
 <style>
+.transcript-page-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.transcript-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.transcript-table-wrap .data-table {
+    min-width: 1180px;
+}
+
+.transcript-table-wrap .data-table td,
+.transcript-table-wrap .data-table th {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
 .sessional-control {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
     justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.sessional-pill {
+    min-width: 64px;
+    text-align: center;
+    border-radius: 999px;
+    font-size: 0.82rem;
+}
+
+.sessional-control .btn {
+    min-height: 26px !important;
+    width: 26px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
 }
 
 .override-wrap {
@@ -18,11 +60,39 @@
     gap: 6px;
     align-items: center;
     justify-content: center;
+    flex-wrap: nowrap;
     margin-top: 8px;
 }
 
 .override-wrap input {
-    max-width: 90px;
+    max-width: 78px;
+    height: 34px;
+}
+
+.override-wrap .btn {
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    border-radius: 9px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+}
+
+.override-wrap .btn-set {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    color: #fff !important;
+}
+
+.override-wrap .btn-set:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%) !important;
+}
+
+.override-wrap .btn-reset {
+    background: #64748b !important;
+    color: #fff !important;
+}
+
+.override-wrap .btn-reset:hover {
+    background: #475569 !important;
 }
 
 .sessional-modal {
@@ -68,10 +138,56 @@
     padding: 8px 0;
     border-bottom: 1px solid #f1f5f9;
 }
+
+.sessional-mode-text {
+    font-size: 0.78rem;
+    margin-top: 3px;
+}
+
+.sessional-details-btn {
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .transcript-page-shell {
+        max-width: 100%;
+    }
+
+    .sessional-control {
+        gap: 4px;
+    }
+
+    .sessional-control .btn {
+        width: 24px !important;
+        min-height: 24px !important;
+    }
+
+    .sessional-pill {
+        min-width: 58px;
+    }
+
+    .override-wrap {
+        gap: 4px;
+    }
+
+    .override-wrap .btn {
+        min-height: 30px !important;
+        padding: 0 8px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .override-wrap input {
+        max-width: 70px;
+        height: 30px;
+    }
+}
 </style>
 {% endblock %}
 
 {% block page_content %}
+<div class="transcript-page-shell">
 <div class="page-header-section">
     <div class="page-header-content">
         <h2 class="page-main-title">
@@ -93,7 +209,7 @@
     </div>
     <div class="card-body">
         {% if enrollments %}
-            <div class="table-responsive">
+            <div class="table-responsive transcript-table-wrap">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -128,21 +244,39 @@
                                 </td>
                                 <td class="text-center">
                                     {% if enrollment.transcript %}
-                                        <span class="badge badge-info" id="attendance-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.attendance_marks|floatformat:2 }}/5</span>
+                                        <div class="sessional-control">
+                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="attendance" data-delta="-0.25">-</button>
+                                            <span class="badge badge-info sessional-pill" id="attendance-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.attendance_marks|floatformat:2 }}/5</span>
+                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="attendance" data-delta="0.25">+</button>
+                                        </div>
+                                    {% elif enrollment.preview_sessional_data %}
+                                        <span class="badge badge-info">{{ enrollment.preview_sessional_data.attendance_marks|floatformat:2 }}/5</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
                                     {% if enrollment.transcript %}
-                                        <span class="badge badge-info" id="quiz-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.quiz_marks|floatformat:2 }}/5</span>
+                                        <div class="sessional-control">
+                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="quiz" data-delta="-0.25">-</button>
+                                            <span class="badge badge-info sessional-pill" id="quiz-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.quiz_marks|floatformat:2 }}/5</span>
+                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="quiz" data-delta="0.25">+</button>
+                                        </div>
+                                    {% elif enrollment.preview_sessional_data %}
+                                        <span class="badge badge-info">{{ enrollment.preview_sessional_data.quiz_marks|floatformat:2 }}/5</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
                                     {% if enrollment.transcript %}
-                                        <span class="badge badge-info" id="assignment-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.assignment_marks|floatformat:2 }}/5</span>
+                                        <div class="sessional-control">
+                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="assignment" data-delta="-0.25">-</button>
+                                            <span class="badge badge-info sessional-pill" id="assignment-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.assignment_marks|floatformat:2 }}/5</span>
+                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="assignment" data-delta="0.25">+</button>
+                                        </div>
+                                    {% elif enrollment.preview_sessional_data %}
+                                        <span class="badge badge-info">{{ enrollment.preview_sessional_data.assignment_marks|floatformat:2 }}/5</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
@@ -150,10 +284,12 @@
                                 <td class="text-center">
                                     {% if enrollment.transcript %}
                                     <div class="sessional-control">
-                                        <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="behavior_delta" data-delta="-0.25">-</button>
-                                        <span class="badge badge-warning" id="behavior-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.behavior_marks|floatformat:2 }}/5</span>
-                                        <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="behavior_delta" data-delta="0.25">+</button>
+                                        <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="behavior" data-delta="-0.25">-</button>
+                                        <span class="badge badge-warning sessional-pill" id="behavior-marks-{{ enrollment.transcript.id }}">{{ enrollment.transcript.behavior_marks|floatformat:2 }}/5</span>
+                                        <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="component_delta" data-component="behavior" data-delta="0.25">+</button>
                                     </div>
+                                    {% elif enrollment.preview_sessional_data %}
+                                        <span class="badge badge-warning">{{ enrollment.preview_sessional_data.behavior_marks|floatformat:2 }}/5</span>
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
@@ -162,14 +298,14 @@
                                     {% if enrollment.transcript %}
                                         <div>
                                             <span class="badge badge-success" id="sessional-total-{{ enrollment.transcript.id }}">{{ enrollment.transcript.sessional_marks|floatformat:2 }}/20</span>
-                                            <small class="text-muted d-block" id="sessional-mode-{{ enrollment.transcript.id }}">{% if enrollment.transcript.sessional_auto_enabled %}Auto{% else %}Manual Override{% endif %}</small>
+                                            <small class="text-muted d-block sessional-mode-text" id="sessional-mode-{{ enrollment.transcript.id }}">{% if enrollment.transcript.sessional_auto_enabled %}Auto{% else %}Manual Override{% endif %}</small>
                                         </div>
                                         <div class="override-wrap">
                                             <input type="number" step="0.01" min="0" max="20" class="form-control form-control-sm" id="override-input-{{ enrollment.transcript.id }}" placeholder="0-20">
-                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="override_set">Set</button>
-                                            <button type="button" class="btn btn-sm btn-secondary js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="override_reset">Reset</button>
+                                            <button type="button" class="btn btn-sm btn-set js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="override_set">Set</button>
+                                            <button type="button" class="btn btn-sm btn-reset js-transcript-action" data-transcript-id="{{ enrollment.transcript.id }}" data-action="override_reset">Reset</button>
                                         </div>
-                                        <button type="button" class="btn btn-sm btn-primary mt-2 js-open-breakdown"
+                                        <button type="button" class="btn btn-sm btn-primary sessional-details-btn js-open-breakdown"
                                             data-student="{{ enrollment.student.get_full_name }}"
                                             data-course="{{ enrollment.course.code }} - {{ enrollment.course.name }}"
                                             data-attendance="{{ enrollment.transcript.attendance_marks|floatformat:2 }}"
@@ -180,6 +316,16 @@
                                             data-mode="{% if enrollment.transcript.sessional_auto_enabled %}Auto{% else %}Manual Override{% endif %}">
                                             Details
                                         </button>
+                                    {% elif enrollment.preview_sessional_data %}
+                                        <div>
+                                            <span class="badge badge-secondary">{{ enrollment.preview_sessional_data.sessional_marks|floatformat:2 }}/20</span>
+                                            <small class="text-muted d-block">Preview</small>
+                                        </div>
+                                        <div class="override-wrap">
+                                            <input type="number" step="0.01" min="0" max="20" class="form-control form-control-sm" id="preview-override-input-{{ enrollment.id }}" placeholder="0-20">
+                                            <button type="button" class="btn btn-sm btn-set js-enrollment-transcript-action" data-enrollment-id="{{ enrollment.id }}" data-action="override_set">Set Manual</button>
+                                            <button type="button" class="btn btn-sm btn-reset js-enrollment-transcript-action" data-enrollment-id="{{ enrollment.id }}" data-action="override_reset">Auto</button>
+                                        </div>
                                     {% else %}
                                         <span class="text-muted">Initialize transcript to enable sessional system</span>
                                     {% endif %}
@@ -221,6 +367,7 @@
         {% endif %}
     </div>
 </div>
+</div>
 
 <div id="sessionalBreakdownModal" class="sessional-modal" aria-hidden="true">
     <div class="sessional-modal-card">
@@ -245,6 +392,42 @@
 {% block page_scripts %}
 <script>
 document.addEventListener('click', async function (event) {
+    const enrollmentActionButton = event.target.closest('.js-enrollment-transcript-action');
+    if (enrollmentActionButton) {
+        const enrollmentId = enrollmentActionButton.getAttribute('data-enrollment-id');
+        const action = enrollmentActionButton.getAttribute('data-action');
+        const url = "{% url 'main:update_enrollment_transcript_sessional' 0 %}".replace('/0/', '/' + enrollmentId + '/');
+
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        if (action === 'override_set') {
+            const overrideInput = document.getElementById('preview-override-input-' + enrollmentId);
+            formData.append('value', overrideInput ? overrideInput.value : '0');
+        }
+
+        enrollmentActionButton.disabled = true;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const payload = await response.json();
+            if (!payload.success) {
+                return;
+            }
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            enrollmentActionButton.disabled = false;
+        }
+        return;
+    }
+
     const actionButton = event.target.closest('.js-transcript-action');
     if (actionButton) {
         const transcriptId = actionButton.getAttribute('data-transcript-id');
@@ -254,6 +437,10 @@ document.addEventListener('click', async function (event) {
         const formData = new FormData();
         formData.append('action', action);
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        if (action === 'component_delta') {
+            formData.append('component', actionButton.getAttribute('data-component'));
+            formData.append('delta', actionButton.getAttribute('data-delta'));
+        }
         if (action === 'behavior_delta') {
             formData.append('delta', actionButton.getAttribute('data-delta'));
         }

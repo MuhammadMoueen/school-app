@@ -4,38 +4,6 @@
 {% block page_title %}Manage Quizzes{% endblock %}
 {% block topbar_title %}The City School – Manage Quizzes{% endblock %}
 
-{% block page_css %}
-<style>
-    /* Keep quiz action buttons compact so they stay on one row like lecture actions */
-    .teacher-main .quiz-action-buttons {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: nowrap;
-    }
-
-    .teacher-main .quiz-action-buttons .btn {
-        min-height: 36px !important;
-        padding: 6px 10px !important;
-        width: auto !important;
-        flex: 0 0 auto;
-    }
-
-    @media (max-width: 768px) {
-        .teacher-main .quiz-action-buttons {
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .teacher-main .quiz-action-buttons .btn {
-            width: auto !important;
-            min-width: 40px;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block page_content %}
 <div class="page-header-section">
     <div class="page-header-content">
@@ -91,15 +59,6 @@
     </div>
 </div>
 
-<!-- Secondary Action -->
-<div class="content-card mb-25">
-    <div class="card-body card-body-pad-20 text-end">
-        <a href="{% url 'main:teacher_quiz_attempts_dashboard' %}" class="btn-action btn-secondary">
-            <i class="fas fa-chart-line"></i> Attempts Dashboard
-        </a>
-    </div>
-</div>
-
 <!-- Quizzes List Card -->
 <div class="content-card">
     <div class="card-header-section">
@@ -107,6 +66,9 @@
             <i class="fas fa-list"></i> Your Quizzes
         </h3>
         <div class="card-header-actions">
+            <a href="{% url 'main:teacher_quiz_attempts_dashboard' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-chart-line"></i> Attempts Dashboard
+            </a>
             <span class="badge badge-info">{{ quizzes|length }} Total</span>
         </div>
     </div>
@@ -163,7 +125,7 @@
                             </td>
                             <td class="text-center text-muted">{{ quiz.created_at|date:"M d, Y" }}</td>
                             <td class="text-center">
-                                <div class="action-buttons quiz-action-buttons">
+                                <div class="action-buttons">
                                     <a href="{% url 'main:add_questions' quiz.id %}" 
                                        class="btn btn-sm btn-primary" 
                                        title="Manage Questions">
