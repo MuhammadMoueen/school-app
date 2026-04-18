@@ -1,47 +1,49 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}Report Details{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 <link rel="stylesheet" href="{% static 'css/chat-system.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="report-container">
     <a href="{% url 'main:dashboard' %}" class="back-link">← Back to Dashboard</a>
     
     <div class="report-main">
         <div class="report-header">
-            <h3>{{ report.transcript.enrollment.course.name }} - Marks Report</h3>
+            <h3>{{ report.course_name }} - {{ report.get_issue_type_display }}</h3>
             <span class="status-badge {{ report.status }}">{{ report.get_status_display }}</span>
         </div>
-        
-        <div class="transcript-details">
-            <h4>Your Transcript</h4>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <span class="detail-label">Marks Obtained</span>
-                    <span class="detail-value">{{ report.transcript.marks_obtained }}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Total Marks</span>
-                    <span class="detail-value">{{ report.transcript.total_marks }}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Percentage</span>
-                    <span class="detail-value">{{ report.transcript.percentage }}%</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Grade</span>
-                    <span class="detail-value">{{ report.transcript.grade }}</span>
+
+        {% if report.transcript %}
+            <div class="transcript-details">
+                <h4>Your Transcript</h4>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Marks Obtained</span>
+                        <span class="detail-value">{{ report.transcript.marks_obtained }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total Marks</span>
+                        <span class="detail-value">{{ report.transcript.total_marks }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Percentage</span>
+                        <span class="detail-value">{{ report.transcript.percentage }}%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Grade</span>
+                        <span class="detail-value">{{ report.transcript.grade }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
         
         <div class="your-message">
-            <h4>Your Concern</h4>
+            <h4>{% if report.report_type == 'teacher_message' %}Teacher Message{% else %}Your Concern{% endif %}</h4>
             <p>{{ report.message }}</p>
             <div class="message-timestamp">Submitted on {{ report.created_at|date:"F d, Y \a\t h:i A" }}</div>
         </div>
@@ -113,6 +115,6 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block page_scripts %}
 <script src="{% static 'js/chat-system.js' %}"></script>
 {% endblock %}

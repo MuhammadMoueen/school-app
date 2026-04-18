@@ -394,6 +394,56 @@ class ReportReplyForm(forms.ModelForm):
         }
 
 
+class TeacherReportComposeForm(forms.ModelForm):
+    """Form for teacher-initiated student messages from report center."""
+    class Meta:
+        model = MarksReport
+        fields = ['student', 'enrollment', 'issue_type', 'message']
+        widgets = {
+            'student': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'enrollment': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'issue_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'message': forms.Textarea(attrs={
+                'placeholder': 'Write your message to the selected student...',
+                'class': 'form-control',
+                'rows': 4
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        teacher = kwargs.pop('teacher', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['issue_type'].choices = MarksReport.ISSUE_TYPE_CHOICES
+
+        if teacher is not None:
+            enrollments = Enrollment.objects.filter(course__teacher=teacher).select_related('student', 'course')
+            students = User.objects.filter(id__in=enrollments.values_list('student_id', flat=True)).order_by('first_name', 'last_name', 'username')
+
+            self.fields['student'].queryset = students
+            self.fields['enrollment'].queryset = enrollments.order_by('course__name', 'student__first_name')
+            self.fields['enrollment'].label_from_instance = lambda obj: f"{obj.student.get_full_name() or obj.student.username} - {obj.course.code} ({obj.course.name})"
+        else:
+            self.fields['student'].queryset = User.objects.none()
+            self.fields['enrollment'].queryset = Enrollment.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        student = cleaned_data.get('student')
+        enrollment = cleaned_data.get('enrollment')
+
+        if student and enrollment and enrollment.student_id != student.id:
+            self.add_error('enrollment', 'Selected course enrollment does not belong to this student.')
+
+        return cleaned_data
+
+
 class TeacherActivityResponseForm(forms.ModelForm):
     """Form used by admin to message or question a teacher activity"""
     class Meta:
@@ -446,6 +496,16 @@ class AdminCreateStudentForm(forms.ModelForm):
         }),
         label='Class'
     )
+
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'Optional: enter student email (e.g., ali@student.edu.pk)',
+            'class': 'form-control'
+        }),
+        label='Student Email (Optional)',
+        help_text='If left empty, system auto-generates a @student.edu.pk email.'
+    )
     
     section = forms.ChoiceField(
         required=False,
@@ -468,6 +528,10 @@ class AdminCreateStudentForm(forms.ModelForm):
         # Prep class does not require section
         if student_class and student_class != 'Prep' and not section:
             raise forms.ValidationError('Section is required for Class 1-10.')
+
+        email = (cleaned_data.get('email') or '').strip().lower()
+        if email and User.objects.filter(email__iexact=email).exists():
+            self.add_error('email', 'This email is already in use. Please use a different email.')
         
         return cleaned_data
     
@@ -475,6 +539,7 @@ class AdminCreateStudentForm(forms.ModelForm):
         full_name = self.cleaned_data.get('full_name').strip()
         student_class = self.cleaned_data.get('student_class')
         section = self.cleaned_data.get('section', '')
+        provided_email = (self.cleaned_data.get('email') or '').strip().lower()
         
         # Parse name: get first name and last name
         name_parts = full_name.split()
@@ -486,18 +551,27 @@ class AdminCreateStudentForm(forms.ModelForm):
             first_name = name_parts[0]
             last_name = name_parts[-1]
         
-        # New format: <firstname><5 random digits>@student.edu.pk
-        # Example: Ali Khan -> ali32635@student.edu.pk
         first_name_clean = re.sub(r'[^a-zA-Z]', '', first_name).lower() or 'student'
 
-        while True:
-            random_code = random.randint(10000, 99999)
-            email_base = f"{first_name_clean}{random_code}"
-            email = f"{email_base}@student.edu.pk"
+        if provided_email:
+            email = provided_email
+            username_base = re.sub(r'[^a-zA-Z0-9._-]', '', email.split('@')[0]).lower() or first_name_clean
+            username = username_base
+            counter = 1
+            while User.objects.filter(username__iexact=username).exists():
+                username = f"{username_base}{counter}"
+                counter += 1
+        else:
+            # New format: <firstname><5 random digits>@student.edu.pk
+            # Example: Ali Khan -> ali32635@student.edu.pk
+            while True:
+                random_code = random.randint(10000, 99999)
+                email_base = f"{first_name_clean}{random_code}"
+                email = f"{email_base}@student.edu.pk"
 
-            if not User.objects.filter(email=email).exists() and not User.objects.filter(username=email_base).exists():
-                username = email_base
-                break
+                if not User.objects.filter(email__iexact=email).exists() and not User.objects.filter(username__iexact=email_base).exists():
+                    username = email_base
+                    break
         
         # Create user instance directly
         user = User()

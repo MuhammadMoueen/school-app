@@ -737,10 +737,24 @@ class MarksReport(models.Model):
         ('replied', 'Replied'),
         ('resolved', 'Resolved'),
     )
+
+    REPORT_TYPE_CHOICES = (
+        ('student_report', 'Student Report'),
+        ('teacher_message', 'Teacher Message'),
+    )
+
+    ISSUE_TYPE_CHOICES = (
+        ('marks', 'Marks Issue'),
+        ('attendance', 'Attendance Issue'),
+        ('general', 'General'),
+    )
     
-    transcript = models.ForeignKey(Transcript, on_delete=models.CASCADE, related_name='reports')
+    transcript = models.ForeignKey(Transcript, on_delete=models.CASCADE, related_name='reports', null=True, blank=True)
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='reports', null=True, blank=True)
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marks_reports_sent')
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marks_reports_received')
+    report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES, default='student_report')
+    issue_type = models.CharField(max_length=20, choices=ISSUE_TYPE_CHOICES, default='marks')
     message = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     is_read_by_teacher = models.BooleanField(default=False)  # Track if teacher has read the report
@@ -751,7 +765,20 @@ class MarksReport(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Report from {self.student.username} about {self.transcript.enrollment.course.name}"
+        return f"{self.get_report_type_display()} from {self.student.username} about {self.course_name}"
+
+    @property
+    def course(self):
+        if self.enrollment_id:
+            return self.enrollment.course
+        if self.transcript_id:
+            return self.transcript.enrollment.course
+        return None
+
+    @property
+    def course_name(self):
+        course = self.course
+        return course.name if course else 'General'
 
 
 # Report Reply model - teacher replies to student reports

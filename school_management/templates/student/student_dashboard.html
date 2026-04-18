@@ -1,13 +1,13 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}Student Dashboard - THE CITY SCHOOL OF BAHAWALPUR{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="container-fluid student-container-pad-top">
     <div class="dashboard-wrapper">
         <!-- Header -->
@@ -291,7 +291,7 @@
     </div>
     
     <!-- Subjects & Transcripts -->
-    <div class="subjects-section">
+    <div class="subjects-section" id="subjects-transcripts">
         <h2><img src="{% static 'images/school-logo.png' %}" alt="School Logo" class="inline-logo-student"> My Subjects & Transcripts</h2>
         
         {% if enrollments %}
@@ -378,7 +378,7 @@
     {% if reports %}
         <div class="section-divider"><hr></div>
         
-        <div class="reports-section">
+        <div class="reports-section" id="reports-communication">
             <h2><i class="fas fa-comments"></i> My Reports & Communication</h2>
             <p class="section-desc">Track your marks reports and teacher responses</p>
             
@@ -386,7 +386,7 @@
                 <div class="report-card">
                     <div class="report-header">
                         <div>
-                            <h4>{{ report.transcript.enrollment.course.name }}</h4>
+                            <h4>{{ report.course_name }}</h4>
                             <p class="report-date"><i class="fas fa-calendar"></i> Submitted {{ report.created_at|date:"M d, Y" }}</p>
                         </div>
                         <span class="status-badge {% if report.status == 'replied' %}graded{% elif report.status == 'resolved' %}graded{% else %}pending{% endif %}">
@@ -395,7 +395,7 @@
                     </div>
                     
                     <div class="report-content">
-                        <p><strong><i class="fas fa-user"></i> Your Message:</strong></p>
+                        <p><strong><i class="fas fa-user"></i> {% if report.report_type == 'teacher_message' %}Teacher Message:{% else %}Your Message:{% endif %}</strong></p>
                         <p class="message">{{ report.message }}</p>
                         
                         {% if report.replies.all %}

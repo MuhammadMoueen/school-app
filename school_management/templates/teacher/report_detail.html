@@ -33,36 +33,38 @@
                 </div>
                 <div class="student-details">
                     <h3>{{ report.student.get_full_name }}</h3>
-                    <p>{{ report.transcript.enrollment.course.name }}</p>
+                    <p>{{ report.course_name }} • {{ report.get_issue_type_display }}</p>
                 </div>
             </div>
             <span class="status-badge {{ report.status }}">{{ report.get_status_display }}</span>
         </div>
-        
-        <div class="transcript-details">
-            <h4>Transcript Information</h4>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <span class="detail-label">Marks Obtained</span>
-                    <span class="detail-value">{{ report.transcript.marks_obtained }}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Total Marks</span>
-                    <span class="detail-value">{{ report.transcript.total_marks }}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Percentage</span>
-                    <span class="detail-value">{{ report.transcript.percentage }}%</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Grade</span>
-                    <span class="detail-value">{{ report.transcript.grade }}</span>
+
+        {% if report.transcript %}
+            <div class="transcript-details">
+                <h4>Transcript Information</h4>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Marks Obtained</span>
+                        <span class="detail-value">{{ report.transcript.marks_obtained }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total Marks</span>
+                        <span class="detail-value">{{ report.transcript.total_marks }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Percentage</span>
+                        <span class="detail-value">{{ report.transcript.percentage }}%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Grade</span>
+                        <span class="detail-value">{{ report.transcript.grade }}</span>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
         
         <div class="report-message">
-            <h4>Student's Concern</h4>
+            <h4>{% if report.report_type == 'teacher_message' %}Teacher Message{% else %}Student's Concern{% endif %}</h4>
             <p>{{ report.message }}</p>
             <div class="report-timestamp">Submitted on {{ report.created_at|date:"F d, Y \a\t h:i A" }}</div>
         </div>

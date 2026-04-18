@@ -17,7 +17,7 @@ import json
 import csv
 from .forms import (TeacherSignupForm, StudentSignupForm, CustomLoginForm,
                    AssignEmailForm, CourseForm, EnrollmentForm, TranscriptForm,
-                   MarksReportForm, ReportReplyForm, AdminCreateStudentForm, ProfileEditForm,
+                   MarksReportForm, ReportReplyForm, TeacherReportComposeForm, AdminCreateStudentForm, ProfileEditForm,
                    LectureForm, AttendanceForm, BulkAttendanceForm, QuizForm, QuestionForm,
                    DiscussionThreadForm, DiscussionReplyForm, TeacherActivityResponseForm,
                    AssignmentForm, AssignmentSubmissionForm, AssignmentGradingForm)
@@ -452,7 +452,7 @@ def teacher_dashboard(request):
     
     # Get recent reports
     recent_reports = MarksReport.objects.filter(teacher=teacher).select_related(
-        'student', 'transcript__enrollment__course'
+        'student', 'enrollment__course', 'transcript__enrollment__course'
     )[:5]
     
     # Statistics
@@ -3680,10 +3680,41 @@ def manage_transcripts(request):
     """View and manage student transcripts"""
     if request.user.role != 'teacher':
         return redirect('main:dashboard')
-    
-    enrollments = Enrollment.objects.filter(course__teacher=request.user).select_related(
+
+    search_query = (request.GET.get('q') or '').strip()
+    selected_course_id = (request.GET.get('course') or '').strip()
+
+    base_enrollments = Enrollment.objects.filter(course__teacher=request.user).select_related(
         'student', 'course'
-    ).prefetch_related('transcript', 'quiz_marks__quiz')
+    ).prefetch_related('transcript', 'quiz_marks__quiz').order_by(
+        'course__name',
+        'student__first_name',
+        'student__last_name',
+        'student__username',
+    )
+
+    courses = Course.objects.filter(teacher=request.user).order_by('name', 'code')
+    total_enrollments = base_enrollments.count()
+
+    enrollments = base_enrollments
+    if search_query:
+        enrollments = enrollments.filter(
+            Q(student__first_name__icontains=search_query)
+            | Q(student__last_name__icontains=search_query)
+            | Q(student__username__icontains=search_query)
+            | Q(student__roll_number__icontains=search_query)
+            | Q(course__name__icontains=search_query)
+            | Q(course__code__icontains=search_query)
+        )
+
+    if selected_course_id:
+        if selected_course_id.isdigit():
+            enrollments = enrollments.filter(course_id=int(selected_course_id))
+        else:
+            selected_course_id = ''
+
+    enrollments = list(enrollments)
+    filtered_count = len(enrollments)
 
     for enrollment in enrollments:
         transcript = getattr(enrollment, 'transcript', None)
@@ -3718,7 +3749,13 @@ def manage_transcripts(request):
             )
     
     context = {
-        'enrollments': enrollments
+        'enrollments': enrollments,
+        'courses': courses,
+        'q': search_query,
+        'selected_course_id': selected_course_id,
+        'filtered_count': filtered_count,
+        'total_enrollments': total_enrollments,
+        'has_active_filters': bool(search_query or selected_course_id),
     }
     return render(request, 'teacher/manage_transcripts.html', context)
 
@@ -4023,13 +4060,68 @@ def view_reports(request):
     """View all marks reports"""
     if request.user.role != 'teacher':
         return redirect('main:dashboard')
-    
+
+    status_filter = (request.GET.get('status') or 'all').strip().lower()
+    search_query = (request.GET.get('q') or '').strip()
+
     reports = MarksReport.objects.filter(teacher=request.user).select_related(
-        'student', 'transcript__enrollment__course'
+        'student',
+        'enrollment__course',
+        'transcript__enrollment__course',
     ).prefetch_related('replies')
-    
+
+    if status_filter and status_filter != 'all':
+        reports = reports.filter(status=status_filter)
+
+    if search_query:
+        reports = reports.filter(
+            Q(student__first_name__icontains=search_query)
+            | Q(student__last_name__icontains=search_query)
+            | Q(student__username__icontains=search_query)
+            | Q(student__roll_number__icontains=search_query)
+            | Q(enrollment__course__name__icontains=search_query)
+            | Q(enrollment__course__code__icontains=search_query)
+            | Q(transcript__enrollment__course__name__icontains=search_query)
+            | Q(transcript__enrollment__course__code__icontains=search_query)
+            | Q(message__icontains=search_query)
+        )
+
+    compose_form = TeacherReportComposeForm(teacher=request.user)
+
+    if request.method == 'POST' and request.POST.get('action') == 'compose_report':
+        compose_form = TeacherReportComposeForm(request.POST, teacher=request.user)
+        if compose_form.is_valid():
+            report = compose_form.save(commit=False)
+            report.teacher = request.user
+            report.report_type = 'teacher_message'
+            report.status = 'pending'
+            report.is_read_by_teacher = True
+
+            enrollment = compose_form.cleaned_data['enrollment']
+            report.enrollment = enrollment
+            report.transcript = getattr(enrollment, 'transcript', None)
+            report.save()
+
+            teacher_name = request.user.get_full_name() or request.user.username
+            course = enrollment.course
+            student_name = report.student.get_full_name() or report.student.username
+            log_teacher_activity(
+                teacher=request.user,
+                action_type='post_report',
+                description=f"Teacher {teacher_name} started a {report.get_issue_type_display()} thread with {student_name} for {course.name} (Class {course.student_class}{course.section})",
+                course=course,
+            )
+
+            messages.success(request, 'Message thread created successfully.')
+            return redirect('main:report_detail', report_id=report.id)
+
+    reports = reports.order_by('-updated_at', '-created_at')
+
     context = {
-        'reports': reports
+        'reports': reports,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'compose_form': compose_form,
     }
     return render(request, 'teacher/view_reports.html', context)
 
@@ -4061,11 +4153,11 @@ def report_detail(request, report_id):
             reply.save()
 
             teacher_name = request.user.get_full_name() or request.user.username
-            course = report.transcript.enrollment.course
+            course = report.course
             log_teacher_activity(
                 teacher=request.user,
                 action_type='post_report',
-                description=f'Teacher {teacher_name} posted a report reply for {course.name} (Class {course.student_class}{course.section})',
+                description=f'Teacher {teacher_name} posted a report reply for {course.name if course else "General"}',
                 course=course,
             )
             
@@ -4161,7 +4253,7 @@ def student_dashboard(request):
     
     # Get student's reports
     reports = MarksReport.objects.filter(student=student).select_related(
-        'transcript__enrollment__course'
+        'enrollment__course', 'transcript__enrollment__course'
     ).prefetch_related('replies')
 
     enrolled_course_ids = enrollments.values_list('course_id', flat=True)
@@ -4173,6 +4265,10 @@ def student_dashboard(request):
     assignments = Assignment.objects.filter(
         course_id__in=enrolled_course_ids,
     ).exclude(status='draft').select_related('course').order_by('deadline', '-created_at')
+
+    quizzes = Quiz.objects.filter(
+        course_id__in=enrolled_course_ids,
+    ).select_related('course').order_by('-created_at')
 
     assignment_rows = []
     for assignment in assignments[:8]:
@@ -4297,8 +4393,11 @@ def submit_marks_report(request, transcript_id):
         if form.is_valid():
             report = form.save(commit=False)
             report.transcript = transcript
+            report.enrollment = transcript.enrollment
             report.student = request.user
             report.teacher = transcript.enrollment.course.teacher
+            report.report_type = 'student_report'
+            report.issue_type = 'marks'
             report.save()
             messages.success(request, 'Your report has been submitted to the teacher!')
             return redirect('main:dashboard')
@@ -4471,14 +4570,15 @@ def get_notifications(request):
         # Student reports addressed to teacher
         reports = MarksReport.objects.filter(
             teacher=request.user
-        ).select_related('student', 'transcript__enrollment__course').order_by('-created_at')[:20]
+        ).select_related('student', 'enrollment__course', 'transcript__enrollment__course').order_by('-created_at')[:20]
         
         for report in reports:
+            course_name = report.course_name
             notifications.append({
                 'id': report.id,
                 'type': 'report',
                 'sender': report.student.get_full_name() or report.student.username,
-                'message': f"Student {report.student.get_full_name() or report.student.username} sent a report in {report.transcript.enrollment.course.name}",
+                'message': f"Student {report.student.get_full_name() or report.student.username} sent a {report.get_issue_type_display().lower()} in {course_name}",
                 'time': _relative_time_text(report.created_at),
                 'is_read': report.is_read_by_teacher,
                 'sort_time': report.created_at.isoformat(),
@@ -4490,7 +4590,7 @@ def get_notifications(request):
         student_replies = ReportReply.objects.filter(
             report__teacher=request.user,
             sender__role='student',
-        ).select_related('sender', 'report', 'report__transcript__enrollment__course').order_by('-created_at')[:20]
+        ).select_related('sender', 'report', 'report__enrollment__course', 'report__transcript__enrollment__course').order_by('-created_at')[:20]
 
         for reply in student_replies:
             sender_name = reply.sender.get_full_name() or reply.sender.username

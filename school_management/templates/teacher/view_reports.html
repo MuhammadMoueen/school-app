@@ -10,24 +10,79 @@
         <h2 class="page-main-title">
             <i class="fas fa-comment-dots"></i> Marks Reports
         </h2>
-        <p class="page-subtitle">View and reply to student marks reports</p>
+        <p class="page-subtitle">Student reports + teacher initiated messages in one communication center</p>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">
+            <i class="fas fa-paper-plane"></i> Message a Specific Student
+        </h3>
+    </div>
+    <div class="card-body card-body-pad-20">
+        <form method="post" class="form-modern">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="compose_report">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Student</label>
+                    {{ compose_form.student }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Course Enrollment</label>
+                    {{ compose_form.enrollment }}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Issue Type</label>
+                    {{ compose_form.issue_type }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Message</label>
+                {{ compose_form.message }}
+                {% if compose_form.non_field_errors %}
+                    <div class="form-error mt-2">{{ compose_form.non_field_errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Start Thread
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- Filter Tabs Card -->
 <div class="content-card">
     <div class="card-body card-body-pad-20">
+        <form method="get" class="mb-3">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Search Student / Course / Message</label>
+                    <input type="text" name="q" class="form-control" value="{{ search_query }}" placeholder="e.g. Muhammad Talha, math-206, attendance">
+                </div>
+                <div class="form-group d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                    <a href="{% url 'main:view_reports' %}" class="btn btn-secondary"><i class="fas fa-undo"></i> Clear</a>
+                </div>
+            </div>
+        </form>
+
         <div class="filter-tabs-modern">
-            <a href="?status=all" class="filter-tab-btn {% if not status_filter or status_filter == 'all' %}active{% endif %}">
+            <a href="?status=all{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-tab-btn {% if not status_filter or status_filter == 'all' %}active{% endif %}">
                 <i class="fas fa-list"></i> All Reports
             </a>
-            <a href="?status=pending" class="filter-tab-btn {% if status_filter == 'pending' %}active{% endif %}">
+            <a href="?status=pending{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-tab-btn {% if status_filter == 'pending' %}active{% endif %}">
                 <i class="fas fa-clock"></i> Pending
             </a>
-            <a href="?status=replied" class="filter-tab-btn {% if status_filter == 'replied' %}active{% endif %}">
+            <a href="?status=replied{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-tab-btn {% if status_filter == 'replied' %}active{% endif %}">
                 <i class="fas fa-reply"></i> Replied
             </a>
-            <a href="?status=resolved" class="filter-tab-btn {% if status_filter == 'resolved' %}active{% endif %}">
+            <a href="?status=resolved{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="filter-tab-btn {% if status_filter == 'resolved' %}active{% endif %}">
                 <i class="fas fa-check-circle"></i> Resolved
             </a>
         </div>
@@ -52,7 +107,8 @@
                         <tr>
                             <th>Student</th>
                             <th>Subject</th>
-                            <th>Grade</th>
+                            <th>Thread Type</th>
+                            <th>Issue Type</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Date</th>
                             <th class="text-center">Actions</th>
@@ -64,12 +120,16 @@
                                 <td class="font-weight-bold">
                                     <i class="fas fa-user-circle"></i> {{ report.student.get_full_name }}
                                 </td>
-                                <td>{{ report.transcript.enrollment.course.name }}</td>
+                                <td>{{ report.course_name }}</td>
                                 <td>
-                                    <span class="badge badge-primary">{{ report.transcript.grade }}</span>
-                                    <small class="text-muted d-block">
-                                        {{ report.transcript.marks_obtained }}/{{ report.transcript.total_marks }}
-                                    </small>
+                                    {% if report.report_type == 'teacher_message' %}
+                                        <span class="badge badge-info">From Teacher</span>
+                                    {% else %}
+                                        <span class="badge badge-primary">From Student</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-secondary">{{ report.get_issue_type_display }}</span>
                                 </td>
                                 <td class="text-center">
                                     {% if report.status == 'pending' %}
@@ -91,7 +151,7 @@
                                     <div class="action-buttons">
                                         <a href="{% url 'main:report_detail' report.id %}" 
                                            class="btn btn-sm btn-primary" 
-                                           title="View & Reply">
+                                           title="Open Thread">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </div>
