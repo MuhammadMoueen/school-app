@@ -4,6 +4,41 @@
 {% block page_title %}Edit Transcript{% endblock %}
 {% block topbar_title %}The City School – Edit Transcript{% endblock %}
 
+{% block page_css %}
+<style>
+.transcript-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(130px, 1fr));
+    gap: 12px;
+    align-items: stretch;
+}
+
+.transcript-stats-grid .stat-box-analytics {
+    height: 100%;
+    min-height: 152px;
+    margin-bottom: 0;
+}
+
+@media (max-width: 1400px) {
+    .transcript-stats-grid {
+        grid-template-columns: repeat(4, minmax(130px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .transcript-stats-grid {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .transcript-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
 {% block page_content %}
 <div class="page-header-section">
     <div class="page-header-content">
@@ -24,50 +59,50 @@
         </h3>
     </div>
     <div class="card-body">
-        <div class="row text-center">
-            <div class="col-md-3">
+        <div class="transcript-stats-grid text-center">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-check-circle stat-icon text-success"></i>
                     <h3 class="stat-number text-success">{{ transcript.marks_obtained }}</h3>
                     <p class="stat-label text-muted">Marks Obtained</p>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-list-ol stat-icon text-primary"></i>
                     <h3 class="stat-number text-primary">{{ transcript.total_marks }}</h3>
                     <p class="stat-label text-muted">Total Marks</p>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-percent stat-icon text-info"></i>
                     <h3 class="stat-number text-info">{{ transcript.percentage|floatformat:1 }}%</h3>
                     <p class="stat-label text-muted">Percentage</p>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-trophy stat-icon text-warning"></i>
                     <h3 class="stat-number text-warning">{{ transcript.grade }}</h3>
                     <p class="stat-label text-muted">Grade</p>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-balance-scale stat-icon text-primary"></i>
                     <h3 class="stat-number text-primary" id="editExam80PreviewCurrent">{{ final_result_data.exam_80|default:0|floatformat:2 }}</h3>
                     <p class="stat-label text-muted">Exam (80)</p>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-star stat-icon text-info"></i>
                     <h3 class="stat-number text-info" id="editSessional20PreviewCurrent">{{ sessional_marks_current|floatformat:2 }}</h3>
                     <p class="stat-label text-muted">Sessional (20)</p>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div>
                 <div class="stat-box-analytics">
                     <i class="fas fa-award stat-icon text-success"></i>
                     <h3 class="stat-number text-success" id="editFinal100PreviewCurrent">{{ final_result_data.final_100|default:0|floatformat:2 }}</h3>
