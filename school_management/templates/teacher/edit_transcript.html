@@ -53,6 +53,27 @@
                     <p class="stat-label text-muted">Grade</p>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="stat-box-analytics">
+                    <i class="fas fa-balance-scale stat-icon text-primary"></i>
+                    <h3 class="stat-number text-primary" id="editExam80PreviewCurrent">{{ final_result_data.exam_80|default:0|floatformat:2 }}</h3>
+                    <p class="stat-label text-muted">Exam (80)</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box-analytics">
+                    <i class="fas fa-star stat-icon text-info"></i>
+                    <h3 class="stat-number text-info" id="editSessional20PreviewCurrent">{{ sessional_marks_current|floatformat:2 }}</h3>
+                    <p class="stat-label text-muted">Sessional (20)</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box-analytics">
+                    <i class="fas fa-award stat-icon text-success"></i>
+                    <h3 class="stat-number text-success" id="editFinal100PreviewCurrent">{{ final_result_data.final_100|default:0|floatformat:2 }}</h3>
+                    <p class="stat-label text-muted">Final (100)</p>
+                </div>
+            </div>
         </div>
         <div class="text-center transcript-note-wrap">
             <p class="transcript-note-text">
@@ -94,6 +115,31 @@
                     {% endif %}
                 </div>
             </div>
+
+            <div class="content-card mb-25">
+                <div class="card-body card-body-pad-20">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="stat-box-analytics">
+                                <h3 class="stat-number text-primary" id="editExam80Preview">{{ final_result_data.exam_80|default:0|floatformat:2 }}</h3>
+                                <p class="stat-label text-muted">Exam (80)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-box-analytics">
+                                <h3 class="stat-number text-info" id="editSessional20Preview">{{ sessional_marks_current|floatformat:2 }}</h3>
+                                <p class="stat-label text-muted">Sessional (20)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-box-analytics">
+                                <h3 class="stat-number text-success" id="editFinal100Preview">{{ final_result_data.final_100|default:0|floatformat:2 }}</h3>
+                                <p class="stat-label text-muted">Final (100)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="form-group">
                 <label for="{{ form.grade.id_for_label }}" class="form-label">
@@ -133,4 +179,35 @@
 
 {% block extra_js %}
 <script src="{% static 'js/teacher.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const marksInput = document.getElementById('{{ form.marks_obtained.id_for_label }}');
+    const sessionalValue = Number('{{ sessional_marks_current|default:0 }}');
+    const examNodes = [
+        document.getElementById('editExam80PreviewCurrent'),
+        document.getElementById('editExam80Preview')
+    ];
+    const finalNodes = [
+        document.getElementById('editFinal100PreviewCurrent'),
+        document.getElementById('editFinal100Preview')
+    ];
+
+    function refreshFinalPreview() {
+        const raw = Math.max(0, Math.min(100, Number((marksInput && marksInput.value) || '0')));
+        const exam80 = (raw / 100) * 80;
+        const final100 = Math.max(0, Math.min(100, exam80 + sessionalValue));
+        examNodes.forEach(function (node) {
+            if (node) node.textContent = exam80.toFixed(2);
+        });
+        finalNodes.forEach(function (node) {
+            if (node) node.textContent = final100.toFixed(2);
+        });
+    }
+
+    if (marksInput) {
+        marksInput.addEventListener('input', refreshFinalPreview);
+    }
+    refreshFinalPreview();
+});
+</script>
 {% endblock %}

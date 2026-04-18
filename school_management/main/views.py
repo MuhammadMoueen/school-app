@@ -2190,6 +2190,18 @@ def _derive_marks_out_of_five(obtained, total):
     return _clamp_marks((obtained_value / total_value) * Decimal('5'), 0, 5)
 
 
+def _calculate_exam80_and_final100(exam_marks, sessional_marks):
+    # Exam is stored out of 100 and contributes 80% of final result.
+    exam_marks_100 = _clamp_marks(exam_marks or 0, 0, 100)
+    exam_80 = _clamp_marks((exam_marks_100 / Decimal('100')) * Decimal('80'), 0, 80)
+    sessional_20 = _clamp_marks(sessional_marks or 0, 0, 20)
+    final_100 = _clamp_marks(exam_80 + sessional_20, 0, 100)
+    return {
+        'exam_80': exam_80,
+        'final_100': final_100,
+    }
+
+
 def _get_or_create_transcript_for_enrollment(enrollment):
     transcript, _ = Transcript.objects.get_or_create(
         enrollment=enrollment,
@@ -2309,12 +2321,16 @@ def _recalculate_sessional_marks_for_transcript(transcript, save=True):
             'updated_at',
         ])
 
+    final_data = _calculate_exam80_and_final100(transcript.marks_obtained, transcript.sessional_marks)
+
     return {
         'attendance_marks': float(transcript.attendance_marks),
         'quiz_marks': float(transcript.quiz_marks),
         'assignment_marks': float(transcript.assignment_marks),
         'behavior_marks': float(transcript.behavior_marks),
         'sessional_marks': float(transcript.sessional_marks),
+        'exam_80': float(final_data['exam_80']),
+        'final_100': float(final_data['final_100']),
         'auto_enabled': bool(transcript.sessional_auto_enabled),
     }
 
@@ -3674,6 +3690,10 @@ def manage_transcripts(request):
         if transcript:
             enrollment.sessional_data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
             enrollment.preview_sessional_data = None
+            enrollment.final_result_data = _calculate_exam80_and_final100(
+                transcript.marks_obtained,
+                transcript.sessional_marks,
+            )
         else:
             enrollment.sessional_data = None
             attendance_marks = _calculate_attendance_marks(enrollment.course, enrollment.student)
@@ -3692,6 +3712,10 @@ def manage_transcripts(request):
                 'behavior_marks': behavior_marks,
                 'sessional_marks': sessional_marks,
             }
+            enrollment.final_result_data = _calculate_exam80_and_final100(
+                Decimal('0.00'),
+                sessional_marks,
+            )
     
     context = {
         'enrollments': enrollments
@@ -3741,7 +3765,8 @@ def create_transcript(request, enrollment_id):
     
     context = {
         'form': form,
-        'enrollment': enrollment
+        'enrollment': enrollment,
+        'sessional_marks_current': Decimal('0.00'),
     }
     return render(request, 'teacher/create_transcript.html', context)
 
@@ -3783,7 +3808,9 @@ def edit_transcript(request, transcript_id):
     
     context = {
         'form': form,
-        'transcript': transcript
+        'transcript': transcript,
+        'sessional_marks_current': transcript.sessional_marks,
+        'final_result_data': _calculate_exam80_and_final100(transcript.marks_obtained, transcript.sessional_marks),
     }
     return render(request, 'teacher/edit_transcript.html', context)
 

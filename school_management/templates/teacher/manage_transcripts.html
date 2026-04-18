@@ -249,12 +249,13 @@
                         <tr>
                             <th>Student</th>
                             <th>Course</th>
-                            <th class="text-center">Exam</th>
+                            <th class="text-center">Exam (80)</th>
                             <th class="text-center">Attendance</th>
                             <th class="text-center">Quiz</th>
                             <th class="text-center">Assignment</th>
                             <th class="text-center">Behavior</th>
                             <th class="text-center">Sessional</th>
+                            <th class="text-center">Final (100)</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -270,10 +271,11 @@
                                 </td>
                                 <td class="text-center">
                                     {% if enrollment.transcript %}
-                                        <div class="font-weight-bold">{{ enrollment.transcript.grade }}</div>
-                                        <small class="text-muted">{{ enrollment.transcript.marks_obtained }}/{{ enrollment.transcript.total_marks }}</small>
+                                        <div class="font-weight-bold" id="exam-80-{{ enrollment.transcript.id }}">{{ enrollment.final_result_data.exam_80|floatformat:2 }}/80</div>
+                                        <small class="text-muted">Raw: {{ enrollment.transcript.marks_obtained|floatformat:2 }}/100 • Grade {{ enrollment.transcript.grade }}</small>
                                     {% else %}
-                                        <span class="text-muted">-</span>
+                                        <div class="text-muted">{{ enrollment.final_result_data.exam_80|floatformat:2 }}/80</div>
+                                        <small class="text-muted">Raw: 0.00/100</small>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
@@ -366,6 +368,13 @@
                                         </div>
                                     {% else %}
                                         <span class="text-muted">Initialize transcript to enable sessional system</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if enrollment.transcript %}
+                                        <span class="badge badge-success" id="final-total-{{ enrollment.transcript.id }}">{{ enrollment.final_result_data.final_100|floatformat:2 }}/100</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ enrollment.final_result_data.final_100|floatformat:2 }}/100</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
@@ -508,12 +517,16 @@ document.addEventListener('click', async function (event) {
             const behaviorNode = document.getElementById('behavior-marks-' + transcriptId);
             const sessionalNode = document.getElementById('sessional-total-' + transcriptId);
             const modeNode = document.getElementById('sessional-mode-' + transcriptId);
+            const exam80Node = document.getElementById('exam-80-' + transcriptId);
+            const finalNode = document.getElementById('final-total-' + transcriptId);
 
             if (attendanceNode) attendanceNode.textContent = Number(data.attendance_marks).toFixed(2) + '/5';
             if (quizNode) quizNode.textContent = Number(data.quiz_marks).toFixed(2) + '/5';
             if (assignmentNode) assignmentNode.textContent = Number(data.assignment_marks).toFixed(2) + '/5';
             if (behaviorNode) behaviorNode.textContent = Number(data.behavior_marks).toFixed(2) + '/5';
             if (sessionalNode) sessionalNode.textContent = Number(data.sessional_marks).toFixed(2) + '/20';
+            if (exam80Node) exam80Node.textContent = Number(data.exam_80).toFixed(2) + '/80';
+            if (finalNode) finalNode.textContent = Number(data.final_100).toFixed(2) + '/100';
             if (modeNode) modeNode.textContent = data.auto_enabled ? 'Auto' : 'Manual Override';
         } catch (error) {
             console.error(error);

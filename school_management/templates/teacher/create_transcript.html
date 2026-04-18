@@ -91,6 +91,31 @@
                     {% endif %}
                 </div>
             </div>
+
+            <div class="content-card mb-25">
+                <div class="card-body card-body-pad-20">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="stat-box-analytics">
+                                <h3 class="stat-number text-primary" id="createExam80Preview">0.00</h3>
+                                <p class="stat-label text-muted">Exam (80)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-box-analytics">
+                                <h3 class="stat-number text-info" id="createSessional20Preview">{{ sessional_marks_current|floatformat:2 }}</h3>
+                                <p class="stat-label text-muted">Sessional (20)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-box-analytics">
+                                <h3 class="stat-number text-success" id="createFinal100Preview">{{ sessional_marks_current|floatformat:2 }}</h3>
+                                <p class="stat-label text-muted">Final (100)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="form-group">
                 <label for="{{ form.grade.id_for_label }}" class="form-label">
@@ -130,4 +155,25 @@
 
 {% block extra_js %}
 <script src="{% static 'js/teacher.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const marksInput = document.getElementById('{{ form.marks_obtained.id_for_label }}');
+    const sessionalValue = Number('{{ sessional_marks_current|default:0 }}');
+    const examNode = document.getElementById('createExam80Preview');
+    const finalNode = document.getElementById('createFinal100Preview');
+
+    function refreshFinalPreview() {
+        const raw = Math.max(0, Math.min(100, Number((marksInput && marksInput.value) || '0')));
+        const exam80 = (raw / 100) * 80;
+        const final100 = Math.max(0, Math.min(100, exam80 + sessionalValue));
+        if (examNode) examNode.textContent = exam80.toFixed(2);
+        if (finalNode) finalNode.textContent = final100.toFixed(2);
+    }
+
+    if (marksInput) {
+        marksInput.addEventListener('input', refreshFinalPreview);
+    }
+    refreshFinalPreview();
+});
+</script>
 {% endblock %}
