@@ -1,94 +1,28 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Edit Lecture - Teacher Panel{% endblock %}
+{% block page_title %}Edit Lecture{% endblock %}
+{% block topbar_title %}The City School – Edit Lecture{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-edit"></i> Edit Lecture
+        </h2>
+        <p class="page-subtitle">Update lecture information and files</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    <!-- Sidebar -->
-    <aside class="teacher-sidebar" id="teacherSidebar">
-        <div class="sidebar-header">
-            <div class="logo-area">
-                <img src="{% static 'images/school-logo.png' %}" alt="School Logo" class="inline-logo-md">
-                <span class="sidebar-title">Teacher Panel</span>
-            </div>
-        </div>
-        
-        <nav class="teacher-nav">
-            <!-- Main Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Main</div>
-                <a href="{% url 'main:dashboard' %}" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span class="nav-text">Dashboard</span>
-                </a>
-            </div>
-            
-            <!-- Academic Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Academic</div>
-                <a href="{% url 'main:manage_courses' %}" class="nav-item">
-                    <i class="fas fa-book"></i>
-                    <span class="nav-text">Courses</span>
-                </a>
-                <a href="{% url 'main:manage_lectures' %}" class="nav-item active">
-                    <i class="fas fa-file-video"></i>
-                    <span class="nav-text">Lectures</span>
-                </a>
-                <a href="{% url 'main:manage_enrollments' %}" class="nav-item">
-                    <i class="fas fa-user-plus"></i>
-                    <span class="nav-text">Enrollments</span>
-                </a>
-                <a href="{% url 'main:manage_transcripts' %}" class="nav-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span class="nav-text">Grades</span>
-                </a>
-            </div>
-            
-            <!-- Communication Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Communication</div>
-                <a href="{% url 'main:view_reports' %}" class="nav-item">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span class="nav-text">Reports</span>
-                </a>
-            </div>
-            
-            <!-- Account Section -->
-            <div class="nav-section">
-                <div class="nav-section-title">Account</div>
-                <a href="{% url 'main:edit_profile' %}" class="nav-item">
-                    <i class="fas fa-user-edit"></i>
-                    <span class="nav-text">Edit Profile</span>
-                </a>
-                <a href="{% url 'main:logout' %}" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="nav-text">Logout</span>
-                </a>
-            </div>
-        </nav>
-    </aside>
-    
-    <!-- Main Content -->
-    <div class="teacher-content">
-        <!-- Top Navbar -->
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-            
-            <div class="topbar-left">
-                <h1 class="page-title">Edit Lecture</h1>
-            </div>
-        </header>
-        
-        <!-- Page Content -->
-        <main class="page-content">
-            <div class="upload-form">
+<div class="page-back-row">
+    <a href="{% url 'main:manage_lectures' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+        <div class="upload-form">
                 <div class="form-header text-center">
                     <div class="form-icon">
                         <i class="fas fa-edit"></i>
@@ -267,21 +201,17 @@
                         </div>
                     </div>
                     
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'main:manage_lectures' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancel
-                        </a>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
                         <button type="submit" class="btn btn-submit">
                             <i class="fas fa-save"></i> Save Changes
                         </button>
                     </div>
                 </form>
             </div>
-        </main>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block page_scripts %}
 <script src="{% static 'js/teacher.js' %}"></script>
 {% endblock %}

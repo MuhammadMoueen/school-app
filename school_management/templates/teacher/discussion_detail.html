@@ -1,71 +1,77 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Discussion Thread{% endblock %}
+{% block page_title %}Discussion Detail{% endblock %}
+{% block topbar_title %}The City School – Discussion Detail{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-comment-dots"></i> {{ thread.title }}
+        </h2>
+        <p class="page-subtitle">Lecture: {{ lecture.title }}</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">{{ thread.title }}</h1></div>
-        </header>
-        
-        <main class="page-content">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted">Lecture: {{ lecture.title }}</small>
-                        </div>
-                        {% if request.user.role == 'teacher' %}
-                        <a href="{% url 'main:mark_discussion_resolved' thread.id %}" class="btn btn-sm btn-{% if thread.is_resolved %}warning{% else %}success{% endif %}">
-                            {% if thread.is_resolved %}Reopen{% else %}Mark Resolved{% endif %}
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="card-body">
-                    <strong>{{ thread.author.get_full_name }}</strong>
-                    <small class="text-muted">{{ thread.created_at|date:"M d, Y H:i" }}</small>
-                    <p class="mt-2">{{ thread.content }}</p>
-                </div>
+<div class="page-back-row">
+    <a href="{% url 'main:lecture_discussions' lecture.id %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="content-card mb-25">
+    <div class="card-header-section">
+        <h3 class="card-section-title">Thread</h3>
+        {% if request.user.role == 'teacher' %}
+        <a href="{% url 'main:mark_discussion_resolved' thread.id %}" class="btn btn-sm {% if thread.is_resolved %}btn-warning{% else %}btn-success{% endif %}">
+            {% if thread.is_resolved %}Reopen{% else %}Mark Resolved{% endif %}
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <strong>{{ thread.author.get_full_name }}</strong>
+        <small class="text-muted">{{ thread.created_at|date:"M d, Y H:i" }}</small>
+        <p class="mt-2">{{ thread.content }}</p>
+    </div>
+</div>
+
+<div class="content-card mb-25">
+    <div class="card-header-section">
+        <h3 class="card-section-title">Replies ({{ replies.count }})</h3>
+    </div>
+    <div class="card-body">
+        {% for reply in replies %}
+        <div class="border-bottom pb-3 mb-3">
+            <strong>{{ reply.author.get_full_name }}</strong>
+            <small class="text-muted">{{ reply.created_at|date:"M d, Y H:i" }}</small>
+            <p class="mt-2">{{ reply.content }}</p>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-comments"></i>
+            <p>No replies yet</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">Post Reply</h3>
+    </div>
+    <div class="card-body card-body-pad-20">
+        <form method="post" class="form-modern">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.content }}
             </div>
-            
-            <div class="card mb-4">
-                <div class="card-header"><h5>Replies ({{ replies.count }})</h5></div>
-                <div class="card-body">
-                    {% for reply in replies %}
-                    <div class="border-bottom pb-3 mb-3">
-                        <strong>{{ reply.author.get_full_name }}</strong>
-                        <small class="text-muted">{{ reply.created_at|date:"M d, Y H:i" }}</small>
-                        <p class="mt-2">{{ reply.content }}</p>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted">No replies yet</p>
-                    {% endfor %}
-                </div>
+            <div class="form-actions justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Post Reply
+                </button>
             </div>
-            
-            <div class="card">
-                <div class="card-header"><h5>Post Reply</h5></div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            {{ form.content }}
-                        </div>
-                        <button type="submit" class="btn btn-gradient">Post Reply</button>
-                    </form>
-                </div>
-            </div>
-        </main>
+        </form>
     </div>
 </div>
 {% endblock %}

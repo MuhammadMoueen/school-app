@@ -1,17 +1,30 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Report Details{% endblock %}
+{% block page_title %}Report Details{% endblock %}
+{% block topbar_title %}The City School – Report Details{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/chat-system.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-flag"></i> Report Detail
+        </h2>
+        <p class="page-subtitle">Review student concern and reply</p>
+    </div>
+</div>
+
+<div class="page-back-row">
+    <a href="{% url 'main:view_reports' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
 <div class="report-container">
-    <a href="{% url 'main:view_reports' %}" class="back-link">← Back to Reports</a>
-    
     <div class="report-main">
         <div class="report-header">
             <div class="student-info">
@@ -113,6 +126,6 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block page_scripts %}
 <script src="{% static 'js/chat-system.js' %}"></script>
 {% endblock %}

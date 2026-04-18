@@ -243,39 +243,35 @@
                     </div>
                     {% endif %}
                 </div>
-                <div class="col-md-4 mb-3 form-check d-flex align-items-end">
-                    <div>
-                        {{ form.allow_late_submission }}
-                        <label class="form-check-label">Allow Late Submission</label>
-                        {% if form.allow_late_submission.errors %}
-                        <div class="text-danger small mt-2">
-                            {% for error in form.allow_late_submission.errors %}
-                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
-            <div class="row">
-                <div class="col-md-12 mb-3 form-check d-flex align-items-end">
-                    <div>
-                        {{ form.auto_submit_on_timeout }}
-                        <label class="form-check-label">Auto Submit on Timeout</label>
-                        {% if form.auto_submit_on_timeout.errors %}
-                        <div class="text-danger small mt-2">
-                            {% for error in form.auto_submit_on_timeout.errors %}
-                            <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
+
+            <div class="quiz-section submission-settings-section">
+                <div class="quiz-section-title">Submission Settings</div>
+                <div class="quiz-helper-text">Choose one submission behavior for this quiz.</div>
+                <div class="submission-mode-grid mt-3">
+                    {% for radio in form.submission_mode %}
+                    <label class="submission-mode-option" for="{{ radio.id_for_label }}">
+                        {{ radio.tag }}
+                        <span class="submission-mode-text">{{ radio.choice_label }}</span>
+                    </label>
+                    {% endfor %}
                 </div>
+                {% if form.submission_mode.errors %}
+                <div class="text-danger small mt-2">
+                    {% for error in form.submission_mode.errors %}
+                    <i class="fas fa-exclamation-triangle"></i> {{ error }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-            <div class="mb-3 form-check d-flex align-items-end">
-                <div>
+
+            <div class="quiz-section publish-settings-section">
+                <div class="quiz-section-title">Publish Quiz</div>
+                <div class="form-check form-switch publish-switch">
                     {{ form.is_published }}
-                    <label class="form-check-label">Publish (students can take quiz)</label>
+                    <label class="form-check-label" for="{{ form.is_published.id_for_label }}">Publish Quiz (Students can attempt this quiz)</label>
+                </div>
+                <div class="quiz-helper-text">If enabled, students will be able to see and attempt this quiz.</div>
                     {% if form.is_published.errors %}
                     <div class="text-danger small mt-2">
                         {% for error in form.is_published.errors %}
@@ -283,11 +279,10 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                </div>
             </div>
-            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+            <div class="form-actions justify-content-end mt-4">
                 <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancel
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Create Quiz

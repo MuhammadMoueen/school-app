@@ -1,68 +1,72 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Lecture Discussions{% endblock %}
+{% block page_title %}Lecture Discussions{% endblock %}
+{% block topbar_title %}The City School – Lecture Discussions{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-comments"></i> Lecture Discussions
+        </h2>
+        <p class="page-subtitle">{{ lecture.title }}</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Discussions: {{ lecture.title }}</h1></div>
+<div class="page-back-row">
+    <a href="{% url 'main:manage_lectures' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
 
-        </header>
-        
-        <main class="page-content">
-            <div class="card mb-4">
-                <div class="card-header"><h5>Start New Discussion</h5></div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Title</label>
-                            {{ form.title }}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Question/Discussion</label>
-                            {{ form.content }}
-                        </div>
-                        <button type="submit" class="btn btn-gradient">Post Discussion</button>
-                    </form>
-                </div>
+<div class="content-card mb-25">
+    <div class="card-header-section">
+        <h3 class="card-section-title">Start New Discussion</h3>
+    </div>
+    <div class="card-body card-body-pad-20">
+        <form method="post" class="form-modern">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                {{ form.title }}
             </div>
-            
-            <div class="card">
-                <div class="card-header"><h5>All Discussions</h5></div>
-                <div class="card-body">
-                    {% for thread in threads %}
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6>
-                                    <a href="{% url 'main:discussion_detail' thread.id %}">{{ thread.title }}</a>
-                                    {% if thread.is_resolved %}
-                                    <span class="badge bg-success">Resolved</span>
-                                    {% endif %}
-                                </h6>
-                                <small class="text-muted">
-                                    By {{ thread.author.get_full_name }} • {{ thread.created_at|date:"M d, Y H:i" }} • 
-                                    {{ thread.reply_count }} replies
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted">No discussions yet</p>
-                    {% endfor %}
-                </div>
+            <div class="form-group">
+                <label class="form-label">Question/Discussion</label>
+                {{ form.content }}
             </div>
-        </main>
+            <div class="form-actions justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Post Discussion
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header-section">
+        <h3 class="card-section-title">All Discussions</h3>
+    </div>
+    <div class="card-body">
+        {% for thread in threads %}
+        <div class="border-bottom pb-3 mb-3">
+            <h6 class="mb-1">
+                <a href="{% url 'main:discussion_detail' thread.id %}">{{ thread.title }}</a>
+                {% if thread.is_resolved %}
+                <span class="badge badge-success">Resolved</span>
+                {% endif %}
+            </h6>
+            <small class="text-muted">
+                By {{ thread.author.get_full_name }} • {{ thread.created_at|date:"M d, Y H:i" }} • {{ thread.reply_count }} replies
+            </small>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-comments"></i>
+            <p>No discussions yet</p>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

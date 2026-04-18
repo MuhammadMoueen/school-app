@@ -1,62 +1,62 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Attendance Report{% endblock %}
+{% block page_title %}Attendance Report{% endblock %}
+{% block topbar_title %}The City School – Attendance Report{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{%static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-clipboard-check"></i> Attendance Report
+        </h2>
+        <p class="page-subtitle">{{ course.code }} - {{ course.name }}</p>
+    </div>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Attendance Report: {{ course.name }}</h1></div>
+<div class="page-back-row">
+    <a href="{% url 'main:course_analytics' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
 
-        </header>
-        
-        <main class="page-content">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Total Classes</th>
-                                <th>Present</th>
-                                <th>Absent</th>
-                                <th>Late</th>
-                                <th>Leave</th>
-                                <th>Attendance %</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stat in student_stats %}
-                            <tr>
-                                <td>{{ stat.student.get_full_name }}</td>
-                                <td>{{ stat.total }}</td>
-                                <td><span class="badge bg-success">{{ stat.present }}</span></td>
-                                <td><span class="badge bg-danger">{{ stat.absent }}</span></td>
-                                <td><span class="badge bg-warning">{{ stat.late }}</span></td>
-                                <td><span class="badge bg-info text-dark">{{ stat.leave }}</span></td>
-                                <td>
-                                    <strong>{{ stat.percentage }}%</strong>
-                                    {% if stat.percentage >= 75 %}
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    {% else %}
-                                        <i class="fas fa-exclamation-triangle text-warning"></i>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+<div class="content-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th class="text-center">Total Classes</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Leave</th>
+                        <th class="text-center">Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in student_stats %}
+                    <tr>
+                        <td class="font-weight-bold">{{ stat.student.get_full_name }}</td>
+                        <td class="text-center">{{ stat.total }}</td>
+                        <td class="text-center"><span class="badge badge-success">{{ stat.present }}</span></td>
+                        <td class="text-center"><span class="badge badge-danger">{{ stat.absent }}</span></td>
+                        <td class="text-center"><span class="badge badge-warning">{{ stat.late }}</span></td>
+                        <td class="text-center"><span class="badge badge-info">{{ stat.leave }}</span></td>
+                        <td class="text-center">
+                            <strong>{{ stat.percentage }}%</strong>
+                            {% if stat.percentage >= 75 %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

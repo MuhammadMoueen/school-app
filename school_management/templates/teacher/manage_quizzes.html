@@ -4,24 +4,98 @@
 {% block page_title %}Manage Quizzes{% endblock %}
 {% block topbar_title %}The City School – Manage Quizzes{% endblock %}
 
+{% block page_css %}
+<style>
+    /* Keep quiz action buttons compact so they stay on one row like lecture actions */
+    .teacher-main .quiz-action-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .teacher-main .quiz-action-buttons .btn {
+        min-height: 36px !important;
+        padding: 6px 10px !important;
+        width: auto !important;
+        flex: 0 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .teacher-main .quiz-action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .teacher-main .quiz-action-buttons .btn {
+            width: auto !important;
+            min-width: 40px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block page_content %}
 <div class="page-header-section">
     <div class="page-header-content">
         <h2 class="page-main-title">
-            <i class="fas fa-tasks"></i> Quizzes Management
+            <i class="fas fa-tasks"></i> Quiz Management
         </h2>
         <p class="page-subtitle">Create and manage course quizzes</p>
     </div>
 </div>
 
-<!-- Create Quiz Button -->
+<!-- Filter and Action Section -->
+<div class="content-card">
+    <div class="card-body card-body-pad-20">
+        <form method="get" class="row align-items-end g-3">
+            <div class="col-md-4">
+                <label for="courseFilter" class="form-label">
+                    <i class="fas fa-filter"></i> Course
+                </label>
+                <select name="course" id="courseFilter" class="form-select">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">
+                    <i class="fas fa-eye"></i> Visibility
+                </label>
+                <select name="status" id="statusFilter" class="form-select">
+                    <option value="">All</option>
+                    <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Published</option>
+                    <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="quizSearch" class="form-label">
+                    <i class="fas fa-search"></i> Search
+                </label>
+                <input type="text" id="quizSearch" name="q" class="form-control" value="{{ search_query }}" placeholder="Quiz title, description, course...">
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="submit" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-filter"></i> Apply
+                </button>
+                <a href="{% url 'main:create_quiz' %}" class="btn-action w-100 text-center d-inline-block">
+                    <i class="fas fa-plus"></i> New
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Secondary Action -->
 <div class="content-card mb-25">
-    <div class="card-body card-body-pad-20 text-right">
+    <div class="card-body card-body-pad-20 text-end">
         <a href="{% url 'main:teacher_quiz_attempts_dashboard' %}" class="btn-action btn-secondary">
-            <i class="fas fa-filter"></i> Attempts Dashboard
-        </a>
-        <a href="{% url 'main:create_quiz' %}" class="btn-action">
-            <i class="fas fa-plus"></i> Create New Quiz
+            <i class="fas fa-chart-line"></i> Attempts Dashboard
         </a>
     </div>
 </div>
@@ -42,7 +116,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Quiz Title</th>
+                            <th>Title</th>
                             <th>Course</th>
                             <th class="text-center">Type</th>
                             <th class="text-center">Questions</th>
@@ -50,6 +124,7 @@
                             <th class="text-center">Manual Pending</th>
                             <th class="text-center">Duration</th>
                             <th class="text-center">Status</th>
+                            <th class="text-center">Date</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -79,15 +154,20 @@
                             <td class="text-center text-muted">{{ quiz.duration_minutes }} min</td>
                             <td class="text-center">
                                 <span class="badge badge-{% if quiz.is_published %}success{% else %}warning{% endif %}">
-                                    {% if quiz.is_published %}Published{% else %}Draft{% endif %}
+                                    {% if quiz.is_published %}
+                                        <i class="fas fa-check-circle"></i> Published
+                                    {% else %}
+                                        <i class="fas fa-eye-slash"></i> Draft
+                                    {% endif %}
                                 </span>
                             </td>
+                            <td class="text-center text-muted">{{ quiz.created_at|date:"M d, Y" }}</td>
                             <td class="text-center">
-                                <div class="action-buttons">
+                                <div class="action-buttons quiz-action-buttons">
                                     <a href="{% url 'main:add_questions' quiz.id %}" 
                                        class="btn btn-sm btn-primary" 
                                        title="Manage Questions">
-                                        <i class="fas fa-question-circle"></i>
+                                        <i class="fas fa-list"></i>
                                     </a>
                                     <a href="{% url 'main:quiz_results' quiz.id %}" 
                                        class="btn btn-sm btn-info" 

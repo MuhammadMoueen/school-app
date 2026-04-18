@@ -1,64 +1,61 @@
-{% extends 'shared/base.html' %}
+{% extends 'teacher/teacher_base.html' %}
 {% load static %}
 
-{% block title %}Student Performance{% endblock %}
+{% block page_title %}Student Performance{% endblock %}
+{% block topbar_title %}The City School – Student Performance{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/teacher.css' %}">
-{% endblock %}
+{% block page_content %}
+<div class="page-header-section">
+    <div class="page-header-content">
+        <h2 class="page-main-title">
+            <i class="fas fa-chart-line"></i> Student Performance
+        </h2>
+        <p class="page-subtitle">{{ course.code }} - {{ course.name }}</p>
+    </div>
+</div>
 
-{% block extra_js %}
-<script src="{% static 'js/teacher.js' %}"></script>
-{% endblock %}
+<div class="page-back-row">
+    <a href="{% url 'main:course_analytics' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
 
-{% block content %}
-<div class="teacher-layout">
-    {% include 'teacher/sidebar.html' %}
-    
-    <div class="teacher-content">
-        <header class="teacher-topbar">
-            <button class="sidebar-toggle-btn" id="sidebarToggleBtn"><i class="fas fa-bars"></i></button>
-            <div class="topbar-left"><h1 class="page-title">Student Performance: {{ course.name }}</h1></div>
-        </header>
-        
-        <main class="page-content">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Lecture Progress</th>
-                                <th>Quiz Score</th>
-                                <th>Attendance</th>
-                                <th>Overall Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for perf in student_performance %}
-                            <tr>
-                                <td>{{ perf.student.get_full_name }}</td>
-                                <td>
-                                    <div class="progress">
-                                        <div class="progress-bar js-progress-width" data-progress-width="{{ perf.lecture_progress }}">
-                                            {{ perf.completed_lectures }}/{{ perf.total_lectures }}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ perf.avg_quiz_score|floatformat:2 }}</td>
-                                <td>{{ perf.attendance_rate|floatformat:2 }}%</td>
-                                <td>
-                                    <span class="badge bg-{% if perf.grade == 'A' %}success{% elif perf.grade == 'B' %}info{% elif perf.grade == 'C' %}warning{% else %}danger{% endif %}">
-                                        {{ perf.grade }} ({{ perf.percentage|floatformat:2 }}%)
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+<div class="content-card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Lecture Progress</th>
+                        <th class="text-center">Quiz Score</th>
+                        <th class="text-center">Attendance</th>
+                        <th class="text-center">Overall Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for perf in student_performance %}
+                    <tr>
+                        <td class="font-weight-bold">{{ perf.student.get_full_name }}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar js-progress-width" data-progress-width="{{ perf.lecture_progress }}">
+                                    {{ perf.completed_lectures }}/{{ perf.total_lectures }}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">{{ perf.avg_quiz_score|floatformat:2 }}</td>
+                        <td class="text-center">{{ perf.attendance_rate|floatformat:2 }}%</td>
+                        <td class="text-center">
+                            <span class="badge badge-{% if perf.grade == 'A' %}success{% elif perf.grade == 'B' %}info{% elif perf.grade == 'C' %}warning{% else %}danger{% endif %}">
+                                {{ perf.grade }} ({{ perf.percentage|floatformat:2 }}%)
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

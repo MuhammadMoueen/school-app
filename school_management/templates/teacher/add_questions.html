@@ -325,7 +325,7 @@
                 {% endif %}
             </div>
             
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <div class="form-actions justify-content-end">
                 <form method="post" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="form_type" value="save_draft">
@@ -349,9 +349,9 @@
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between;">
+        <div class="page-back-row">
             <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Quizzes
+                <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
 

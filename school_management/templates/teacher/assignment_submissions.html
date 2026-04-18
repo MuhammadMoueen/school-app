@@ -22,7 +22,7 @@
 <div class="content-card">
     <div class="card-header-section">
         <h3 class="card-section-title"><i class="fas fa-table"></i> Student Submissions</h3>
-        <a href="{% url 'main:manage_assignments' %}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+        <a href="{% url 'main:manage_assignments' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -71,11 +71,22 @@
                         </td>
                         <td class="text-center">
                             {% if row.submission %}
-                            <div class="action-buttons">
+                            <div class="action-buttons mb-2">
                                 <a href="{{ row.submission.submission_file.url }}" target="_blank" class="btn btn-sm btn-primary" title="View"><i class="fas fa-eye"></i></a>
                                 <a href="{{ row.submission.submission_file.url }}" class="btn btn-sm btn-info" title="Download"><i class="fas fa-download"></i></a>
-                                <a href="{% url 'main:grade_assignment_submission' row.submission.id %}" class="btn btn-sm btn-edit" title="Grade"><i class="fas fa-star"></i></a>
+                                <a href="{% url 'main:grade_assignment_submission' row.submission.id %}" class="btn btn-sm btn-edit" title="Check Submission">
+                                    <i class="fas fa-check-circle"></i>
+                                    {% if row.submission.score == None %}Check{% endif %}
+                                </a>
                             </div>
+                            {% if row.submission.score != None %}
+                            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                <button type="button" class="btn btn-sm btn-secondary js-assignment-mark-delta" data-id="{{ row.submission.id }}" data-student-id="{{ row.student.id }}" data-delta="-0.25">-</button>
+                                <span class="badge badge-warning" id="assignment-mark-{{ row.submission.id }}">{{ row.assignment_marks_5|default:0|floatformat:2 }}/5</span>
+                                <button type="button" class="btn btn-sm btn-secondary js-assignment-mark-delta" data-id="{{ row.submission.id }}" data-student-id="{{ row.student.id }}" data-delta="0.25">+</button>
+                            </div>
+                            <small class="text-muted d-block">Sessional: <span id="assignment-sessional-{{ row.student.id }}">{{ row.sessional_total|default:0|floatformat:2 }}</span>/20</small>
+                            {% endif %}
                             {% else %}
                                 -
                             {% endif %}
@@ -87,4 +98,56 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('click', async function (event) {
+    const button = event.target.closest('.js-assignment-mark-delta');
+    if (!button) {
+        return;
+    }
+
+    const submissionId = button.getAttribute('data-id');
+    const studentId = button.getAttribute('data-student-id');
+    const delta = button.getAttribute('data-delta');
+    const url = "{% url 'main:update_assignment_submission_sessional_mark' 0 %}".replace('/0/', '/' + submissionId + '/');
+
+    const formData = new FormData();
+    formData.append('action', 'delta');
+    formData.append('delta', delta);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    button.disabled = true;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const payload = await response.json();
+        if (!payload.success) {
+            return;
+        }
+
+        const marksNode = document.getElementById('assignment-mark-' + submissionId);
+        if (marksNode) {
+            marksNode.textContent = Number(payload.marks_5).toFixed(2) + '/5';
+        }
+
+        if (payload.sessional && payload.sessional.sessional_marks !== undefined) {
+            const sessionalNode = document.getElementById('assignment-sessional-' + studentId);
+            if (sessionalNode) {
+                sessionalNode.textContent = Number(payload.sessional.sessional_marks).toFixed(2);
+            }
+        }
+    } catch (error) {
+        console.error(error);
+    } finally {
+        button.disabled = false;
+    }
+});
+</script>
 {% endblock %}

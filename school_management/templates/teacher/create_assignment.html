@@ -74,8 +74,8 @@
             <div class="alert alert-danger">{{ form.non_field_errors }}</div>
             {% endif %}
 
-            <div class="d-flex justify-content-between">
-                <a href="{% url 'main:manage_assignments' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancel</a>
+            <div class="form-actions justify-content-between">
+                <a href="{% url 'main:manage_assignments' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Assignment</button>
             </div>
         </form>

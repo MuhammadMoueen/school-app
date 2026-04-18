@@ -1045,13 +1045,20 @@ class AssignmentGradingForm(forms.ModelForm):
     """Teacher grading form for assignment submissions."""
     class Meta:
         model = AssignmentSubmission
-        fields = ['score', 'feedback']
+        fields = ['score', 'teacher_marks_5', 'feedback']
         widgets = {
             'score': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': 0,
                 'placeholder': 'Score (e.g., 8 or 8.5)'
+            }),
+            'teacher_marks_5': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': 0,
+                'max': 5,
+                'placeholder': 'Sessional Marks (0-5)'
             }),
             'feedback': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1134,6 +1141,23 @@ class BulkAttendanceForm(forms.Form):
 
 class QuizForm(forms.ModelForm):
     """Form for creating/editing quizzes"""
+
+    SUBMISSION_MODES = [
+        ('late', 'Allow Late Submission'),
+        ('auto', 'Auto Submit on Timeout'),
+    ]
+
+    submission_mode = forms.ChoiceField(
+        choices=SUBMISSION_MODES,
+        widget=forms.RadioSelect,
+        required=True,
+        initial='auto',
+    )
+
+    is_published = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
     
     class Meta:
         model = Quiz
@@ -1146,12 +1170,11 @@ class QuizForm(forms.ModelForm):
             'duration_minutes',
             'start_time',
             'end_time',
-            'allow_late_submission',
             'question_display_mode',
-            'auto_submit_on_timeout',
             'total_marks_mode',
             'total_marks',
             'passing_marks',
+            'is_published',
             'paper_file',
             'omr_source_file',
             'answer_key_text',
@@ -1183,13 +1206,7 @@ class QuizForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local'
             }, format='%Y-%m-%dT%H:%M'),
-            'allow_late_submission': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
             'question_display_mode': forms.Select(attrs={'class': 'form-control'}),
-            'auto_submit_on_timeout': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
             'total_marks_mode': forms.Select(attrs={'class': 'form-control'}),
             'total_marks': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -1217,9 +1234,6 @@ class QuizForm(forms.ModelForm):
             'answer_key_file': forms.ClearableFileInput(attrs={
                 'class': 'form-control',
                 'accept': '.txt,.csv,.docx'
-            }),
-            'is_published': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
             })
         }
     
@@ -1227,6 +1241,12 @@ class QuizForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if teacher:
             self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+
+        if self.instance and self.instance.pk and not self.is_bound:
+            if self.instance.allow_late_submission:
+                self.fields['submission_mode'].initial = 'late'
+            else:
+                self.fields['submission_mode'].initial = 'auto'
 
         # This field is disabled in UI for manual/mixed quizzes, so allow it to be empty in POST.
         self.fields['question_source'].required = False
@@ -1259,8 +1279,7 @@ class QuizForm(forms.ModelForm):
         total_marks_mode = cleaned_data.get('total_marks_mode')
         total_marks = cleaned_data.get('total_marks')
         passing_marks = cleaned_data.get('passing_marks')
-        allow_late_submission = cleaned_data.get('allow_late_submission')
-        auto_submit_on_timeout = cleaned_data.get('auto_submit_on_timeout')
+        submission_mode = cleaned_data.get('submission_mode')
         omr_file = cleaned_data.get('omr_source_file')
 
         # Only validate times if both are provided
@@ -1271,8 +1290,8 @@ class QuizForm(forms.ModelForm):
         if duration_minutes and duration_minutes < 1:
             self.add_error('duration_minutes', 'Duration must be at least 1 minute.')
 
-        if allow_late_submission and auto_submit_on_timeout:
-            self.add_error('auto_submit_on_timeout', 'Auto-submit and late submission cannot both be enabled at the same time.')
+        if not submission_mode:
+            self.add_error('submission_mode', 'Please select a submission mode.')
 
         # Only validate marks comparison if BOTH are provided
         if total_marks_mode == 'manual' and total_marks is not None and passing_marks is not None:
@@ -1287,9 +1306,6 @@ class QuizForm(forms.ModelForm):
             cleaned_data['question_source'] = 'manual'
             cleaned_data['answer_key_text'] = ''
 
-        if quiz_type == 'auto':
-            cleaned_data['question_source'] = 'omr_upload' if omr_file else 'manual'
-
         if quiz_type == 'auto' and cleaned_data.get('question_source') == 'omr_upload':
             if not omr_file and not self.instance.pk:
                 self.add_error('omr_source_file', 'Upload an OMR/MCQ source file for OMR mode.')
@@ -1300,6 +1316,18 @@ class QuizForm(forms.ModelForm):
                     self.add_error('omr_source_file', 'Supported formats: PDF, JPG, PNG, DOCX.')
 
         return cleaned_data
+
+    def save(self, commit=True):
+        quiz = super().save(commit=False)
+        submission_mode = self.cleaned_data.get('submission_mode', 'auto')
+        quiz.allow_late_submission = submission_mode == 'late'
+        quiz.auto_submit_on_timeout = submission_mode == 'auto'
+
+        if commit:
+            quiz.save()
+            self.save_m2m()
+
+        return quiz
 
 
 class QuestionForm(forms.ModelForm):

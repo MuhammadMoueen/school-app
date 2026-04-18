@@ -2174,3 +2174,205 @@ main .container .alert {
         padding: 10px;
     }
 }
+
+/* ==================== UNIFIED TEACHER BUTTON DESIGN SYSTEM ==================== */
+
+.btn-primary-custom,
+.btn-secondary-custom,
+.btn-danger-custom,
+.teacher-main .btn,
+.teacher-main .btn-action,
+.teacher-main .btn-gradient,
+.teacher-main .btn-add-question,
+.teacher-main .btn-add,
+.teacher-main .btn-new,
+.teacher-main .btn-create,
+.teacher-main .btn-update,
+.teacher-main .btn-submit,
+.teacher-main .btn-save,
+.teacher-main .btn-edit,
+.teacher-main .btn-delete {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-height: 44px !important;
+    padding: 10px 20px !important;
+    border-radius: 11px !important;
+    border: none !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12) !important;
+}
+
+.btn-primary-custom,
+.teacher-main .btn-primary,
+.teacher-main .btn-success,
+.teacher-main .btn-info,
+.teacher-main .btn-action,
+.teacher-main .btn-gradient,
+.teacher-main .btn-add-question,
+.teacher-main .btn-add,
+.teacher-main .btn-new,
+.teacher-main .btn-create,
+.teacher-main .btn-update,
+.teacher-main .btn-submit,
+.teacher-main .btn-save,
+.teacher-main .btn-edit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary-custom:hover,
+.teacher-main .btn-primary:hover,
+.teacher-main .btn-success:hover,
+.teacher-main .btn-info:hover,
+.teacher-main .btn-action:hover,
+.teacher-main .btn-gradient:hover,
+.teacher-main .btn-add-question:hover,
+.teacher-main .btn-add:hover,
+.teacher-main .btn-new:hover,
+.teacher-main .btn-create:hover,
+.teacher-main .btn-update:hover,
+.teacher-main .btn-submit:hover,
+.teacher-main .btn-save:hover,
+.teacher-main .btn-edit:hover {
+    background: linear-gradient(135deg, #5d72e3 0%, #643f93 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 18px rgba(102, 126, 234, 0.35) !important;
+}
+
+.btn-secondary-custom,
+.teacher-main .btn-secondary,
+.teacher-main .btn-outline-secondary,
+.teacher-main .btn-outline-primary,
+.teacher-main .btn-cancel {
+    background: #6b7280 !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+}
+
+.btn-secondary-custom:hover,
+.teacher-main .btn-secondary:hover,
+.teacher-main .btn-outline-secondary:hover,
+.teacher-main .btn-outline-primary:hover,
+.teacher-main .btn-cancel:hover {
+    background: #4b5563 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 18px rgba(75, 85, 99, 0.34) !important;
+}
+
+.btn-danger-custom,
+.teacher-main .btn-danger,
+.teacher-main .btn-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    color: #ffffff !important;
+}
+
+.btn-danger-custom:hover,
+.teacher-main .btn-danger:hover,
+.teacher-main .btn-delete:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.35) !important;
+}
+
+.teacher-main .form-actions,
+.teacher-main .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.teacher-main .action-buttons .btn {
+    width: auto !important;
+    min-height: 36px !important;
+    padding: 6px 12px !important;
+}
+
+.page-back-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.page-back-row .btn {
+    min-height: 40px !important;
+}
+
+.teacher-main .btn.w-100 {
+    width: 100% !important;
+}
+
+.teacher-main .content-card + .content-card {
+    margin-top: 25px;
+}
+
+.teacher-main .list-group-item .btn {
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+}
+
+@media (max-width: 768px) {
+    .teacher-main .form-actions .btn,
+    .teacher-main .btn-primary-custom,
+    .teacher-main .btn-secondary-custom,
+    .teacher-main .btn-danger-custom {
+        width: 100% !important;
+    }
+
+    .teacher-main .action-buttons .btn {
+        width: auto !important;
+    }
+
+    .page-back-row {
+        justify-content: stretch;
+    }
+
+    .page-back-row .btn {
+        width: 100% !important;
+    }
+}
+
+/* ==================== PANEL ALIGNMENT STANDARD ==================== */
+
+.teacher-sidebar,
+.teacher-nav,
+.teacher-nav .nav-item {
+    text-align: left !important;
+}
+
+.teacher-nav .nav-item {
+    justify-content: flex-start !important;
+    padding-left: 20px !important;
+}
+
+.teacher-nav .nav-item .nav-icon {
+    margin-right: 10px !important;
+}
+
+.topbar-left,
+.topbar-left h1,
+.page-header-content,
+.page-main-title,
+.page-subtitle {
+    text-align: left !important;
+}
+
+.page-main-title,
+.page-subtitle {
+    padding-left: 0 !important;
+}
+
+.teacher-main .form-label,
+.teacher-main label {
+    text-align: left !important;
+}

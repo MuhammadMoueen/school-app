@@ -110,3 +110,71 @@
     border-color: #f5c6cb !important;
     color: #721c24 !important;
 }
+
+.submission-settings-section,
+.publish-settings-section {
+    margin-top: 16px;
+}
+
+.submission-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.submission-mode-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid #d8dfef;
+    border-radius: 12px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submission-mode-option:hover {
+    border-color: #8ea2f2;
+    box-shadow: 0 8px 18px rgba(98, 111, 214, 0.14);
+}
+
+.submission-mode-option input[type='radio'] {
+    accent-color: #5f6fd9;
+    margin: 0;
+}
+
+.submission-mode-option .submission-mode-text {
+    font-weight: 600;
+    color: #32466f;
+}
+
+.submission-mode-option:has(input[type='radio']:checked) {
+    border-color: #5f6fd9;
+    background: linear-gradient(135deg, rgba(95, 111, 217, 0.1) 0%, rgba(127, 82, 204, 0.08) 100%);
+    box-shadow: 0 10px 20px rgba(95, 111, 217, 0.2);
+}
+
+.publish-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.publish-switch .form-check-input {
+    width: 2.6rem;
+    height: 1.35rem;
+    margin: 0;
+}
+
+.publish-switch .form-check-label {
+    font-weight: 600;
+    color: #32466f;
+}
+
+@media (max-width: 768px) {
+    .submission-mode-grid {
+        grid-template-columns: 1fr;
+    }
+}

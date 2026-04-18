@@ -22,6 +22,16 @@
             <div class="col-md-3"><strong>Started:</strong> {{ attempt.started_at|date:"M d, Y H:i" }}</div>
             <div class="col-md-3"><strong>Submitted:</strong> {{ attempt.submitted_at|date:"M d, Y H:i" }}</div>
         </div>
+        <div class="row g-3 mt-2 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label" for="teacher_marks_5"><strong>Sessional Quiz Marks (0-5)</strong></label>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-secondary js-input-delta" data-target="teacher_marks_5" data-delta="-0.25">-</button>
+                    <button type="button" class="btn btn-sm btn-secondary js-input-delta" data-target="teacher_marks_5" data-delta="0.25">+</button>
+                </div>
+                <input id="teacher_marks_5" type="number" step="0.01" min="0" max="5" name="teacher_marks_5" class="form-control" value="{{ attempt_marks_5|floatformat:2 }}">
+            </div>
+        </div>
     </div>
 </div>
 
@@ -121,4 +131,28 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('click', function (event) {
+    const button = event.target.closest('.js-input-delta');
+    if (!button) {
+        return;
+    }
+
+    const targetId = button.getAttribute('data-target');
+    const delta = Number(button.getAttribute('data-delta') || '0');
+    const input = document.getElementById(targetId);
+    if (!input) {
+        return;
+    }
+
+    const current = Number(input.value || '0');
+    const min = input.min !== '' ? Number(input.min) : -999999;
+    const max = input.max !== '' ? Number(input.max) : 999999;
+    const next = Math.max(min, Math.min(max, current + delta));
+    input.value = next.toFixed(2);
+});
+</script>
 {% endblock %}

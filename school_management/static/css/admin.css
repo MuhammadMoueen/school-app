@@ -3,6 +3,15 @@
    THE CITY SCHOOL OF BAHAWALPUR
    ======================================== */
 
+:root {
+    --panel-primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --panel-primary-gradient-hover: linear-gradient(135deg, #5d72e3 0%, #643f93 100%);
+    --panel-secondary-bg: #6b7280;
+    --panel-secondary-bg-hover: #4b5563;
+    --panel-danger-gradient: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    --panel-danger-gradient-hover: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+}
+
 /* ========== COMMON/SHARED COMPONENTS ========== */
 
 /* Form Wrapper */
@@ -257,6 +266,129 @@
 .badge-student {
     background: #e3f2fd;
     color: #1976d2;
+}
+
+/* ==================== PANEL ALIGNMENT STANDARD ==================== */
+
+.sidebar,
+.admin-sidebar,
+.menu-item,
+.nav-item {
+    text-align: left;
+}
+
+.sidebar .menu-item,
+.admin-sidebar .menu-item,
+.sidebar .nav-item,
+.admin-sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 18px;
+}
+
+.menu-item i,
+.nav-item i {
+    margin-right: 10px;
+}
+
+.page-title,
+.page-header h1,
+.header-content,
+.header-content h1,
+.dashboard-header .header-content {
+    text-align: left;
+    padding-left: 0;
+}
+
+.form-group label,
+.form-label {
+    text-align: left;
+}
+
+/* ==================== GLOBAL BUTTON SYSTEM ==================== */
+
+.btn-primary-custom,
+.btn-secondary-custom,
+.btn-danger-custom,
+.btn,
+.btn-add,
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 20px;
+    border-radius: 11px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-custom,
+.btn-primary,
+.btn-add {
+    background: var(--panel-primary-gradient);
+    color: #fff;
+}
+
+.btn-primary-custom:hover,
+.btn-primary:hover,
+.btn-add:hover {
+    background: var(--panel-primary-gradient-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(102, 126, 234, 0.35);
+}
+
+.btn-secondary-custom,
+.btn-secondary,
+.btn-back {
+    background: var(--panel-secondary-bg);
+    color: #fff;
+}
+
+.btn-secondary-custom:hover,
+.btn-secondary:hover,
+.btn-back:hover {
+    background: var(--panel-secondary-bg-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(75, 85, 99, 0.34);
+}
+
+.btn-danger-custom,
+.btn-danger {
+    background: var(--panel-danger-gradient);
+    color: #fff;
+}
+
+.btn-danger-custom:hover,
+.btn-danger:hover {
+    background: var(--panel-danger-gradient-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.35);
+}
+
+.form-actions,
+.btn-container,
+.header-actions {
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .form-actions .btn,
+    .btn-container .btn,
+    .header-actions .btn {
+        width: 100%;
+    }
 }
 
 .badge-teacher {

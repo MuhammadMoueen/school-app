@@ -1252,6 +1252,8 @@ def assignment_submissions(request, assignment_id):
     for enrollment in enrollments:
         student = enrollment.student
         submission = latest_submission_by_student.get(student.id)
+        sessional_total = None
+        assignment_marks_5 = None
 
         if submission:
             if submission.is_late:
@@ -1261,6 +1263,18 @@ def assignment_submissions(request, assignment_id):
                 row_status = 'Submitted'
                 submitted_count += 1
             late_text = submission.late_by_text
+
+            if submission.score is not None:
+                assignment_marks_5 = float(
+                    _clamp_marks(
+                        submission.teacher_marks_5 if submission.teacher_marks_5 is not None else submission.score,
+                        0,
+                        5,
+                    )
+                )
+                transcript = _get_or_create_transcript_for_enrollment(enrollment)
+                sessional_data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+                sessional_total = sessional_data['sessional_marks']
         else:
             if deadline_passed:
                 row_status = 'Missing'
@@ -1275,6 +1289,8 @@ def assignment_submissions(request, assignment_id):
             'submission': submission,
             'status': row_status,
             'late_text': late_text,
+            'sessional_total': sessional_total,
+            'assignment_marks_5': assignment_marks_5,
         })
 
     context = {
@@ -1307,7 +1323,18 @@ def grade_assignment_submission(request, submission_id):
             graded_submission = form.save(commit=False)
             graded_submission.graded_by = request.user
             graded_submission.graded_at = timezone.now()
+            if graded_submission.teacher_marks_5 is None:
+                graded_submission.teacher_marks_5 = _clamp_marks(graded_submission.score or 0, 0, 5)
             graded_submission.save()
+
+            enrollment = Enrollment.objects.filter(
+                course=graded_submission.assignment.course,
+                student=graded_submission.student,
+            ).first()
+            if enrollment:
+                transcript = _get_or_create_transcript_for_enrollment(enrollment)
+                _recalculate_sessional_marks_for_transcript(transcript, save=True)
+
             messages.success(request, 'Submission graded successfully.')
             return redirect('main:assignment_submissions', assignment_id=submission.assignment.id)
     else:
@@ -1795,6 +1822,10 @@ def manage_attendance(request):
                             section=selected_course.section,
                         )
 
+                for enrollment in enrollments:
+                    transcript = _get_or_create_transcript_for_enrollment(enrollment)
+                    _recalculate_sessional_marks_for_transcript(transcript, save=True)
+
                 teacher_name = teacher.get_full_name() or teacher.username
                 log_teacher_activity(
                     teacher=teacher,
@@ -1888,6 +1919,10 @@ def manage_attendance(request):
                             },
                         )
                         imported_count += 1
+
+                    for enrollment in enrollments:
+                        transcript = _get_or_create_transcript_for_enrollment(enrollment)
+                        _recalculate_sessional_marks_for_transcript(transcript, save=True)
 
                     messages.success(request, f'Imported/updated {imported_count} attendance record(s).')
                     if skipped_count > 0:
@@ -2128,6 +2163,141 @@ def _create_placeholder_questions_from_answer_key(quiz):
     return created_count
 
 
+def _clamp_marks(value, minimum, maximum):
+    try:
+        numeric = Decimal(str(value))
+    except Exception:
+        numeric = Decimal('0')
+
+    min_value = Decimal(str(minimum))
+    max_value = Decimal(str(maximum))
+    if numeric < min_value:
+        numeric = min_value
+    if numeric > max_value:
+        numeric = max_value
+    return numeric.quantize(Decimal('0.01'))
+
+
+def _derive_marks_out_of_five(obtained, total):
+    try:
+        obtained_value = Decimal(str(obtained or 0))
+        total_value = Decimal(str(total or 0))
+    except Exception:
+        return Decimal('0.00')
+
+    if total_value <= 0:
+        return Decimal('0.00')
+    return _clamp_marks((obtained_value / total_value) * Decimal('5'), 0, 5)
+
+
+def _get_or_create_transcript_for_enrollment(enrollment):
+    transcript, _ = Transcript.objects.get_or_create(
+        enrollment=enrollment,
+        defaults={
+            'marks_obtained': Decimal('0.00'),
+            'total_marks': Decimal('100.00'),
+            'grade': 'F',
+        },
+    )
+    return transcript
+
+
+def _calculate_attendance_marks(course, student):
+    attendance_qs = Attendance.objects.filter(course=course, student=student)
+    total_records = attendance_qs.count()
+    if total_records == 0:
+        return Decimal('0.00')
+
+    present_records = attendance_qs.filter(status='present').count()
+    percentage = (Decimal(present_records) / Decimal(total_records)) * Decimal('100')
+    if percentage >= Decimal('80'):
+        return Decimal('5.00')
+
+    return _clamp_marks((percentage / Decimal('80')) * Decimal('5'), 0, 5)
+
+
+def _calculate_quiz_component_marks(enrollment):
+    attempts = QuizAttempt.objects.filter(
+        quiz__course=enrollment.course,
+        student=enrollment.student,
+        is_completed=True,
+    ).exclude(status='pending_review').select_related('quiz')
+
+    marks = []
+    for attempt in attempts:
+        if attempt.teacher_marks_5 is not None:
+            marks.append(_clamp_marks(attempt.teacher_marks_5, 0, 5))
+        else:
+            marks.append(_derive_marks_out_of_five(attempt.obtained_marks, attempt.quiz.total_marks))
+
+    if not marks:
+        return Decimal('0.00')
+
+    return _clamp_marks(sum(marks) / Decimal(len(marks)), 0, 5)
+
+
+def _calculate_assignment_component_marks(enrollment):
+    submissions = AssignmentSubmission.objects.filter(
+        assignment__course=enrollment.course,
+        student=enrollment.student,
+        score__isnull=False,
+    ).select_related('assignment')
+
+    marks = []
+    for submission in submissions:
+        if submission.teacher_marks_5 is not None:
+            marks.append(_clamp_marks(submission.teacher_marks_5, 0, 5))
+        else:
+            marks.append(_clamp_marks(submission.score or 0, 0, 5))
+
+    if not marks:
+        return Decimal('0.00')
+
+    return _clamp_marks(sum(marks) / Decimal(len(marks)), 0, 5)
+
+
+def _recalculate_sessional_marks_for_transcript(transcript, save=True):
+    enrollment = transcript.enrollment
+
+    attendance_marks = _calculate_attendance_marks(enrollment.course, enrollment.student)
+    quiz_marks = _calculate_quiz_component_marks(enrollment)
+    assignment_marks = _calculate_assignment_component_marks(enrollment)
+    behavior_marks = _clamp_marks(transcript.behavior_marks or 0, 0, 5)
+
+    auto_total = _clamp_marks(attendance_marks + quiz_marks + assignment_marks + behavior_marks, 0, 20)
+
+    transcript.attendance_marks = attendance_marks
+    transcript.quiz_marks = quiz_marks
+    transcript.assignment_marks = assignment_marks
+    transcript.behavior_marks = behavior_marks
+
+    if transcript.sessional_auto_enabled or transcript.sessional_override_marks is None:
+        transcript.sessional_marks = auto_total
+    else:
+        transcript.sessional_marks = _clamp_marks(transcript.sessional_override_marks, 0, 20)
+
+    if save:
+        transcript.save(update_fields=[
+            'attendance_marks',
+            'quiz_marks',
+            'assignment_marks',
+            'behavior_marks',
+            'sessional_marks',
+            'sessional_auto_enabled',
+            'sessional_override_marks',
+            'updated_at',
+        ])
+
+    return {
+        'attendance_marks': float(transcript.attendance_marks),
+        'quiz_marks': float(transcript.quiz_marks),
+        'assignment_marks': float(transcript.assignment_marks),
+        'behavior_marks': float(transcript.behavior_marks),
+        'sessional_marks': float(transcript.sessional_marks),
+        'auto_enabled': bool(transcript.sessional_auto_enabled),
+    }
+
+
 def _sync_quiz_attempt_to_transcript(attempt):
     """Persist per-quiz marks under transcript context for later aggregate calculations."""
     enrollment = Enrollment.objects.filter(
@@ -2147,6 +2317,9 @@ def _sync_quiz_attempt_to_transcript(attempt):
             'attempt_date': attempt.submitted_at or timezone.now(),
         },
     )
+
+    transcript = _get_or_create_transcript_for_enrollment(enrollment)
+    _recalculate_sessional_marks_for_transcript(transcript, save=True)
 
 
 def _upsert_quiz_result(attempt):
@@ -2345,6 +2518,27 @@ def manage_quizzes(request):
     teacher = request.user
     quizzes = Quiz.objects.filter(created_by=teacher).select_related('course').order_by('created_at')
 
+    courses = Course.objects.filter(teacher=teacher).order_by('code')
+    selected_course = request.GET.get('course', '').strip()
+    selected_status = request.GET.get('status', '').strip()
+    search_query = request.GET.get('q', '').strip()
+
+    if selected_course:
+        quizzes = quizzes.filter(course_id=selected_course)
+
+    if selected_status == 'published':
+        quizzes = quizzes.filter(is_published=True)
+    elif selected_status == 'draft':
+        quizzes = quizzes.filter(is_published=False)
+
+    if search_query:
+        quizzes = quizzes.filter(
+            Q(title__icontains=search_query)
+            | Q(course__name__icontains=search_query)
+            | Q(course__code__icontains=search_query)
+            | Q(description__icontains=search_query)
+        )
+
     quiz_rows = []
     for quiz in quizzes:
         completed_attempts = QuizAttempt.objects.filter(quiz=quiz, is_completed=True)
@@ -2363,6 +2557,10 @@ def manage_quizzes(request):
     context = {
         'quizzes': quizzes,
         'quiz_rows': quiz_rows,
+        'courses': courses,
+        'selected_course': selected_course,
+        'selected_status': selected_status,
+        'search_query': search_query,
     }
     
     return render(request, 'teacher/manage_quizzes.html', context)
@@ -2385,7 +2583,8 @@ def create_quiz(request):
             quiz.save()
             _sync_quiz_answer_key(quiz)
             placeholder_count = 0
-            if quiz.quiz_type == 'auto' and quiz.question_source == 'omr_upload':
+            is_auto_omr_quiz = quiz.quiz_type == 'auto' and quiz.question_source == 'omr_upload'
+            if is_auto_omr_quiz:
                 placeholder_count = _create_placeholder_questions_from_answer_key(quiz)
 
             teacher_name = teacher.get_full_name() or teacher.username
@@ -2395,8 +2594,11 @@ def create_quiz(request):
                 description=f'Teacher {teacher_name} created a quiz for {quiz.course.name} (Class {quiz.course.student_class}{quiz.course.section}): {quiz.title}',
                 course=quiz.course,
             )
-            if placeholder_count > 0:
-                messages.success(request, f'Quiz "{quiz.title}" created and {placeholder_count} OMR questions generated from the answer key.')
+            if is_auto_omr_quiz:
+                if placeholder_count > 0:
+                    messages.success(request, f'Quiz "{quiz.title}" created and {placeholder_count} OMR questions generated from the answer key.')
+                else:
+                    messages.success(request, f'Quiz "{quiz.title}" created successfully from uploaded MCQ source.')
                 return redirect('main:manage_quizzes')
 
             messages.success(request, f'Quiz "{quiz.title}" created successfully! Now add questions.')
@@ -2495,6 +2697,11 @@ def add_questions(request, quiz_id):
     
     teacher = request.user
     quiz = get_object_or_404(Quiz, id=quiz_id, created_by=teacher)
+
+    # Always initialize form so context rendering is safe for all POST branches.
+    next_order = quiz.questions.count() + 1
+    default_type = 'subjective' if quiz.quiz_type != 'auto' else 'mcq'
+    form = QuestionForm(initial={'order': next_order, 'question_type': default_type})
     
     if request.method == 'POST':
         form_type = request.POST.get('form_type', 'add_question')
@@ -2506,6 +2713,7 @@ def add_questions(request, quiz_id):
                 quiz.save()
                 messages.success(request, 'Question paper uploaded successfully!')
                 return redirect('main:add_questions', quiz_id=quiz.id)
+            messages.error(request, 'Please select a paper file to upload.')
         
         # Handle publish/draft buttons
         elif form_type == 'publish':
@@ -2554,11 +2762,6 @@ def add_questions(request, quiz_id):
                 question_type_display = 'MCQ' if question_type == 'mcq' else 'Subjective'
                 messages.success(request, f'{question_type_display} question added successfully!')
                 return redirect('main:add_questions', quiz_id=quiz.id)
-    else:
-        # Set default order to next number
-        next_order = quiz.questions.count() + 1
-        default_type = 'subjective' if quiz.quiz_type != 'auto' else 'mcq'
-        form = QuestionForm(initial={'order': next_order, 'question_type': default_type})
     
     questions = quiz.questions.all().order_by('order')
     mcq_questions = questions.filter(question_type__in=['mcq', 'omr', 'true_false'])
@@ -2661,11 +2864,24 @@ def quiz_results(request, quiz_id):
         grading_status = 'Pending Review' if attempt.status == 'pending_review' or pending_subjective > 0 else 'Completed'
         submission_status = 'Submitted Late' if attempt.is_late else 'On Time'
 
+        marks_5 = float(_clamp_marks(
+            attempt.teacher_marks_5 if attempt.teacher_marks_5 is not None else _derive_marks_out_of_five(attempt.obtained_marks, quiz.total_marks),
+            0,
+            5,
+        ))
+        sessional_total = None
+        enrollment = Enrollment.objects.filter(course=quiz.course, student=attempt.student).first()
+        if enrollment:
+            transcript = _get_or_create_transcript_for_enrollment(enrollment)
+            sessional_total = _recalculate_sessional_marks_for_transcript(transcript, save=True)['sessional_marks']
+
         attempt_rows.append({
             'attempt': attempt,
             'pending_subjective': pending_subjective,
             'grading_status': grading_status,
             'submission_status': submission_status,
+            'marks_5': marks_5,
+            'sessional_total': sessional_total,
         })
     
     context = {
@@ -2716,6 +2932,11 @@ def grade_quiz_attempt(request, attempt_id):
             answer.checked_at = timezone.now()
             answer.save(update_fields=['manual_marks', 'feedback', 'is_manually_checked', 'checked_by', 'checked_at'])
 
+        marks_5_raw = (request.POST.get('teacher_marks_5') or '').strip()
+        if marks_5_raw:
+            attempt.teacher_marks_5 = _clamp_marks(marks_5_raw, 0, 5)
+            attempt.save(update_fields=['teacher_marks_5'])
+
         _calculate_attempt_score(attempt)
         _sync_quiz_attempt_to_transcript(attempt)
 
@@ -2728,6 +2949,11 @@ def grade_quiz_attempt(request, attempt_id):
         'attempt': attempt,
         'objective_answers': objective_answers,
         'subjective_answers': subjective_answers,
+        'attempt_marks_5': float(_clamp_marks(
+            attempt.teacher_marks_5 if attempt.teacher_marks_5 is not None else _derive_marks_out_of_five(attempt.obtained_marks, attempt.quiz.total_marks),
+            0,
+            5,
+        )),
     }
     return render(request, 'teacher/grade_quiz_attempt.html', context)
 
@@ -3421,6 +3647,13 @@ def manage_transcripts(request):
     enrollments = Enrollment.objects.filter(course__teacher=request.user).select_related(
         'student', 'course'
     ).prefetch_related('transcript', 'quiz_marks__quiz')
+
+    for enrollment in enrollments:
+        transcript = getattr(enrollment, 'transcript', None)
+        if transcript:
+            enrollment.sessional_data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+        else:
+            enrollment.sessional_data = None
     
     context = {
         'enrollments': enrollments
@@ -3454,6 +3687,7 @@ def create_transcript(request, enrollment_id):
             )
             
             transcript.save()
+            _recalculate_sessional_marks_for_transcript(transcript, save=True)
             teacher_name = request.user.get_full_name() or request.user.username
             course = enrollment.course
             log_teacher_activity(
@@ -3494,6 +3728,7 @@ def edit_transcript(request, transcript_id):
             )
             
             transcript.save()
+            _recalculate_sessional_marks_for_transcript(transcript, save=True)
             teacher_name = request.user.get_full_name() or request.user.username
             course = transcript.enrollment.course
             student_name = transcript.enrollment.student.get_full_name() or transcript.enrollment.student.username
@@ -3526,6 +3761,110 @@ def delete_transcript(request, transcript_id):
     transcript.delete()
     messages.success(request, f'Transcript deleted for {student_name}!')
     return redirect('main:manage_transcripts')
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_transcript_sessional(request, transcript_id):
+    if request.user.role != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Access denied.'}, status=403)
+
+    transcript = get_object_or_404(Transcript, id=transcript_id, enrollment__course__teacher=request.user)
+
+    action = (request.POST.get('action') or '').strip()
+    if action == 'behavior_delta':
+        delta = request.POST.get('delta', '0')
+        transcript.behavior_marks = _clamp_marks((transcript.behavior_marks or 0) + Decimal(str(delta)), 0, 5)
+    elif action == 'override_set':
+        override_value = request.POST.get('value', '0')
+        transcript.sessional_override_marks = _clamp_marks(override_value, 0, 20)
+        transcript.sessional_auto_enabled = False
+    elif action == 'override_reset':
+        transcript.sessional_override_marks = None
+        transcript.sessional_auto_enabled = True
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid action.'}, status=400)
+
+    data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+    return JsonResponse({
+        'success': True,
+        'data': data,
+        'override_marks': float(transcript.sessional_override_marks) if transcript.sessional_override_marks is not None else None,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_assignment_submission_sessional_mark(request, submission_id):
+    if request.user.role != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Access denied.'}, status=403)
+
+    submission = get_object_or_404(
+        AssignmentSubmission.objects.select_related('assignment', 'assignment__course', 'student'),
+        id=submission_id,
+        assignment__created_by=request.user,
+    )
+
+    action = (request.POST.get('action') or '').strip()
+    current = submission.teacher_marks_5 if submission.teacher_marks_5 is not None else _clamp_marks(submission.score or 0, 0, 5)
+    if action == 'delta':
+        delta = Decimal(str(request.POST.get('delta', '0')))
+        submission.teacher_marks_5 = _clamp_marks(Decimal(str(current)) + delta, 0, 5)
+    elif action == 'set':
+        submission.teacher_marks_5 = _clamp_marks(request.POST.get('value', '0'), 0, 5)
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid action.'}, status=400)
+
+    submission.save(update_fields=['teacher_marks_5'])
+
+    enrollment = Enrollment.objects.filter(course=submission.assignment.course, student=submission.student).first()
+    sessional_data = None
+    if enrollment:
+        transcript = _get_or_create_transcript_for_enrollment(enrollment)
+        sessional_data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+
+    return JsonResponse({
+        'success': True,
+        'marks_5': float(submission.teacher_marks_5),
+        'sessional': sessional_data,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_quiz_attempt_sessional_mark(request, attempt_id):
+    if request.user.role != 'teacher':
+        return JsonResponse({'success': False, 'error': 'Access denied.'}, status=403)
+
+    attempt = get_object_or_404(
+        QuizAttempt.objects.select_related('quiz', 'quiz__course', 'student'),
+        id=attempt_id,
+        quiz__created_by=request.user,
+    )
+
+    action = (request.POST.get('action') or '').strip()
+    current = attempt.teacher_marks_5 if attempt.teacher_marks_5 is not None else _derive_marks_out_of_five(attempt.obtained_marks, attempt.quiz.total_marks)
+    if action == 'delta':
+        delta = Decimal(str(request.POST.get('delta', '0')))
+        attempt.teacher_marks_5 = _clamp_marks(Decimal(str(current)) + delta, 0, 5)
+    elif action == 'set':
+        attempt.teacher_marks_5 = _clamp_marks(request.POST.get('value', '0'), 0, 5)
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid action.'}, status=400)
+
+    attempt.save(update_fields=['teacher_marks_5'])
+
+    enrollment = Enrollment.objects.filter(course=attempt.quiz.course, student=attempt.student).first()
+    sessional_data = None
+    if enrollment:
+        transcript = _get_or_create_transcript_for_enrollment(enrollment)
+        sessional_data = _recalculate_sessional_marks_for_transcript(transcript, save=True)
+
+    return JsonResponse({
+        'success': True,
+        'marks_5': float(attempt.teacher_marks_5),
+        'sessional': sessional_data,
+    })
 
 
 @login_required

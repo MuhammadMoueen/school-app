@@ -1,4 +1,13 @@
 /* Student dashboard styles */
+:root {
+    --panel-primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --panel-primary-gradient-hover: linear-gradient(135deg, #5d72e3 0%, #643f93 100%);
+    --panel-secondary-bg: #6b7280;
+    --panel-secondary-bg-hover: #4b5563;
+    --panel-danger-gradient: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    --panel-danger-gradient-hover: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+}
+
 .dashboard-wrapper {
     background: white;
     border-radius: 15px;
@@ -327,6 +336,126 @@
     opacity: 0.5;
 }
 
+
+/* ==================== PANEL ALIGNMENT STANDARD ==================== */
+
+.sidebar,
+.student-sidebar,
+.menu-item,
+.nav-item {
+    text-align: left;
+}
+
+.sidebar .menu-item,
+.student-sidebar .menu-item,
+.sidebar .nav-item,
+.student-sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 18px;
+}
+
+.menu-item i,
+.nav-item i {
+    margin-right: 10px;
+}
+
+.page-title,
+.dashboard-header .header-content,
+.header-content,
+.header-content h1,
+.subjects-section h2,
+.reports-section h2 {
+    text-align: left;
+    padding-left: 0;
+}
+
+.form-group label,
+.form-label {
+    text-align: left;
+}
+
+/* ==================== GLOBAL BUTTON SYSTEM ==================== */
+
+.btn-primary-custom,
+.btn-secondary-custom,
+.btn-danger-custom,
+.btn,
+.profile-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 20px;
+    border-radius: 11px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-custom,
+.btn-primary,
+.btn-success,
+.btn-info,
+.profile-btn {
+    background: var(--panel-primary-gradient);
+    color: #fff;
+}
+
+.btn-primary-custom:hover,
+.btn-primary:hover,
+.btn-success:hover,
+.btn-info:hover,
+.profile-btn:hover {
+    background: var(--panel-primary-gradient-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(102, 126, 234, 0.35);
+}
+
+.btn-secondary-custom,
+.btn-secondary,
+.btn-outline-secondary,
+.btn-outline-primary {
+    background: var(--panel-secondary-bg);
+    color: #fff;
+    border-color: transparent;
+}
+
+.btn-secondary-custom:hover,
+.btn-secondary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-primary:hover {
+    background: var(--panel-secondary-bg-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(75, 85, 99, 0.34);
+}
+
+.btn-danger-custom,
+.btn-danger {
+    background: var(--panel-danger-gradient);
+    color: #fff;
+}
+
+.btn-danger-custom:hover,
+.btn-danger:hover {
+    background: var(--panel-danger-gradient-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.35);
+}
+
+@media (max-width: 768px) {
+    .btn {
+        width: 100%;
+    }
+}
 .no-transcript-note {
     font-size: 0.9rem;
 }

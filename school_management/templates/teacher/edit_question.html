@@ -102,9 +102,9 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                <div class="form-actions justify-content-end mt-4">
                     <a href="{% url 'main:add_questions' quiz.id %}" class="btn btn-cancel">
-                        <i class="fas fa-times"></i> Cancel
+                        <i class="fas fa-arrow-left"></i> Back
                     </a>
                     <button type="submit" class="btn btn-add-question">
                         <i class="fas fa-check"></i> Update Question
@@ -113,9 +113,9 @@
             </form>
         </div>
 
-        <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+        <div class="page-back-row mt-3">
             <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Quizzes
+                <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
 

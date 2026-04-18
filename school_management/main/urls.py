@@ -65,6 +65,7 @@ urlpatterns = [
     path('teacher/assignments/<int:assignment_id>/attachments/<int:attachment_id>/delete/', views.delete_assignment_attachment, name='delete_assignment_attachment'),
     path('teacher/assignments/<int:assignment_id>/submissions/', views.assignment_submissions, name='assignment_submissions'),
     path('teacher/assignment-submissions/<int:submission_id>/grade/', views.grade_assignment_submission, name='grade_assignment_submission'),
+    path('teacher/assignment-submissions/<int:submission_id>/sessional-mark/', views.update_assignment_submission_sessional_mark, name='update_assignment_submission_sessional_mark'),
     
     # Attendance Management URLs
     path('teacher/attendance/', views.manage_attendance, name='manage_attendance'),
@@ -81,6 +82,7 @@ urlpatterns = [
     path('teacher/questions/<int:question_id>/delete/', views.delete_question, name='delete_question'),
     path('teacher/quizzes/<int:quiz_id>/results/', views.quiz_results, name='quiz_results'),
     path('teacher/quiz-attempts/<int:attempt_id>/grade/', views.grade_quiz_attempt, name='grade_quiz_attempt'),
+    path('teacher/quiz-attempts/<int:attempt_id>/sessional-mark/', views.update_quiz_attempt_sessional_mark, name='update_quiz_attempt_sessional_mark'),
     path('teacher/quiz-attempts/dashboard/', views.teacher_quiz_attempts_dashboard, name='teacher_quiz_attempts_dashboard'),
     
     # Analytics & Performance URLs
@@ -100,6 +102,7 @@ urlpatterns = [
     path('teacher/transcripts/create/<int:enrollment_id>/', views.create_transcript, name='create_transcript'),
     path('teacher/transcripts/<int:transcript_id>/edit/', views.edit_transcript, name='edit_transcript'),
     path('teacher/transcripts/<int:transcript_id>/delete/', views.delete_transcript, name='delete_transcript'),
+    path('teacher/transcripts/<int:transcript_id>/sessional/update/', views.update_transcript_sessional, name='update_transcript_sessional'),
     path('teacher/reports/', views.view_reports, name='view_reports'),
     path('teacher/reports/<int:report_id>/', views.report_detail, name='report_detail'),
     

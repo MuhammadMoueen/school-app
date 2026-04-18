@@ -53,67 +53,74 @@
         </div>
     </div>
     <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Score</th>
-                    <th>Percentage</th>
-                    <th>Result</th>
-                    <th>Submission</th>
-                    <th>Grading</th>
-                    <th>Submitted At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in attempt_rows %}
-                {% with attempt=row.attempt %}
-                <tr>
-                    <td>{{ attempt.student.get_full_name }}</td>
-                    <td>{{ attempt.score }}/{{ quiz.total_marks }}</td>
-                    <td>{{ attempt.percentage|floatformat:2 }}%</td>
-                    <td>
-                        <span class="badge bg-{% if attempt.is_passed %}success{% else %}danger{% endif %}">
-                            {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-{% if row.submission_status == 'Submitted Late' %}danger{% else %}success{% endif %}">
-                            {{ row.submission_status }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-{% if row.pending_subjective > 0 %}warning text-dark{% else %}success{% endif %}">
-                            {{ row.grading_status }}
-                        </span>
-                    </td>
-                    <td>{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
-                    <td>
-                        {% if row.pending_subjective > 0 %}
-                        <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">
-                            Manual Check
-                        </a>
-                        {% else %}
-                        <span class="text-muted">Completed</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endwith %}
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center">No attempts yet</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center">Percentage</th>
+                        <th class="text-center">Result</th>
+                        <th class="text-center">Submission</th>
+                        <th class="text-center">Grading</th>
+                        <th class="text-center">Submitted At</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attempt_rows %}
+                    {% with attempt=row.attempt %}
+                    <tr>
+                        <td class="font-weight-bold">{{ attempt.student.get_full_name }}</td>
+                        <td class="text-center">{{ attempt.score }}/{{ quiz.total_marks }}</td>
+                        <td class="text-center">{{ attempt.percentage|floatformat:2 }}%</td>
+                        <td class="text-center">
+                            <span class="badge badge-{% if attempt.is_passed %}success{% else %}danger{% endif %}">
+                                {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-{% if row.submission_status == 'Submitted Late' %}danger{% else %}success{% endif %}">
+                                {{ row.submission_status }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-{% if row.pending_subjective > 0 %}warning{% else %}success{% endif %}">
+                                {{ row.grading_status }}
+                            </span>
+                        </td>
+                        <td class="text-center text-muted">{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
+                        <td class="text-center">
+                            {% if row.pending_subjective > 0 %}
+                            <a href="{% url 'main:grade_quiz_attempt' attempt.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-check-circle"></i> Check
+                            </a>
+                            {% else %}
+                            <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                <button type="button" class="btn btn-sm btn-secondary js-quiz-mark-delta" data-id="{{ attempt.id }}" data-student-id="{{ attempt.student.id }}" data-delta="-0.25">-</button>
+                                <span class="badge badge-warning" id="quiz-mark-{{ attempt.id }}">{{ row.marks_5|default:0|floatformat:2 }}/5</span>
+                                <button type="button" class="btn btn-sm btn-secondary js-quiz-mark-delta" data-id="{{ attempt.id }}" data-student-id="{{ attempt.student.id }}" data-delta="0.25">+</button>
+                            </div>
+                            <small class="text-muted d-block">Sessional: <span id="quiz-sessional-{{ attempt.student.id }}">{{ row.sessional_total|default:0|floatformat:2 }}</span>/20</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center">No attempts yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <!-- Back to Quizzes -->
-<div style="margin-top: 20px;">
+<div class="page-back-row mt-3">
     <a href="{% url 'main:manage_quizzes' %}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Quizzes
+        <i class="fas fa-arrow-left"></i> Back
     </a>
 </div>
 
@@ -121,4 +128,53 @@
 
 {% block page_scripts %}
 <script src="{% static 'js/quiz-create.js' %}"></script>
+<script>
+document.addEventListener('click', async function (event) {
+    const button = event.target.closest('.js-quiz-mark-delta');
+    if (!button) {
+        return;
+    }
+
+    const attemptId = button.getAttribute('data-id');
+    const studentId = button.getAttribute('data-student-id');
+    const delta = button.getAttribute('data-delta');
+    const url = "{% url 'main:update_quiz_attempt_sessional_mark' 0 %}".replace('/0/', '/' + attemptId + '/');
+
+    const formData = new FormData();
+    formData.append('action', 'delta');
+    formData.append('delta', delta);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    button.disabled = true;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const payload = await response.json();
+        if (!payload.success) {
+            return;
+        }
+
+        const marksNode = document.getElementById('quiz-mark-' + attemptId);
+        if (marksNode) {
+            marksNode.textContent = Number(payload.marks_5).toFixed(2) + '/5';
+        }
+
+        if (payload.sessional && payload.sessional.sessional_marks !== undefined) {
+            const sessionalNode = document.getElementById('quiz-sessional-' + studentId);
+            if (sessionalNode) {
+                sessionalNode.textContent = Number(payload.sessional.sessional_marks).toFixed(2);
+            }
+        }
+    } catch (error) {
+        console.error(error);
+    } finally {
+        button.disabled = false;
+    }
+});
+</script>
 {% endblock %}
