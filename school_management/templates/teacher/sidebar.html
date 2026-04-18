@@ -1,59 +1,72 @@
 {% load static %}
 <aside class="teacher-sidebar" id="teacherSidebar">
     <div class="sidebar-header">
-        <img src="{% static 'images/favicon.png' %}" alt="Logo" class="sidebar-logo">
-        <div class="sidebar-title">
-            <h3>Teacher Panel</h3>
-            <p>{{ request.user.get_full_name }}</p>
-        </div>
-        <button class="sidebar-toggle" id="sidebarToggle">
-            <i class="fas fa-bars"></i>
-        </button>
+        <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="sidebar-logo">
+        <h3 class="sidebar-title">The City School</h3>
+        <p class="sidebar-subtitle">of Bahawalpur</p>
+        <div class="sidebar-divider"></div>
+        <p class="sidebar-panel-label">Teacher Panel</p>
     </div>
-    
+
+    {% with url_name=request.resolver_match.url_name %}
     <nav class="teacher-nav">
-        <div class="nav-section">
-            <div class="nav-section-title">Academic</div>
-            <a href="{% url 'main:dashboard' %}" class="nav-item">
-                <i class="fas fa-tachometer-alt nav-icon"></i>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="{% url 'main:manage_courses' %}" class="nav-item">
-                <i class="fas fa-book nav-icon"></i>
-                <span class="nav-text">My Courses</span>
-            </a>
-            <a href="{% url 'main:manage_lectures' %}" class="nav-item">
-                <i class="fas fa-file-video nav-icon"></i>
-                <span class="nav-text">Lectures</span>
-            </a>
-            <a href="{% url 'main:manage_assignments' %}" class="nav-item">
-                <i class="fas fa-file-signature nav-icon"></i>
-                <span class="nav-text">Assignments</span>
-            </a>
-            <a href="{% url 'main:manage_attendance' %}" class="nav-item">
-                <i class="fas fa-calendar-check nav-icon"></i>
-                <span class="nav-text">Attendance</span>
-            </a>
-            <a href="{% url 'main:manage_quizzes' %}" class="nav-item">
-                <i class="fas fa-tasks nav-icon"></i>
-                <span class="nav-text">Quizzes</span>
-            </a>
-            <a href="{% url 'main:manage_enrollments' %}" class="nav-item">
-                <i class="fas fa-user-check nav-icon"></i>
-                <span class="nav-text">Enrollments</span>
-            </a>
-            <a href="{% url 'main:manage_transcripts' %}" class="nav-item">
-                <i class="fas fa-clipboard-list nav-icon"></i>
-                <span class="nav-text">Grades/Transcripts</span>
-            </a>
-            <a href="{% url 'main:view_reports' %}" class="nav-item">
-                <i class="fas fa-comments nav-icon"></i>
-                <span class="nav-text">Reports</span>
-            </a>
-            <a href="{% url 'main:course_analytics' %}" class="nav-item">
-                <i class="fas fa-chart-bar nav-icon"></i>
-                <span class="nav-text">Course Analytics</span>
-            </a>
-        </div>
+        <a href="{% url 'main:dashboard' %}" class="nav-item {% if url_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-text">Dashboard</span>
+        </a>
+
+        <a href="{% url 'main:manage_courses' %}" class="nav-item {% if url_name == 'manage_courses' or url_name == 'edit_course' or url_name == 'delete_course' or url_name == 'view_course_lectures' %}active{% endif %}">
+            <i class="fas fa-book nav-icon"></i>
+            <span class="nav-text">My Courses</span>
+        </a>
+
+        <a href="{% url 'main:manage_lectures' %}" class="nav-item {% if 'lecture' in url_name and url_name != 'view_course_lectures' %}active{% endif %}">
+            <i class="fas fa-file-video nav-icon"></i>
+            <span class="nav-text">Lectures</span>
+        </a>
+
+        <a href="{% url 'main:manage_attendance' %}" class="nav-item {% if url_name == 'manage_attendance' or url_name == 'mark_attendance' or url_name == 'attendance_report' %}active{% endif %}">
+            <i class="fas fa-calendar-check nav-icon"></i>
+            <span class="nav-text">Attendance</span>
+        </a>
+
+        <a href="{% url 'main:manage_quizzes' %}" class="nav-item {% if 'quiz' in url_name or 'question' in url_name %}active{% endif %}">
+            <i class="fas fa-tasks nav-icon"></i>
+            <span class="nav-text">Quizzes</span>
+        </a>
+
+        <a href="{% url 'main:manage_assignments' %}" class="nav-item {% if 'assignment' in url_name %}active{% endif %}">
+            <i class="fas fa-file-alt nav-icon"></i>
+            <span class="nav-text">Assignments</span>
+        </a>
+
+        <a href="{% url 'main:manage_enrollments' %}" class="nav-item {% if 'enrollment' in url_name or url_name == 'get_course_students' %}active{% endif %}">
+            <i class="fas fa-user-check nav-icon"></i>
+            <span class="nav-text">Enrollments</span>
+        </a>
+
+        <a href="{% url 'main:manage_transcripts' %}" class="nav-item {% if 'transcript' in url_name %}active{% endif %}">
+            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span class="nav-text">Grades/Transcripts</span>
+        </a>
+
+        <a href="{% url 'main:view_reports' %}" class="nav-item {% if url_name == 'view_reports' or url_name == 'report_detail' %}active{% endif %}">
+            <i class="fas fa-comments nav-icon"></i>
+            <span class="nav-text">Reports</span>
+            {% if unread_reports > 0 %}
+                <span class="nav-badge">{{ unread_reports }}</span>
+            {% endif %}
+        </a>
+
+        <a href="{% url 'main:course_analytics' %}" class="nav-item {% if url_name == 'course_analytics' or url_name == 'student_performance' %}active{% endif %}">
+            <i class="fas fa-chart-bar nav-icon"></i>
+            <span class="nav-text">Course Analytics</span>
+        </a>
+
+        <a href="{% url 'main:teacher_admin_chat' %}" class="nav-item {% if url_name == 'teacher_admin_chat' %}active{% endif %}">
+            <i class="fas fa-headset nav-icon"></i>
+            <span class="nav-text">Admin Chat</span>
+        </a>
     </nav>
+    {% endwith %}
 </aside>
