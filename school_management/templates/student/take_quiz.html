@@ -1,17 +1,19 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}Take Quiz{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 <link rel="stylesheet" href="{% static 'css/quiz-system.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="container-fluid student-container-pad-top">
     <div class="report-container">
-        <a href="{% url 'main:student_my_quizzes' %}" class="back-link">← Back to Quizzes</a>
+        <div class="page-back-row">
+            <a href="{% url 'main:student_my_quizzes' %}" class="btn btn-back back-link"><i class="fas fa-arrow-left"></i> Back to Quizzes</a>
+        </div>
 
         <div class="report-main">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -117,6 +119,6 @@
 </script>
 {% endblock %}
 
-{% block extra_js %}
+{% block page_scripts %}
 <script src="{% static 'js/student-quiz-attempt.js' %}"></script>
 {% endblock %}

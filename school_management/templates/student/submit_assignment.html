@@ -1,16 +1,18 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}Submit Assignment{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="container-fluid student-container-pad-top">
     <div class="report-form-container">
-        <a href="{% url 'main:student_my_assignments' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to My Assignments</a>
+        <div class="page-back-row">
+            <a href="{% url 'main:student_my_assignments' %}" class="btn btn-back back-link"><i class="fas fa-arrow-left"></i> Back to My Assignments</a>
+        </div>
 
         <div class="report-form-box">
             <h2><i class="fas fa-upload"></i> {{ assignment.title }}</h2>
@@ -58,7 +60,7 @@
                 <div class="alert alert-danger">{{ form.non_field_errors }}</div>
                 {% endif %}
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Assignment</button>
+                    <button type="submit" class="btn btn-primary btn-submit"><i class="fas fa-paper-plane"></i> Submit Assignment</button>
                 </div>
             </form>
         </div>

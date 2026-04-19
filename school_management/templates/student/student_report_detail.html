@@ -10,7 +10,9 @@
 
 {% block page_content %}
 <div class="report-container">
-    <a href="{% url 'main:dashboard' %}" class="back-link">← Back to Dashboard</a>
+    <div class="page-back-row">
+        <a href="{% url 'main:dashboard' %}" class="btn btn-back back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
     
     <div class="report-main">
         <div class="report-header">

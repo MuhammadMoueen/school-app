@@ -1,16 +1,18 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}My Quizzes{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="container-fluid student-container-pad-top">
     <div class="report-container">
-        <a href="{% url 'main:dashboard' %}" class="back-link">← Back to Dashboard</a>
+        <div class="page-back-row">
+            <a href="{% url 'main:dashboard' %}" class="btn btn-back back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
 
         <div class="report-main">
             <h3><i class="fas fa-tasks"></i> My Quizzes</h3>

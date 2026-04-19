@@ -184,6 +184,26 @@
     margin-top: 8px;
 }
 
+.transcript-filter-bar {
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(220px, 300px) auto auto;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 14px;
+}
+
+.transcript-filter-bar .form-control,
+.transcript-filter-bar .form-select,
+.transcript-filter-bar .btn {
+    min-height: 38px;
+}
+
+.filter-results-note {
+    margin: 0 0 12px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
     .transcript-page-shell {
         max-width: 100%;
@@ -216,6 +236,11 @@
         max-width: 70px;
         height: 30px;
     }
+
+    .transcript-filter-bar {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
 }
 </style>
 {% endblock %}
@@ -238,10 +263,40 @@
             <img src="{% static 'images/school-logo.png' %}" alt="School Logo" class="inline-logo-sm"> Student Enrollments & Transcripts
         </h3>
         <div class="card-header-actions">
-            <span class="badge badge-info">{{ enrollments|length }} Total</span>
+            <span class="badge badge-info">{{ filtered_count }} Showing</span>
         </div>
     </div>
     <div class="card-body">
+        <form method="get" class="transcript-filter-bar">
+            <input
+                type="text"
+                name="q"
+                value="{{ q }}"
+                class="form-control"
+                placeholder="Search student, roll no, course code or name"
+            >
+            <select name="course" class="form-select">
+                <option value="">All Courses</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}" {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            {% if has_active_filters %}
+                <a href="{% url 'main:manage_transcripts' %}" class="btn btn-secondary">
+                    <i class="fas fa-undo"></i> Clear
+                </a>
+            {% endif %}
+        </form>
+
+        <p class="filter-results-note">
+            Showing {{ filtered_count }} of {{ total_enrollments }} enrollment{{ total_enrollments|pluralize }}
+        </p>
+
         {% if enrollments %}
             <div class="table-responsive transcript-table-wrap">
                 <table class="data-table">
@@ -408,8 +463,13 @@
         {% else %}
             <div class="empty-state">
                 <i class="fas fa-clipboard"></i>
-                <p>No enrollments to grade</p>
-                <small>Students need to be enrolled in subjects before you can add marks</small>
+                {% if has_active_filters %}
+                    <p>No matching student/course found</p>
+                    <small>Try a different search keyword or clear filters</small>
+                {% else %}
+                    <p>No enrollments to grade</p>
+                    <small>Students need to be enrolled in subjects before you can add marks</small>
+                {% endif %}
             </div>
         {% endif %}
     </div>

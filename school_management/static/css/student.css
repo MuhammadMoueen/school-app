@@ -27,14 +27,7 @@
     flex-wrap: wrap;
 }
 
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex: 1;
-}
-
-.profile-btn {
+        margin-bottom: 0;
     background: rgba(255,255,255,0.2);
     border: 2px solid rgba(255,255,255,0.3);
     color: white;
@@ -67,7 +60,9 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
+    cursor: pointer;
     background: rgba(255,255,255,0.2);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -98,8 +93,8 @@
 
 .stats-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
     padding: 30px;
 }
 
@@ -381,7 +376,22 @@
 .btn-primary-custom,
 .btn-secondary-custom,
 .btn-danger-custom,
-.btn,
+.teacher-main .btn,
+.teacher-main .btn-action,
+.teacher-main .btn-gradient,
+.teacher-main .btn-add-question,
+.teacher-main .btn-add,
+.teacher-main .btn-new,
+.teacher-main .btn-create,
+.teacher-main .btn-update,
+.teacher-main .btn-submit,
+.teacher-main .btn-save,
+.teacher-main .btn-edit,
+.teacher-main .btn-delete,
+.teacher-main .btn-view,
+.teacher-main .btn-report,
+.teacher-main .btn-back,
+.teacher-main .back-link,
 .profile-btn {
     display: inline-flex;
     align-items: center;
@@ -395,22 +405,48 @@
     font-weight: 600;
     line-height: 1.2;
     text-decoration: none;
+    cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
 .btn-primary-custom,
-.btn-primary,
-.btn-success,
-.btn-info,
+.teacher-main .btn-primary,
+.teacher-main .btn-success,
+.teacher-main .btn-info,
+.teacher-main .btn-action,
+.teacher-main .btn-gradient,
+.teacher-main .btn-add-question,
+.teacher-main .btn-add,
+.teacher-main .btn-new,
+.teacher-main .btn-create,
+.teacher-main .btn-update,
+.teacher-main .btn-submit,
+.teacher-main .btn-save,
+.teacher-main .btn-edit,
+.teacher-main .btn-view,
+.teacher-main .btn-report,
 .profile-btn {
     background: var(--panel-primary-gradient);
     color: #fff;
 }
 
 .btn-primary-custom:hover,
-.btn-primary:hover,
-.btn-success:hover,
-.btn-info:hover,
+.teacher-main .btn-primary:hover,
+.teacher-main .btn-success:hover,
+.teacher-main .btn-info:hover,
+.teacher-main .btn-action:hover,
+.teacher-main .btn-gradient:hover,
+.teacher-main .btn-add-question:hover,
+.teacher-main .btn-add:hover,
+.teacher-main .btn-new:hover,
+.teacher-main .btn-create:hover,
+.teacher-main .btn-update:hover,
+.teacher-main .btn-submit:hover,
+.teacher-main .btn-save:hover,
+.teacher-main .btn-edit:hover,
+.teacher-main .btn-view:hover,
+.teacher-main .btn-report:hover,
 .profile-btn:hover {
     background: var(--panel-primary-gradient-hover);
     color: #fff;
@@ -419,18 +455,24 @@
 }
 
 .btn-secondary-custom,
-.btn-secondary,
-.btn-outline-secondary,
-.btn-outline-primary {
+.teacher-main .btn-secondary,
+.teacher-main .btn-outline-secondary,
+.teacher-main .btn-outline-primary,
+.teacher-main .btn-cancel,
+.teacher-main .btn-back,
+.teacher-main .back-link {
     background: var(--panel-secondary-bg);
     color: #fff;
     border-color: transparent;
 }
 
 .btn-secondary-custom:hover,
-.btn-secondary:hover,
-.btn-outline-secondary:hover,
-.btn-outline-primary:hover {
+.teacher-main .btn-secondary:hover,
+.teacher-main .btn-outline-secondary:hover,
+.teacher-main .btn-outline-primary:hover,
+.teacher-main .btn-cancel:hover,
+.teacher-main .btn-back:hover,
+.teacher-main .back-link:hover {
     background: var(--panel-secondary-bg-hover);
     color: #fff;
     transform: translateY(-1px);
@@ -438,21 +480,67 @@
 }
 
 .btn-danger-custom,
-.btn-danger {
+.teacher-main .btn-danger,
+.teacher-main .btn-delete {
     background: var(--panel-danger-gradient);
     color: #fff;
 }
 
 .btn-danger-custom:hover,
-.btn-danger:hover {
+.teacher-main .btn-danger:hover,
+.teacher-main .btn-delete:hover {
     background: var(--panel-danger-gradient-hover);
     color: #fff;
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(220, 38, 38, 0.35);
 }
 
+/* Shared action-row behavior aligned with teacher panel */
+.teacher-main .form-actions,
+.teacher-main .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.teacher-main .action-buttons .btn,
+.teacher-main .table .btn.btn-sm {
+    width: auto;
+    min-height: 36px;
+    padding: 6px 12px;
+    border-radius: 9px;
+    font-size: 0.85rem;
+}
+
+.page-back-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.page-back-row .btn {
+    min-height: 40px;
+}
+
 @media (max-width: 768px) {
-    .btn {
+    .teacher-main .form-actions .btn,
+    .teacher-main .btn-primary-custom,
+    .teacher-main .btn-secondary-custom,
+    .teacher-main .btn-danger-custom {
+        width: 100%;
+    }
+
+    .teacher-main .action-buttons .btn,
+    .teacher-main .table .btn.btn-sm {
+        width: auto;
+    }
+
+    .page-back-row {
+        justify-content: stretch;
+    }
+
+    .page-back-row .btn {
         width: 100%;
     }
 }
@@ -460,28 +548,6 @@
     font-size: 0.9rem;
 }
 
-.btn-report,
-.btn-view {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 12px 25px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-report:hover,
-.btn-view:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    color: white;
-}
 
 .empty-state {
     text-align: center;
@@ -601,20 +667,6 @@
     margin-bottom: 2rem;
 }
 
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #3498db;
-    text-decoration: none;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-}
-
-.back-link:hover {
-    color: #2980b9;
-}
-
 .transcript-info-box,
 .transcript-details {
     background: #f8f9fa;
@@ -693,44 +745,6 @@
 .form-actions {
     display: flex;
     gap: 1rem;
-}
-
-.btn {
-    padding: 0.8rem 2rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.btn-primary {
-    background: #3498db;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #2980b9;
-}
-
-.btn-secondary {
-    background: #ecf0f1;
-    color: #7f8c8d;
-}
-
-.btn-secondary:hover {
-    background: #bdc3c7;
-}
-
-.report-btn-primary {
-    background: #e74c3c;
-}
-
-.report-btn-primary:hover {
-    background: #c0392b;
 }
 
 .your-message {
@@ -882,6 +896,12 @@
     height: 24px;
     object-fit: contain;
     vertical-align: middle;
+}
+
+@media (max-width: 1200px) {
+    .stats-container {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 768px) {

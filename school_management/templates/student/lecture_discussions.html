@@ -1,13 +1,13 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}Lecture Discussions{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="container-fluid student-container-pad-top">
     <div class="dashboard-wrapper">
         <div class="reports-section">

@@ -1,16 +1,18 @@
-{% extends 'shared/base.html' %}
+{% extends 'student/student_base.html' %}
 {% load static %}
 
 {% block title %}Report Marks Issue{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <link rel="stylesheet" href="{% static 'css/student.css' %}">
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 
 <div class="report-form-container">
-    <a href="{% url 'main:dashboard' %}" class="back-link">← Back to Dashboard</a>
+    <div class="page-back-row">
+        <a href="{% url 'main:dashboard' %}" class="btn btn-back back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
     
     <div class="report-form-box">
         <h2>⚠️ Report Marks Issue</h2>
@@ -50,8 +52,8 @@
             </div>
             
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary report-btn-primary">Submit Report</button>
-                <a href="{% url 'main:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-submit">Submit Report</button>
+                <a href="{% url 'main:dashboard' %}" class="btn btn-secondary btn-cancel">Cancel</a>
             </div>
         </form>
     </div>
