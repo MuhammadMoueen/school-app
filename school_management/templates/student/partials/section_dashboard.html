@@ -1,0 +1,91 @@
+<section class="smart-section smart-overview-section">
+    <div class="smart-overview-grid">
+        <article class="smart-kpi-card gradient-primary">
+            <div class="kpi-icon"><i class="fas fa-book-open"></i></div>
+            <div>
+                <p>Total Subjects</p>
+                <h3>{{ overview.total_subjects }}</h3>
+            </div>
+        </article>
+        <article class="smart-kpi-card gradient-success">
+            <div class="kpi-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div>
+                <p>Active Enrollments</p>
+                <h3>{{ overview.active_enrollments }}</h3>
+            </div>
+        </article>
+        <article class="smart-kpi-card gradient-info">
+            <div class="kpi-icon"><i class="fas fa-file-signature"></i></div>
+            <div>
+                <p>Assignments</p>
+                <h3>{{ overview.assignments_submitted }}/{{ overview.assignments_submitted|add:overview.assignments_pending }}</h3>
+            </div>
+        </article>
+        <article class="smart-kpi-card gradient-warning">
+            <div class="kpi-icon"><i class="fas fa-tasks"></i></div>
+            <div>
+                <p>Quiz Count</p>
+                <h3>{{ overview.quiz_count }}</h3>
+            </div>
+        </article>
+        <article class="smart-kpi-card gradient-attendance">
+            <div class="kpi-icon"><i class="fas fa-calendar-check"></i></div>
+            <div>
+                <p>Attendance %</p>
+                <h3>{{ overview.attendance_percent }}%</h3>
+            </div>
+        </article>
+        <article class="smart-kpi-card gradient-grade">
+            <div class="kpi-icon"><i class="fas fa-award"></i></div>
+            <div>
+                <p>Overall Grade</p>
+                <h3>{{ overview.overall_grade }}</h3>
+                <small>{{ overview.overall_percentage }}%</small>
+            </div>
+        </article>
+    </div>
+
+    <div class="smart-chart-grid">
+        <article class="smart-card chart-card-large">
+            <header>
+                <h4><i class="fas fa-chart-line"></i> Performance Trend</h4>
+                <span>Assignments + Quizzes</span>
+            </header>
+            <div class="chart-wrap"><canvas id="performanceTrendChart"></canvas></div>
+        </article>
+
+        <article class="smart-card chart-card-side">
+            <header>
+                <h4><i class="fas fa-circle-notch"></i> Attendance Mix</h4>
+            </header>
+            <div class="chart-wrap small"><canvas id="attendanceDonutChart"></canvas></div>
+        </article>
+
+        <article class="smart-card chart-card-side">
+            <header>
+                <h4><i class="fas fa-bars"></i> Assignment Progress</h4>
+            </header>
+            <div class="chart-wrap small"><canvas id="assignmentBarChart"></canvas></div>
+        </article>
+
+        <article class="smart-card chart-card-side">
+            <header>
+                <h4><i class="fas fa-bullseye"></i> Quiz Attempts</h4>
+            </header>
+            <div class="chart-wrap small"><canvas id="quizGaugeChart"></canvas></div>
+        </article>
+    </div>
+
+    <div class="smart-card insights-card">
+        <header>
+            <h4><i class="fas fa-lightbulb"></i> Smart Insights</h4>
+        </header>
+        <ul class="insight-list">
+            {% for insight in analytics.insights %}
+                <li><i class="fas fa-angle-right"></i> {{ insight }}</li>
+            {% empty %}
+                <li><i class="fas fa-angle-right"></i> Keep tracking your progress to unlock insights.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>

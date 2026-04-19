@@ -1,0 +1,58 @@
+<section class="smart-section">
+    <div class="smart-card section-head-card">
+        <header>
+            <h3><i class="fas fa-file-signature"></i> Assignments Analytics</h3>
+            <span>{{ assignment_rows|length }} total assignments</span>
+        </header>
+        <div class="assignment-progress-inline">
+            <div>
+                <strong>{{ overview.assignments_submitted }}</strong>
+                <small>Submitted</small>
+            </div>
+            <div>
+                <strong>{{ overview.assignments_pending }}</strong>
+                <small>Pending / Missing</small>
+            </div>
+        </div>
+        <div class="chart-wrap medium"><canvas id="assignmentSectionChart"></canvas></div>
+    </div>
+
+    <div class="smart-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Assignment</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in assignment_rows %}
+                    <tr>
+                        <td>{{ row.assignment.course.code }}</td>
+                        <td>{{ row.assignment.title }}</td>
+                        <td>{{ row.assignment.deadline|date:"M d, Y h:i A" }}</td>
+                        <td>
+                            <span class="badge {% if row.status == 'Submitted' %}bg-success{% elif row.status == 'Late' %}bg-warning text-dark{% elif row.status == 'Missing' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ row.status }}
+                            </span>
+                        </td>
+                        <td>{% if row.submission and row.submission.score != None %}{{ row.submission.score }}{% else %}-{% endif %}</td>
+                        <td>
+                            <a href="{% url 'main:submit_assignment' row.assignment.id %}" class="btn btn-sm btn-primary">
+                                {% if row.submission and row.assignment.allow_resubmission %}Resubmit{% elif row.submission %}View{% else %}Submit{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-4">No assignments available right now.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

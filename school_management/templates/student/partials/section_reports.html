@@ -1,0 +1,55 @@
+<section class="smart-section">
+    <div class="smart-card section-head-card">
+        <header>
+            <h3><i class="fas fa-comments"></i> Reports & Communication</h3>
+            <span>{{ report_rows|length }} recent threads</span>
+        </header>
+        <div class="chart-wrap medium"><canvas id="reportSectionChart"></canvas></div>
+    </div>
+
+    <div class="smart-card insights-card mb-3">
+        <header>
+            <h4><i class="fas fa-brain"></i> AI-like Suggestions</h4>
+        </header>
+        <ul class="insight-list">
+            {% for insight in analytics.insights %}
+            <li><i class="fas fa-angle-right"></i> {{ insight }}</li>
+            {% empty %}
+            <li><i class="fas fa-angle-right"></i> No suggestions available yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="smart-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Last Update</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in report_rows %}
+                    <tr>
+                        <td>{{ report.course_name }}</td>
+                        <td>{{ report.get_issue_type_display }}</td>
+                        <td>
+                            <span class="badge {% if report.status == 'resolved' %}bg-success{% elif report.status == 'replied' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">
+                                {{ report.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ report.updated_at|date:"M d, Y h:i A" }}</td>
+                        <td><a href="{% url 'main:student_report_detail' report.id %}" class="btn btn-sm btn-primary">Open</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-4">No report threads yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,69 @@
+<section class="smart-section">
+    <div class="smart-card section-head-card">
+        <header>
+            <h3><i class="fas fa-calendar-check"></i> Attendance Analytics</h3>
+            <span>Overall {{ overview.attendance_percent }}%</span>
+        </header>
+        <div class="chart-wrap medium"><canvas id="attendanceSectionChart"></canvas></div>
+    </div>
+
+    <div class="smart-card mb-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Leave</th>
+                        <th class="text-center">Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attendance_summary_rows %}
+                    <tr>
+                        <td>{{ row.course.name }}</td>
+                        <td class="text-center">{{ row.present }}</td>
+                        <td class="text-center">{{ row.absent }}</td>
+                        <td class="text-center">{{ row.late }}</td>
+                        <td class="text-center">{{ row.leave }}</td>
+                        <td class="text-center"><strong>{{ row.attendance_rate }}%</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-4">No attendance summary yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="smart-card">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in attendance_history_rows %}
+                    <tr>
+                        <td>{{ row.date|date:"M d, Y" }}</td>
+                        <td>{{ row.course.name }}</td>
+                        <td>
+                            <span class="badge {% if row.status == 'present' %}bg-success{% elif row.status == 'absent' %}bg-danger{% elif row.status == 'late' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                                {{ row.status|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center py-4">No attendance records yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

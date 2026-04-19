@@ -119,6 +119,7 @@ urlpatterns = [
     path('student/quizzes/<int:quiz_id>/take/', views.take_quiz, name='take_quiz'),
     path('student/quizzes/<int:quiz_id>/autosave/', views.autosave_quiz_attempt, name='autosave_quiz_attempt'),
     path('student/quiz-attempts/<int:attempt_id>/result/', views.student_quiz_result, name='student_quiz_result'),
+    path('student/dashboard/section/<str:section>/', views.student_dashboard_section_api, name='student_dashboard_section_api'),
     
     # Notification URLs
     path('presence/ping/', views.presence_ping, name='presence_ping'),

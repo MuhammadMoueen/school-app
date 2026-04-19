@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.core.cache import cache
+from django.template.loader import render_to_string
 from datetime import datetime, timedelta
 from decimal import Decimal
 import io
@@ -108,6 +109,7 @@ def _serialize_teacher_admin_message(item):
     payload = {
         'sender': item.get('sender'),
         'name': item.get('name', ''),
+
         'message': item.get('message', ''),
         'created_at': item['created_at'].isoformat() if item.get('created_at') else None,
         'time_label': item['created_at'].strftime('%b %d, %Y - %H:%M') if item.get('created_at') else '',
@@ -465,6 +467,7 @@ def teacher_dashboard(request):
     
     # Get unread reports count for notifications
     unread_reports = MarksReport.objects.filter(
+
         teacher=teacher,
         status='pending'
     ).count()
@@ -476,6 +479,7 @@ def teacher_dashboard(request):
     
     # Statistics
     total_students = User.objects.filter(role='student').count()  # All students in the system
+
     total_enrollments = Enrollment.objects.filter(course__teacher=teacher).count()
     total_assignments = Assignment.objects.filter(created_by=teacher).count()
     
@@ -496,6 +500,7 @@ def teacher_dashboard(request):
 @login_required
 def teacher_admin_chat(request):
     """Teacher page to send messages to admins and view admin replies."""
+
     if request.user.role != 'teacher':
         messages.error(request, 'Access denied. Teacher only.')
         return redirect('main:dashboard')
@@ -4358,52 +4363,90 @@ def report_detail(request, report_id):
 
 # ==================== Student Dashboard Views ====================
 
-@login_required
-def student_dashboard(request):
-    """Student dashboard with courses and transcripts"""
-    if request.user.role != 'student':
-        messages.error(request, 'Access denied. Students only.')
-        return redirect('main:home')
-    
-    student = request.user
+def _calculate_letter_grade(percentage):
+    if percentage >= 85:
+        return 'A+'
+    if percentage >= 75:
+        return 'A'
+    if percentage >= 65:
+        return 'B'
+    if percentage >= 55:
+        return 'C'
+    if percentage >= 45:
+        return 'D'
+    return 'F'
+
+
+def _build_student_dashboard_payload(student):
     _publish_due_scheduled_lectures()
-    
-    # Get student's enrollments and transcripts
-    enrollments = Enrollment.objects.filter(student=student).select_related(
-        'course', 'course__teacher'
-    ).prefetch_related('transcript')
-    
-    # Get student's reports
-    reports = MarksReport.objects.filter(student=student).select_related(
-        'enrollment__course', 'transcript__enrollment__course'
-    ).prefetch_related('replies')
 
-    enrolled_course_ids = enrollments.values_list('course_id', flat=True)
-    lectures = Lecture.objects.filter(
-        course_id__in=enrolled_course_ids,
-        is_published=True,
-    ).select_related('course', 'course__teacher').prefetch_related('attachments').order_by('-lecture_date', '-created_at')[:10]
+    enrollments = list(
+        Enrollment.objects.filter(student=student).select_related('course', 'course__teacher')
+    )
+    enrolled_course_ids = [item.course_id for item in enrollments]
 
-    assignments = Assignment.objects.filter(
-        course_id__in=enrolled_course_ids,
-    ).exclude(status='draft').select_related('course').order_by('deadline', '-created_at')
+    reports = list(
+        MarksReport.objects.filter(student=student).select_related(
+            'teacher', 'enrollment__course', 'transcript__enrollment__course'
+        ).order_by('-updated_at', '-created_at')
+    )
 
-    quizzes = Quiz.objects.filter(
-        course_id__in=enrolled_course_ids,
-    ).select_related('course').order_by('-created_at')
+    lectures = list(
+        Lecture.objects.filter(
+            course_id__in=enrolled_course_ids,
+            is_published=True,
+        ).select_related('course', 'course__teacher').prefetch_related('attachments').order_by('-lecture_date', '-created_at')[:10]
+    )
+
+    assignments = list(
+        Assignment.objects.filter(
+            course_id__in=enrolled_course_ids,
+        ).exclude(status='draft').select_related('course').order_by('deadline', '-created_at')
+    )
+
+    latest_submission_by_assignment = {}
+    assignment_submissions = AssignmentSubmission.objects.filter(
+        student=student,
+        assignment__in=assignments,
+    ).select_related('assignment').order_by('assignment_id', '-attempt_number', '-submitted_at')
+    for submission in assignment_submissions:
+        if submission.assignment_id not in latest_submission_by_assignment:
+            latest_submission_by_assignment[submission.assignment_id] = submission
 
     assignment_rows = []
-    for assignment in assignments[:8]:
-        latest_submission = AssignmentSubmission.objects.filter(
-            assignment=assignment,
-            student=student,
-        ).order_by('-attempt_number', '-submitted_at').first()
+    assignment_completed = 0
+    assignment_pending = 0
+    assignment_missing = 0
+    performance_points = []
+
+    for assignment in assignments:
+        latest_submission = latest_submission_by_assignment.get(assignment.id)
 
         if latest_submission:
             status = 'Late' if latest_submission.is_late else 'Submitted'
             late_text = latest_submission.late_by_text
+            assignment_completed += 1
+
+            if latest_submission.teacher_marks_5 is not None:
+                normalized_marks = float(_clamp_marks(latest_submission.teacher_marks_5, 0, 5)) * 20
+            elif latest_submission.score is not None:
+                normalized_marks = float(max(0, min(float(latest_submission.score), 100)))
+            else:
+                normalized_marks = None
+
+            if normalized_marks is not None and latest_submission.submitted_at:
+                performance_points.append({
+                    'date': latest_submission.submitted_at,
+                    'label': f'A: {assignment.course.code}',
+                    'marks': round(normalized_marks, 2),
+                })
         else:
-            status = 'Missing' if timezone.now() > assignment.deadline else 'Pending'
+            if timezone.now() > assignment.deadline:
+                status = 'Missing'
+                assignment_missing += 1
+            else:
+                status = 'Pending'
+                assignment_pending += 1
             late_text = ''
 
         assignment_rows.append({
@@ -4413,17 +4456,31 @@ def student_dashboard(request):
             'late_text': late_text,
         })
 
-    pending_assignments_count = sum(1 for row in assignment_rows if row['status'] == 'Pending')
+    quizzes = list(
+        Quiz.objects.filter(
+            course_id__in=enrolled_course_ids,
+            is_published=True,
+        ).select_related('course').order_by('-created_at')
+    )
+
+    latest_attempt_by_quiz = {}
+    quiz_attempts = QuizAttempt.objects.filter(
+        quiz__in=quizzes,
+        student=student,
+        is_completed=True,
+    ).select_related('quiz').order_by('quiz_id', '-submitted_at')
+    for attempt in quiz_attempts:
+        if attempt.quiz_id not in latest_attempt_by_quiz:
+            latest_attempt_by_quiz[attempt.quiz_id] = attempt
 
     quiz_rows = []
-    for quiz in quizzes[:8]:
-        completed_attempt = QuizAttempt.objects.filter(
-            quiz=quiz,
-            student=student,
-            is_completed=True,
-        ).order_by('-submitted_at').first()
+    attempted_quizzes = 0
+    quiz_percentages = []
+    for quiz in quizzes:
+        completed_attempt = latest_attempt_by_quiz.get(quiz.id)
 
         if completed_attempt:
+            attempted_quizzes += 1
             pending_manual = completed_attempt.answers.filter(
                 question__question_type='subjective',
                 is_manually_checked=False,
@@ -4434,6 +4491,15 @@ def student_dashboard(request):
                 status = 'Submitted Late'
             else:
                 status = 'Completed'
+
+            percentage_value = float(completed_attempt.percentage or 0)
+            quiz_percentages.append(percentage_value)
+            if completed_attempt.submitted_at:
+                performance_points.append({
+                    'date': completed_attempt.submitted_at,
+                    'label': f'Q: {quiz.course.code}',
+                    'marks': round(percentage_value, 2),
+                })
         else:
             status = 'Not Submitted'
 
@@ -4451,6 +4517,10 @@ def student_dashboard(request):
     )
 
     attendance_by_course = {}
+    present_total = 0
+    absent_total = 0
+    late_total = 0
+    leave_total = 0
     for record in attendance_records:
         stats = attendance_by_course.setdefault(record.course_id, {
             'course': record.course,
@@ -4462,6 +4532,15 @@ def student_dashboard(request):
         })
         stats[record.status] += 1
         stats['total'] += 1
+
+        if record.status == 'present':
+            present_total += 1
+        elif record.status == 'absent':
+            absent_total += 1
+        elif record.status == 'late':
+            late_total += 1
+        elif record.status == 'leave':
+            leave_total += 1
 
     attendance_summary_rows = []
     for enrollment in enrollments:
@@ -4484,22 +4563,158 @@ def student_dashboard(request):
         })
 
     attendance_history_rows = attendance_records[:20]
-    
-    context = {
+
+    transcripts = list(
+        Transcript.objects.filter(enrollment__student=student).select_related('enrollment__course')
+    )
+    avg_percentage = round(sum(item.percentage for item in transcripts) / len(transcripts), 2) if transcripts else 0
+    overall_grade = _calculate_letter_grade(avg_percentage)
+
+    total_attendance_records = present_total + absent_total + late_total + leave_total
+    attendance_percent = round((present_total / total_attendance_records * 100), 2) if total_attendance_records else 0
+
+    performance_points = sorted(performance_points, key=lambda item: item['date'])[-12:]
+    performance_labels = [point['date'].strftime('%d %b') for point in performance_points]
+    performance_marks = [point['marks'] for point in performance_points]
+
+    weakest_subject = None
+    if transcripts:
+        weakest = min(transcripts, key=lambda item: item.percentage)
+        weakest_subject = weakest.enrollment.course.name
+
+    insights = []
+    if len(performance_marks) >= 2:
+        delta = round(performance_marks[-1] - performance_marks[0], 2)
+        if delta > 0:
+            insights.append(f'Your performance improved by {delta}% in recent tracked work.')
+        elif delta < 0:
+            insights.append(f'Your recent performance dropped by {abs(delta)}%; review your latest topics.')
+        else:
+            insights.append('Your performance trend is stable across recent activities.')
+
+    if attendance_percent < 75:
+        insights.append(f'Attendance alert: {attendance_percent}% is below the 75% target.')
+    else:
+        insights.append(f'Great attendance: {attendance_percent}% is above the 75% target.')
+
+    if weakest_subject:
+        insights.append(f'You should focus more on {weakest_subject} to raise your overall grade.')
+
+    if not insights:
+        insights.append('Keep consistency in assignments, quizzes, and attendance to improve outcomes.')
+
+    report_status_counts = {'pending': 0, 'replied': 0, 'resolved': 0}
+    for report in reports:
+        if report.status in report_status_counts:
+            report_status_counts[report.status] += 1
+
+    overview = {
+        'total_subjects': len(enrollments),
+        'active_enrollments': len(enrollments),
+        'assignments_submitted': assignment_completed,
+        'assignments_pending': assignment_pending + assignment_missing,
+        'quiz_count': len(quizzes),
+        'attendance_percent': attendance_percent,
+        'overall_grade': overall_grade,
+        'overall_percentage': avg_percentage,
+    }
+
+    analytics = {
+        'overview': overview,
+        'performance_chart': {'labels': performance_labels, 'marks': performance_marks},
+        'attendance_chart': {
+            'labels': ['Present', 'Absent', 'Late', 'Leave'],
+            'values': [present_total, absent_total, late_total, leave_total],
+        },
+        'assignment_progress': {
+            'labels': ['Submitted', 'Pending', 'Missing'],
+            'values': [assignment_completed, assignment_pending, assignment_missing],
+        },
+        'quiz_performance': {
+            'attempted': attempted_quizzes,
+            'not_attempted': max(len(quizzes) - attempted_quizzes, 0),
+            'avg_score': round(sum(quiz_percentages) / len(quiz_percentages), 2) if quiz_percentages else 0,
+        },
+        'report_summary': {
+            'labels': ['Pending', 'Replied', 'Resolved'],
+            'values': [report_status_counts['pending'], report_status_counts['replied'], report_status_counts['resolved']],
+        },
+        'insights': insights[:4],
+    }
+
+    return {
         'student': student,
         'enrollments': enrollments,
         'reports': reports,
+        'report_rows': reports[:12],
         'recent_lectures': lectures,
         'assignment_rows': assignment_rows,
-        'pending_assignments_count': pending_assignments_count,
+        'pending_assignments_count': assignment_pending,
         'quiz_rows': quiz_rows,
-        'total_quizzes': quizzes.count(),
+        'total_quizzes': len(quizzes),
         'attendance_summary_rows': attendance_summary_rows,
         'attendance_history_rows': attendance_history_rows,
-        'total_courses': enrollments.count(),
+        'total_courses': len(enrollments),
+        'overview': overview,
+        'analytics': analytics,
     }
-    
+
+
+def _render_student_section(section, context, request):
+    templates = {
+        'dashboard': 'student/partials/section_dashboard.html',
+        'assignments': 'student/partials/section_assignments.html',
+        'quizzes': 'student/partials/section_quizzes.html',
+        'attendance': 'student/partials/section_attendance.html',
+        'reports': 'student/partials/section_reports.html',
+    }
+    section_key = section if section in templates else 'dashboard'
+    html = render_to_string(templates[section_key], context=context, request=request)
+    return section_key, html
+
+@login_required
+def student_dashboard(request):
+    """Smart student dashboard with dynamic sections and analytics charts."""
+    if request.user.role != 'student':
+        messages.error(request, 'Access denied. Students only.')
+        return redirect('main:home')
+    context = _build_student_dashboard_payload(request.user)
+    initial_section = request.GET.get('section', 'dashboard')
+    initial_section, initial_section_html = _render_student_section(initial_section, context, request)
+
+    context.update({
+        'initial_section': initial_section,
+        'initial_section_html': initial_section_html,
+        'analytics_payload_json': json.dumps(context['analytics']),
+    })
+
     return render(request, 'student/student_dashboard.html', context)
+
+
+@login_required
+@require_http_methods(['GET'])
+def student_dashboard_section_api(request, section):
+    if request.user.role != 'student':
+        return JsonResponse({'success': False, 'error': 'Access denied.'}, status=403)
+
+    context = _build_student_dashboard_payload(request.user)
+    section_key, html = _render_student_section(section, context, request)
+
+    section_titles = {
+        'dashboard': 'Dashboard',
+        'assignments': 'Assignments',
+        'quizzes': 'Quizzes',
+        'attendance': 'Attendance',
+        'reports': 'Reports',
+    }
+
+    return JsonResponse({
+        'success': True,
+        'section': section_key,
+        'title': section_titles.get(section_key, 'Dashboard'),
+        'html': html,
+        'analytics': context['analytics'],
+    })
 
 
 @login_required

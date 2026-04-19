@@ -1,0 +1,62 @@
+<section class="smart-section">
+    <div class="smart-card section-head-card">
+        <header>
+            <h3><i class="fas fa-tasks"></i> Quiz Analytics</h3>
+            <span>{{ quiz_rows|length }} published quizzes</span>
+        </header>
+        <div class="quiz-metrics-inline">
+            <div>
+                <strong>{{ analytics.quiz_performance.attempted }}</strong>
+                <small>Attempted</small>
+            </div>
+            <div>
+                <strong>{{ analytics.quiz_performance.not_attempted }}</strong>
+                <small>Not Attempted</small>
+            </div>
+            <div>
+                <strong>{{ analytics.quiz_performance.avg_score }}%</strong>
+                <small>Average Score</small>
+            </div>
+        </div>
+        <div class="chart-wrap medium"><canvas id="quizSectionChart"></canvas></div>
+    </div>
+
+    <div class="smart-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Quiz</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in quiz_rows %}
+                    <tr>
+                        <td>{{ row.quiz.title }}</td>
+                        <td>{{ row.quiz.course.code }} - {{ row.quiz.course.name }}</td>
+                        <td>
+                            <span class="badge {% if row.status == 'Completed' %}bg-success{% elif row.status == 'Pending Review' %}bg-warning text-dark{% elif row.status == 'Submitted Late' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ row.status }}
+                            </span>
+                        </td>
+                        <td>{% if row.attempt %}{{ row.attempt.score }} / {{ row.attempt.total_marks }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if row.attempt %}
+                            <a href="{% url 'main:student_quiz_result' row.attempt.id %}" class="btn btn-sm btn-primary">View Result</a>
+                            {% else %}
+                            <a href="{% url 'main:take_quiz' row.quiz.id %}" class="btn btn-sm btn-success">Start Quiz</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-4">No quizzes published yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
