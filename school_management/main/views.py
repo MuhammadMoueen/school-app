@@ -25,7 +25,7 @@ from .models import (User, PreassignedEmail, Course, Enrollment, Transcript, Mar
                     Attendance, Quiz, Question, QuizAttempt, QuizAnswer, LectureProgress, DiscussionThread, DiscussionReply,
                     AuditLog,
                     TeacherActivityLog, TeacherActivityNotification, TeacherActivityResponse,
-                    LectureAttachment, LectureView, LectureDownload, LectureNotification,
+                    LectureAttachment, LectureView, LectureDownload, LectureNotification, UserNotification,
                     Assignment, AssignmentAttachment, AssignmentSubmission, TranscriptQuizMark, QuizResult)
 
 ONLINE_PRESENCE_WINDOW_SECONDS = 90
@@ -150,6 +150,25 @@ def _build_tick_data(is_read=False, recipient_online=False):
         'icon': 'fas fa-check',
         'label': 'Sent',
     }
+
+
+def _create_user_notification(recipient, actor, message, url='', icon='fa-bell', notification_type='general'):
+    """Create a lightweight bell-notification between teacher and student panels."""
+    if not recipient or not getattr(recipient, 'id', None):
+        return None
+
+    actor_id = getattr(actor, 'id', None)
+    if actor_id and recipient.id == actor_id:
+        return None
+
+    return UserNotification.objects.create(
+        recipient=recipient,
+        actor=actor,
+        notification_type=notification_type,
+        message=message,
+        icon=icon,
+        url=url or '',
+    )
 
 def home(request):
     """Home page view"""
@@ -1133,6 +1152,20 @@ def create_assignment(request):
                 course=assignment.course,
             )
 
+            enrolled_students = User.objects.filter(
+                role='student',
+                enrollments__course=assignment.course,
+            ).distinct()
+            for student_user in enrolled_students:
+                _create_user_notification(
+                    recipient=student_user,
+                    actor=teacher,
+                    notification_type='assignment',
+                    icon='fa-file-signature',
+                    message=f'{teacher_name} assigned "{assignment.title}" in {assignment.course.name}.',
+                    url=reverse('main:submit_assignment', args=[assignment.id]),
+                )
+
             messages.success(request, f'Assignment "{assignment.title}" created successfully.')
             return redirect('main:manage_assignments')
     else:
@@ -1169,6 +1202,20 @@ def edit_assignment(request, assignment_id):
                 description=f'Teacher {teacher_name} updated assignment for {assignment.course.name} (Class {assignment.student_class}{assignment.section}): {assignment.title}',
                 course=assignment.course,
             )
+
+            enrolled_students = User.objects.filter(
+                role='student',
+                enrollments__course=assignment.course,
+            ).distinct()
+            for student_user in enrolled_students:
+                _create_user_notification(
+                    recipient=student_user,
+                    actor=teacher,
+                    notification_type='assignment',
+                    icon='fa-pen',
+                    message=f'{teacher_name} updated assignment "{assignment.title}" in {assignment.course.name}.',
+                    url=reverse('main:submit_assignment', args=[assignment.id]),
+                )
 
             messages.success(request, f'Assignment "{assignment.title}" updated successfully.')
             return redirect('main:manage_assignments')
@@ -1335,6 +1382,16 @@ def grade_assignment_submission(request, submission_id):
                 transcript = _get_or_create_transcript_for_enrollment(enrollment)
                 _recalculate_sessional_marks_for_transcript(transcript, save=True)
 
+            teacher_name = request.user.get_full_name() or request.user.username
+            _create_user_notification(
+                recipient=graded_submission.student,
+                actor=request.user,
+                notification_type='assignment',
+                icon='fa-check-circle',
+                message=f'{teacher_name} graded your assignment "{graded_submission.assignment.title}".',
+                url=reverse('main:submit_assignment', args=[graded_submission.assignment.id]),
+            )
+
             messages.success(request, 'Submission graded successfully.')
             return redirect('main:assignment_submissions', assignment_id=submission.assignment.id)
     else:
@@ -1440,6 +1497,18 @@ def submit_assignment(request, assignment_id):
             if submission.is_late:
                 submission.late_duration = timezone.now() - assignment.deadline
             submission.save()
+
+            teacher_name = assignment.created_by.get_full_name() or assignment.created_by.username
+            student_name = student.get_full_name() or student.username
+            late_text = ' (late submission)' if submission.is_late else ''
+            _create_user_notification(
+                recipient=assignment.created_by,
+                actor=student,
+                notification_type='submission',
+                icon='fa-upload',
+                message=f'{student_name} submitted "{assignment.title}"{late_text}.',
+                url=reverse('main:assignment_submissions', args=[assignment.id]),
+            )
 
             if submission.is_late:
                 messages.warning(request, f'Submission received. {submission.late_by_text}.')
@@ -2756,6 +2825,20 @@ def add_questions(request, quiz_id):
         elif form_type == 'publish':
             quiz.is_published = True
             quiz.save()
+            teacher_name = teacher.get_full_name() or teacher.username
+            enrolled_students = User.objects.filter(
+                role='student',
+                enrollments__course=quiz.course,
+            ).distinct()
+            for student_user in enrolled_students:
+                _create_user_notification(
+                    recipient=student_user,
+                    actor=teacher,
+                    notification_type='quiz',
+                    icon='fa-file-circle-check',
+                    message=f'{teacher_name} published quiz "{quiz.title}" in {quiz.course.name}.',
+                    url=reverse('main:take_quiz', args=[quiz.id]),
+                )
             messages.success(request, f'Quiz "{quiz.title}" published successfully! Students can now take this quiz.')
             return redirect('main:manage_quizzes')
         
@@ -2977,6 +3060,16 @@ def grade_quiz_attempt(request, attempt_id):
         _calculate_attempt_score(attempt)
         _sync_quiz_attempt_to_transcript(attempt)
 
+        teacher_name = request.user.get_full_name() or request.user.username
+        _create_user_notification(
+            recipient=attempt.student,
+            actor=request.user,
+            notification_type='quiz',
+            icon='fa-clipboard-check',
+            message=f'{teacher_name} reviewed your quiz "{attempt.quiz.title}".',
+            url=reverse('main:student_quiz_result', args=[attempt.id]),
+        )
+
         messages.success(request, 'Manual grading saved successfully.')
         return redirect('main:quiz_results', quiz_id=attempt.quiz.id)
 
@@ -3118,6 +3211,16 @@ def take_quiz(request, quiz_id):
 
         payload = _normalize_attempt_payload(questions, request.POST)
         has_pending_manual = _finalize_attempt(attempt, payload, uploaded_files=request.FILES)
+
+        student_name = request.user.get_full_name() or request.user.username
+        _create_user_notification(
+            recipient=quiz.created_by,
+            actor=request.user,
+            notification_type='submission',
+            icon='fa-tasks',
+            message=f'{student_name} submitted quiz "{quiz.title}" in {quiz.course.name}.',
+            url=reverse('main:quiz_results', args=[quiz.id]),
+        )
 
         if attempt.is_late and has_pending_manual:
             messages.info(request, 'Submitted late. MCQs are auto-graded and subjective answers are waiting for teacher review.')
@@ -4112,6 +4215,15 @@ def view_reports(request):
                 course=course,
             )
 
+            _create_user_notification(
+                recipient=report.student,
+                actor=request.user,
+                notification_type='report',
+                icon='fa-paper-plane',
+                message=f'{teacher_name} sent you a report message in {course.name}.',
+                url=reverse('main:student_report_detail', args=[report.id]),
+            )
+
             messages.success(request, 'Message thread created successfully.')
             return redirect('main:report_detail', report_id=report.id)
 
@@ -4164,6 +4276,16 @@ def report_detail(request, report_id):
             # Update report status
             report.status = 'replied'
             report.save()
+
+            teacher_name = request.user.get_full_name() or request.user.username
+            _create_user_notification(
+                recipient=report.student,
+                actor=request.user,
+                notification_type='report',
+                icon='fa-comments',
+                message=f'{teacher_name} replied to your report in {report.course_name}.',
+                url=reverse('main:student_report_detail', args=[report.id]),
+            )
 
             tick_data = _build_tick_data(
                 is_read=reply.is_read_by_student,
@@ -4399,6 +4521,16 @@ def submit_marks_report(request, transcript_id):
             report.report_type = 'student_report'
             report.issue_type = 'marks'
             report.save()
+
+            student_name = request.user.get_full_name() or request.user.username
+            _create_user_notification(
+                recipient=report.teacher,
+                actor=request.user,
+                notification_type='report',
+                icon='fa-user-graduate',
+                message=f'{student_name} submitted a marks report for {report.course_name}.',
+                url=reverse('main:report_detail', args=[report.id]),
+            )
             messages.success(request, 'Your report has been submitted to the teacher!')
             return redirect('main:dashboard')
     else:
@@ -4437,6 +4569,16 @@ def student_report_detail(request, report_id):
 
             report.is_read_by_teacher = False
             report.save(update_fields=['is_read_by_teacher', 'updated_at'])
+
+            student_name = request.user.get_full_name() or request.user.username
+            _create_user_notification(
+                recipient=report.teacher,
+                actor=request.user,
+                notification_type='report',
+                icon='fa-comment-dots',
+                message=f'{student_name} sent a new reply in {report.course_name}.',
+                url=reverse('main:report_detail', args=[report.id]),
+            )
 
             tick_data = _build_tick_data(
                 is_read=report.is_read_by_teacher,
@@ -4574,16 +4716,27 @@ def get_notifications(request):
         
         for report in reports:
             course_name = report.course_name
+            if report.report_type == 'teacher_message':
+                sender_name = request.user.get_full_name() or request.user.username
+                message_text = f"You sent a report message to {report.student.get_full_name() or report.student.username} in {course_name}"
+                icon_name = 'fa-paper-plane'
+                is_read_value = True
+            else:
+                sender_name = report.student.get_full_name() or report.student.username
+                message_text = f"Student {sender_name} sent a {report.get_issue_type_display().lower()} in {course_name}"
+                icon_name = 'fa-user-graduate'
+                is_read_value = report.is_read_by_teacher
+
             notifications.append({
                 'id': report.id,
                 'type': 'report',
-                'sender': report.student.get_full_name() or report.student.username,
-                'message': f"Student {report.student.get_full_name() or report.student.username} sent a {report.get_issue_type_display().lower()} in {course_name}",
+                'sender': sender_name,
+                'message': message_text,
                 'time': _relative_time_text(report.created_at),
-                'is_read': report.is_read_by_teacher,
+                'is_read': is_read_value,
                 'sort_time': report.created_at.isoformat(),
                 'url': reverse('main:report_detail', args=[report.id]),
-                'icon': 'fa-user-graduate'
+                'icon': icon_name,
             })
 
         # Student replies inside existing report conversation threads
@@ -4680,6 +4833,24 @@ def get_notifications(request):
                 'icon': 'fa-comments'
             })
 
+        user_notifications = UserNotification.objects.filter(
+            recipient=request.user,
+        ).select_related('actor').order_by('-created_at')[:30]
+
+        for notif in user_notifications:
+            sender_name = (notif.actor.get_full_name() or notif.actor.username) if notif.actor else 'System'
+            notifications.append({
+                'id': notif.id,
+                'type': 'user_notification',
+                'sender': sender_name,
+                'message': notif.message,
+                'time': _relative_time_text(notif.created_at),
+                'is_read': notif.is_read,
+                'sort_time': notif.created_at.isoformat(),
+                'url': notif.url or reverse('main:dashboard'),
+                'icon': notif.icon or 'fa-bell',
+            })
+
         notifications.sort(key=lambda item: item.get('sort_time', ''), reverse=True)
         for item in notifications:
             item.pop('sort_time', None)
@@ -4719,6 +4890,24 @@ def get_notifications(request):
                 'sort_time': notif.created_at.isoformat(),
                 'url': reverse('main:student_lecture_detail', args=[notif.lecture.id]),
                 'icon': 'fa-comments'
+            })
+
+        user_notifications = UserNotification.objects.filter(
+            recipient=request.user,
+        ).select_related('actor').order_by('-created_at')[:30]
+
+        for notif in user_notifications:
+            sender_name = (notif.actor.get_full_name() or notif.actor.username) if notif.actor else 'System'
+            notifications.append({
+                'id': notif.id,
+                'type': 'user_notification',
+                'sender': sender_name,
+                'message': notif.message,
+                'time': _relative_time_text(notif.created_at),
+                'is_read': notif.is_read,
+                'sort_time': notif.created_at.isoformat(),
+                'url': notif.url or reverse('main:dashboard'),
+                'icon': notif.icon or 'fa-bell',
             })
 
         notifications.sort(key=lambda item: item.get('sort_time', ''), reverse=True)
@@ -4766,6 +4955,8 @@ def mark_notification_read(request):
             ReportReply.objects.filter(id=notif_id, report__student=request.user).update(is_read_by_student=True)
         elif notif_type == 'lecture_notification' and request.user.role in ['teacher', 'student']:
             LectureNotification.objects.filter(id=notif_id, recipient=request.user).update(is_read=True)
+        elif notif_type == 'user_notification' and request.user.role in ['teacher', 'student']:
+            UserNotification.objects.filter(id=notif_id, recipient=request.user).update(is_read=True)
         
         return JsonResponse({'success': True})
     except Exception as e:
@@ -4803,6 +4994,11 @@ def mark_all_notifications_read(request):
                 is_read=False,
             ).update(is_read=True)
 
+            UserNotification.objects.filter(
+                recipient=request.user,
+                is_read=False,
+            ).update(is_read=True)
+
         elif request.user.role == 'student':
             ReportReply.objects.filter(
                 report__student=request.user,
@@ -4810,6 +5006,11 @@ def mark_all_notifications_read(request):
             ).update(is_read_by_student=True)
 
             LectureNotification.objects.filter(
+                recipient=request.user,
+                is_read=False,
+            ).update(is_read=True)
+
+            UserNotification.objects.filter(
                 recipient=request.user,
                 is_read=False,
             ).update(is_read=True)

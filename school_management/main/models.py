@@ -245,6 +245,32 @@ class LectureNotification(models.Model):
         ordering = ['-created_at']
 
 
+class UserNotification(models.Model):
+    TYPE_CHOICES = (
+        ('assignment', 'Assignment'),
+        ('quiz', 'Quiz'),
+        ('report', 'Report'),
+        ('submission', 'Submission'),
+        ('general', 'General'),
+    )
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_notifications')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_user_notifications')
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='general')
+    message = models.TextField()
+    icon = models.CharField(max_length=40, default='fa-bell')
+    url = models.CharField(max_length=300, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        target = self.recipient.get_full_name() or self.recipient.username
+        return f"Notification to {target}: {self.message[:60]}"
+
+
 class Assignment(models.Model):
     STATUS_CHOICES = (
         ('draft', 'Draft'),
