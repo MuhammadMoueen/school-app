@@ -888,7 +888,7 @@
 }
 
 .student-container-pad-top {
-    padding-top: 20px;
+    padding-top: 8px;
 }
 
 .inline-logo-student {
@@ -1047,18 +1047,23 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f7f9ff 0%, #edf3ff 100%);
+    border: 1px solid #dbe7ff;
 }
 
 .smart-card > header h3,
 .smart-card > header h4 {
     margin: 0;
-    color: #1e293b;
+    color: #1d2f50;
     font-weight: 800;
 }
 
 .smart-card > header span {
-    color: #64748b;
+    color: #4f6688;
     font-size: 0.86rem;
+    font-weight: 600;
 }
 
 .chart-wrap {
