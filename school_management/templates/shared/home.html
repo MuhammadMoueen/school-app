@@ -26,11 +26,11 @@
             max-width: 1200px !important;
         }
 
-        /* Navigation Bar */
-        .navbar-custom {
+        /* Navigation Bar - Match system dashboard style */
+        .top-navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             position: fixed;
             width: 100%;
             top: 0;
@@ -38,78 +38,77 @@
             transition: all 0.3s ease;
         }
 
-        .navbar-custom.scrolled {
-            padding: 0.5rem 0;
-            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+        .top-navbar.scrolled {
+            padding: 6px 0;
+            background: linear-gradient(135deg, #5f74e8 0%, #7a4ac8 100%);
         }
 
-        .navbar-brand {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white !important;
+        .top-navbar .container {
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .school-brand {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .navbar-brand i {
-            font-size: 2rem;
-        }
-
-        .navbar-nav .nav-link {
-            color: rgba(255,255,255,0.9) !important;
-            font-weight: 500;
-            margin: 0 15px;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .navbar-nav .nav-link:hover {
-            color: white !important;
-            transform: translateY(-2px);
-        }
-
-        .navbar-nav .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: white;
-            transition: width 0.3s;
-        }
-
-        .navbar-nav .nav-link:hover::after {
-            width: 100%;
-        }
-
-        .profile-icon {
-            width: 45px;
-            height: 45px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid rgba(255,255,255,0.5);
             text-decoration: none;
         }
 
-        .profile-icon:hover {
-            background: white;
-            transform: scale(1.1);
+        .school-brand .navbar-logo {
+            height: 36px;
+            width: auto;
+            object-fit: contain;
         }
 
-        .profile-icon i {
+        .school-brand h1 {
             color: white;
-            font-size: 1.3rem;
+            font-size: 1.28rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
         }
 
-        .profile-icon:hover i {
-            color: #667eea;
+        .navbar-nav .nav-link {
+            color: white !important;
+            font-weight: 500;
+            padding: 10px 20px !important;
+            transition: all 0.3s;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-cta-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: white !important;
+            border-radius: 999px;
+            padding: 8px 18px !important;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .nav-cta-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: white !important;
+            transform: translateY(-1px);
+        }
+
+        .navbar-toggler {
+            border-color: rgba(255,255,255,0.35);
+        }
+
+        .navbar-toggler-icon {
+            filter: invert(1);
         }
 
         /* Hero Section - Image Carousel Banner */
@@ -587,11 +586,11 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-custom">
+    <nav class="navbar navbar-expand-lg top-navbar">
         <div class="container">
-            <a class="navbar-brand" href="#home">
-                <img src="{% static 'images/school-logo.png' %}" alt="School Logo" style="width: 28px; height: 28px; object-fit: contain; vertical-align: middle; margin-right: 8px;">
-                The City School
+            <a class="school-brand" href="#home">
+                <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="navbar-logo">
+                <h1>The City School</h1>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -613,17 +612,19 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#features">Features</a>
                     </li>
-                    <li class="nav-item ms-3">
-                        {% if user.is_authenticated %}
-                        <a href="{% url 'main:dashboard' %}" class="profile-icon" title="Go to Dashboard">
-                            <i class="fas fa-user"></i>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item ms-2">
+                        <a href="{% url 'main:dashboard' %}" class="nav-cta-btn" title="Go to Dashboard">
+                            <i class="fas fa-gauge-high"></i> Dashboard
                         </a>
-                        {% else %}
-                        <div class="profile-icon" data-bs-toggle="modal" data-bs-target="#authModal">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        {% endif %}
                     </li>
+                    {% else %}
+                    <li class="nav-item ms-2">
+                        <a href="{% url 'main:login' %}" class="nav-cta-btn">
+                            <i class="fas fa-right-to-bracket"></i> Login
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -944,7 +945,7 @@
     <script>
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar-custom');
+            const navbar = document.querySelector('.top-navbar');
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');
             } else {
