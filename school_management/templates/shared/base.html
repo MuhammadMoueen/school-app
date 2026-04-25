@@ -25,7 +25,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #eef1ff 0%, #e8ddff 100%);
             min-height: 100vh;
         }
         
@@ -34,6 +34,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 8px 0;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
         
         .top-navbar .container {
@@ -87,11 +88,17 @@
             padding: 10px 20px !important;
             transition: all 0.3s;
             position: relative;
+            border-radius: 999px;
         }
         
         .navbar-nav .nav-link:hover {
             background: rgba(255,255,255,0.1);
             transform: translateY(-2px);
+        }
+
+        .navbar-nav .nav-link.active-page {
+            background: rgba(255,255,255,0.2);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
         }
         
         .navbar-nav .nav-link i {
@@ -125,6 +132,10 @@
         .profile-section {
             position: relative;
             margin-left: 15px;
+        }
+
+        .profile-link {
+            text-decoration: none;
         }
         
         .profile-icon-circle {
@@ -437,13 +448,13 @@
     <!-- Professional Navbar -->
     <nav class="navbar navbar-expand-lg top-navbar">
         <div class="container">
-            <div class="school-brand">
+            <a class="school-brand text-decoration-none" href="{% url 'main:home' %}">
                 <img src="{% static 'images/favicon.png' %}" alt="School Logo" class="navbar-logo me-2">
                 <div>
                     <h1>The City School</h1>
                     <p>of Bahawalpur</p>
                 </div>
-            </div>
+            </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -451,88 +462,32 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    {% if not user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'main:home' %}">
-                                <i class="fas fa-home"></i> Home
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if user.is_authenticated %}
-                        
-                        <!-- Notification Icon for Admin, Teacher and Student -->
-                        {% if user.role == 'admin' or user.role == 'teacher' or user.role == 'student' %}
-                            <li class="nav-item" style="position: relative;">
-                                <div class="notification-icon" id="notificationIcon">
-                                    <i class="fas fa-bell" style="font-size: 1.3rem; color: white;"></i>
-                                    {% if notification_count > 0 %}
-                                        <span class="notification-badge">{{ notification_count }}</span>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Notification Dropdown -->
-                                <div class="notification-dropdown" id="notificationDropdown">
-                                    <div class="notification-header">
-                                        <span><i class="fas fa-bell"></i> Notifications</span>
-                                        <button
-                                            type="button"
-                                            id="markAllNotificationsBtn"
-                                            style="font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.45); border-radius: 6px; background: rgba(255,255,255,0.16); color: white; padding: 4px 8px;"
-                                        >
-                                            Mark all as read
-                                        </button>
-                                    </div>
-                                    <div class="notification-list" id="notificationList">
-                                        <div class="notification-empty">
-                                            <i class="fas fa-inbox"></i>
-                                            <p>Loading notifications...</p>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/' or request.path == '/home/' %}active-page{% endif %}" href="{% url 'main:home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/facilities/' %}active-page{% endif %}" href="{% url 'main:facilities' %}">Facilities</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/about/' %}active-page{% endif %}" href="{% url 'main:about' %}">About</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/location/' %}active-page{% endif %}" href="{% url 'main:location' %}">Location</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/contact/' %}active-page{% endif %}" href="{% url 'main:contact' %}">Contact</a></li>
+                    <li class="nav-item">
+                        <div class="profile-section">
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'main:dashboard' %}" class="profile-link" title="Open dashboard">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
+                                    {% else %}
+                                        <div class="profile-icon-circle" id="profileIcon">
+                                            <i class="fas fa-user"></i>
                                         </div>
-                                    </div>
-                                </div>
-                            </li>
-                        {% endif %}
-                        
-                        <!-- Profile Icon with Dropdown for All Users -->
-                        <li class="nav-item">
-                            <div class="profile-section">
-                                {% if user.profile_picture %}
-                                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
-                                {% else %}
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <a href="{% url 'main:login' %}" class="profile-link" title="Go to login">
                                     <div class="profile-icon-circle" id="profileIcon">
-                                        <i class="fas fa-user-circle"></i>
+                                        <i class="fas fa-user"></i>
                                     </div>
-                                {% endif %}
-                                
-                                <div class="profile-dropdown" id="profileDropdown">
-                                    <div style="padding: 10px 15px; border-bottom: 1px solid #e9ecef; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                                        <div style="font-weight: 600; font-size: 0.95rem;">{{ user.username }}</div>
-                                        <div style="font-size: 0.8rem; opacity: 0.9;">{{ user.get_role_display }}</div>
-                                    </div>
-                                    <a href="{% url 'main:home' %}" class="profile-dropdown-item">
-                                        <i class="fas fa-home"></i> Home
-                                    </a>
-                                    <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
-                                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                                    </a>
-                                    <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
-                                        <i class="fas fa-user-edit"></i> Edit Profile
-                                    </a>
-                                    <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
-                                        <i class="fas fa-key"></i> Change Password
-                                    </a>
-                                    <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
-                                        <i class="fas fa-sign-out-alt"></i> Logout
-                                    </a>
-                                </div>
-                            </div>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'main:login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </a>
-                        </li>
-                    {% endif %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -551,166 +506,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Profile Dropdown Script - For All Authenticated Users -->
-    {% if user.is_authenticated %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const profileIcon = document.getElementById('profileIcon');
-            const profileDropdown = document.getElementById('profileDropdown');
-            
-            // Toggle profile dropdown
-            if (profileIcon && profileDropdown) {
-                profileIcon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    profileDropdown.classList.toggle('show');
-                    
-                    // Close notification dropdown if it exists
-                    const notificationDropdown = document.getElementById('notificationDropdown');
-                    if (notificationDropdown) {
-                        notificationDropdown.classList.remove('show');
-                    }
-                });
-                
-                // Close profile dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!profileDropdown.contains(e.target) && !profileIcon.contains(e.target)) {
-                        profileDropdown.classList.remove('show');
-                    }
-                });
-            }
-        });
-    </script>
-    {% endif %}
-    
-    <!-- Notification Dropdown Script -->
-    {% if user.is_authenticated and user.role == 'admin' or user.is_authenticated and user.role == 'teacher' or user.is_authenticated and user.role == 'student' %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const notificationIcon = document.getElementById('notificationIcon');
-            const notificationDropdown = document.getElementById('notificationDropdown');
-            const profileDropdown = document.getElementById('profileDropdown');
-            const markAllNotificationsBtn = document.getElementById('markAllNotificationsBtn');
-            
-            // Toggle notification dropdown
-            if (notificationIcon) {
-                notificationIcon.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    notificationDropdown.classList.toggle('show');
-                    
-                    // Close profile dropdown if open
-                    if (profileDropdown) {
-                        profileDropdown.classList.remove('show');
-                    }
-                    
-                    // Load notifications when dropdown opens
-                    if (notificationDropdown.classList.contains('show')) {
-                        loadNotifications();
-                    }
-                });
-                
-                // Close notification dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (notificationDropdown && !notificationDropdown.contains(e.target) && notificationIcon && !notificationIcon.contains(e.target)) {
-                        notificationDropdown.classList.remove('show');
-                    }
-                });
-            }
-            
-            // Load notifications via AJAX
-            function loadNotifications() {
-                fetch('{% url "main:get_notifications" %}')
-                    .then(response => response.json())
-                    .then(data => {
-                        const notificationList = document.getElementById('notificationList');
-                        
-                        if (data.notifications && data.notifications.length > 0) {
-                            let html = '';
-                            data.notifications.forEach(notif => {
-                                const unreadClass = notif.is_read ? '' : 'unread';
-                                html += `
-                                    <a href="${notif.url}" class="notification-item ${unreadClass}" onclick="markAsRead(${notif.id}, '${notif.type}')">
-                                        <div class="notification-sender">
-                                            <i class="fas ${notif.icon}"></i> ${notif.sender}
-                                        </div>
-                                        <div class="notification-message">${notif.message}</div>
-                                        <div class="notification-time">
-                                            <i class="far fa-clock"></i> ${notif.time}
-                                        </div>
-                                    </a>
-                                `;
-                            });
-                            notificationList.innerHTML = html;
-                        } else {
-                            notificationList.innerHTML = `
-                                <div class="notification-empty">
-                                    <i class="fas fa-inbox"></i>
-                                    <p>No notifications</p>
-                                </div>
-                            `;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading notifications:', error);
-                        document.getElementById('notificationList').innerHTML = `
-                            <div class="notification-empty">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <p>Error loading notifications</p>
-                            </div>
-                        `;
-                    });
-            }
-            
-            // Mark notification as read
-            window.markAsRead = function(id, type) {
-                fetch('{% url "main:mark_notification_read" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({
-                        id: id,
-                        type: type
-                    })
-                });
-            };
-
-            // Mark all notifications as read
-            if (markAllNotificationsBtn) {
-                markAllNotificationsBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-
-                    fetch('{% url "main:mark_all_notifications_read" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({ mark_all: true })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.success) {
-                            return;
-                        }
-
-                        // Remove badge when everything is marked as read.
-                        const badge = notificationIcon ? notificationIcon.querySelector('.notification-badge') : null;
-                        if (badge) {
-                            badge.remove();
-                        }
-
-                        loadNotifications();
-                    })
-                    .catch(error => {
-                        console.error('Error marking all notifications as read:', error);
-                    });
-                });
-            }
-        });
-    </script>
-    {% endif %}
     
     <script src="{% static 'js/global-loader.js' %}"></script>
     <script src="{% static 'js/flash-messages.js' %}"></script>

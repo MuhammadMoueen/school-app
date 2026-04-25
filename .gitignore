@@ -33,6 +33,11 @@ Thumbs.db
 .env
 .env.local
 
+# Next.js frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
 # Migrations (optional - uncomment if you want to ignore)
 # **/migrations/*.py
 # !**/migrations/__init__.py

@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.core.cache import cache
 from django.template.loader import render_to_string
 from django.core.serializers.json import DjangoJSONEncoder
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 from decimal import Decimal
 import io
@@ -173,9 +175,155 @@ def _create_user_notification(recipient, actor, message, url='', icon='fa-bell',
         url=url or '',
     )
 
+
+def _frontend_base_url():
+    frontend_url = getattr(settings, 'FRONTEND_BASE_URL', 'http://127.0.0.1:8000')
+    return (frontend_url or 'http://127.0.0.1:8000').rstrip('/')
+
+
+def _frontend_redirect(path=''):
+    return redirect(f"{_frontend_base_url()}{path}")
+
+
+def _apply_api_cors_headers(request, response):
+    allowed_origins_raw = getattr(
+        settings,
+        'FRONTEND_ALLOWED_ORIGINS',
+        ['http://127.0.0.1:8000', 'http://localhost:8000'],
+    )
+    allowed_origins = set(allowed_origins_raw)
+    request_origin = request.headers.get('Origin')
+
+    if request_origin and request_origin in allowed_origins:
+        response['Access-Control-Allow-Origin'] = request_origin
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Vary'] = 'Origin'
+
+    response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response['Access-Control-Allow-Headers'] = 'Content-Type, X-Requested-With, X-CSRFToken'
+    return response
+
+
+def _api_options_response(request):
+    return _apply_api_cors_headers(request, HttpResponse(status=204))
+
+
+def _api_json_response(request, payload, status=200):
+    return _apply_api_cors_headers(request, JsonResponse(payload, status=status))
+
 def home(request):
-    """Home page view"""
-    return render(request, 'shared/home.html')
+    """Redirect public home route to frontend app."""
+    return _frontend_redirect('/')
+
+
+def about(request):
+    """Redirect public about route to frontend app."""
+    return _frontend_redirect('/about')
+
+
+def facilities(request):
+    """Redirect public facilities route to frontend app."""
+    return _frontend_redirect('/facilities')
+
+
+def location(request):
+    """Redirect public location route to frontend app."""
+    return _frontend_redirect('/location')
+
+
+def contact(request):
+    """Redirect public contact route to frontend app."""
+    return _frontend_redirect('/contact')
+
+
+@require_http_methods(['GET', 'OPTIONS'])
+def api_session(request):
+    """Return authentication state for the Next.js public navbar profile icon."""
+    if request.method == 'OPTIONS':
+        return _api_options_response(request)
+
+    user = request.user
+    profile_image_url = ''
+
+    if user.is_authenticated and user.profile_picture:
+        profile_image_url = request.build_absolute_uri(user.profile_picture.url)
+
+    payload = {
+        'is_authenticated': bool(user.is_authenticated),
+        'profile_image_url': profile_image_url,
+        'dashboard_url': request.build_absolute_uri(reverse('main:dashboard')),
+        'login_url': request.build_absolute_uri(reverse('main:login')),
+    }
+    return _api_json_response(request, payload)
+
+
+@require_http_methods(['GET', 'OPTIONS'])
+def api_facilities(request):
+    """Return facilities listing used by the Next.js facilities page."""
+    if request.method == 'OPTIONS':
+        return _api_options_response(request)
+
+    facilities_data = [
+        {
+            'title': 'Classrooms',
+            'description': 'Spacious and interactive classrooms designed for focused learning and collaborative teaching.',
+            'image_url': 'https://source.unsplash.com/1200x900/?modern,classroom,school&sig=11',
+        },
+        {
+            'title': 'Labs',
+            'description': 'Science and computer labs equipped for practical experiments, discovery, and technical skills.',
+            'image_url': 'https://source.unsplash.com/1200x900/?school,science,lab&sig=12',
+        },
+        {
+            'title': 'Library',
+            'description': 'A resource-rich library that supports academic excellence, research, and reading culture.',
+            'image_url': 'https://source.unsplash.com/1200x900/?library,books,school&sig=13',
+        },
+        {
+            'title': 'Sports',
+            'description': 'Outdoor and indoor activity spaces to promote physical wellbeing, teamwork, and discipline.',
+            'image_url': 'https://source.unsplash.com/1200x900/?school,sports,ground&sig=14',
+        },
+        {
+            'title': 'Security',
+            'description': 'A secure campus environment with controlled access and active safety measures.',
+            'image_url': 'https://source.unsplash.com/1200x900/?school,security,campus&sig=15',
+        },
+    ]
+
+    return _api_json_response(request, {'facilities': facilities_data})
+
+
+@csrf_exempt
+@require_http_methods(['POST', 'OPTIONS'])
+def api_contact(request):
+    """Receive contact messages from the Next.js contact form."""
+    if request.method == 'OPTIONS':
+        return _api_options_response(request)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        payload = {}
+
+    name = (payload.get('name') or '').strip()
+    email = (payload.get('email') or '').strip()
+    message_text = (payload.get('message') or '').strip()
+
+    if not name or not email or not message_text:
+        return _api_json_response(
+            request,
+            {'success': False, 'error': 'Please provide name, email, and message.'},
+            status=400,
+        )
+
+    return _api_json_response(
+        request,
+        {
+            'success': True,
+            'message': 'Thank you for contacting The City School. Our team will get back to you soon.',
+        },
+    )
 
 @login_required
 def dashboard(request):

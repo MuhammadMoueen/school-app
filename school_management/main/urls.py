@@ -7,6 +7,16 @@ urlpatterns = [
     # Public pages
     path('', views.home, name='home'),
     path('home/', views.home, name='home_page'),
+    path('facilities/', views.facilities, name='facilities'),
+    path('about/', views.about, name='about'),
+    path('location/', views.location, name='location'),
+    path('contact/', views.contact, name='contact'),
+
+    # Public API endpoints for Next.js frontend
+    path('api/session/', views.api_session, name='api_session'),
+    path('api/facilities/', views.api_facilities, name='api_facilities'),
+    path('api/contact/', views.api_contact, name='api_contact'),
+
     path('login/', views.custom_login, name='login'),
     path('logout/', views.custom_logout, name='logout'),
     

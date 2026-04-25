@@ -4,27 +4,27 @@ const FALLBACK_FACILITIES = [
   {
     title: "Classrooms",
     description: "Interactive classrooms that support focused and collaborative learning.",
-    image_url: "assets/images/classroom.jpg"
+    image_url: "./assets/images/classroom.jpg"
   },
   {
     title: "Labs",
     description: "Science and computer labs for practical experimentation and digital fluency.",
-    image_url: "assets/images/elearning.jpg"
+    image_url: "./assets/images/elearning.jpg"
   },
   {
     title: "Library",
     description: "A calm academic resource center with curated reading and research support.",
-    image_url: "assets/images/campus.jpg"
+    image_url: "./assets/images/campus.jpg"
   },
   {
     title: "Sports",
     description: "Activity and sports spaces that promote teamwork, resilience, and wellbeing.",
-    image_url: "assets/images/school-home.jpg"
+    image_url: "./assets/images/school-home.jpg"
   },
   {
     title: "Security",
     description: "Comprehensive campus safety practices with controlled access and monitoring.",
-    image_url: "assets/images/campus.jpg"
+    image_url: "./assets/images/campus.jpg"
   }
 ];
 
@@ -55,6 +55,10 @@ function resolveImageUrl(imageUrl) {
 
   if (imageUrl.startsWith("../assets/") && !isSubPage()) {
     return imageUrl.replace("../", "");
+  }
+
+  if (imageUrl.startsWith("./assets/")) {
+    return toAsset(imageUrl.replace("./", ""));
   }
 
   if (imageUrl.startsWith("assets/")) {
