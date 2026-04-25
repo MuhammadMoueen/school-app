@@ -60,23 +60,24 @@
 {% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/theme.css' %}">
 <style>
     .back-home {
         margin-bottom: 1.5rem;
     }
     
     .back-home a {
-        color: #3498db;
+        color: var(--primary-color);
         text-decoration: none;
         font-weight: 500;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        transition: color 0.3s;
+        transition: var(--transition-base);
     }
     
     .back-home a:hover {
-        color: #2980b9;
+        color: var(--primary-dark);
     }
     
     .login-container {
@@ -85,26 +86,29 @@
         align-items: center;
         justify-content: center;
         padding: 2rem;
+        background: var(--bg-page);
     }
     
     .login-box {
-        background: white;
+        background: var(--surface-white);
         padding: 3rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
         max-width: 450px;
         width: 100%;
+        border: 1px solid var(--surface-border);
     }
     
     .login-box h2 {
         text-align: center;
         margin-bottom: 0.5rem;
-        color: #2c3e50;
+        color: var(--text-primary);
+        font-weight: 700;
     }
     
     .login-box > p {
         text-align: center;
-        color: #7f8c8d;
+        color: var(--text-secondary);
         margin-bottom: 2rem;
     }
     
@@ -115,92 +119,99 @@
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #2c3e50;
+        color: var(--text-primary);
         font-weight: 600;
     }
     
     .form-control {
         width: 100%;
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: var(--radius-md);
         font-size: 1rem;
-        transition: border-color 0.3s;
+        transition: var(--transition-base);
+        background: var(--surface-white);
     }
     
     .form-control:focus {
         outline: none;
-        border-color: #3498db;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     
     .error-message {
-        color: #e74c3c;
+        color: #dc2626;
         font-size: 0.875rem;
         margin-top: 0.5rem;
     }
     
     .alert {
         padding: 1rem;
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         margin-bottom: 1.5rem;
+        border-left: 4px solid;
     }
     
     .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: #f0fdf4;
+        border-left-color: #22c55e;
+        color: #166534;
     }
     
     .alert-error {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-        color: #5a4d8f;
-        border: 1px solid #a89dd1;
+        background: #fef2f2;
+        border-left-color: var(--primary-color);
+        color: var(--primary-darker);
     }
     
     .btn-primary {
         width: 100%;
-        padding: 1rem;
+        padding: 0.875rem;
         font-size: 1.1rem;
         margin-top: 1rem;
-        background-color: #3498db;
-        color: white;
+        background: var(--bg-gradient);
+        color: var(--text-white);
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-md);
+        font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.3s;
+        transition: var(--transition-base);
+        box-shadow: var(--shadow-md);
     }
     
     .btn-primary:hover {
-        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
     }
     
     .btn-secondary {
         flex: 1;
         padding: 0.75rem;
         font-size: 0.95rem;
-        background-color: #95a5a6;
-        color: white;
+        background-color: var(--text-light);
+        color: var(--text-primary);
         border: none;
-        border-radius: 8px;
+        border-radius: var(--radius-md);
         text-decoration: none;
         display: inline-block;
         text-align: center;
-        transition: background-color 0.3s;
+        transition: var(--transition-base);
+        font-weight: 600;
     }
     
     .btn-secondary:hover {
-        background-color: #7f8c8d;
+        background-color: #cbd5e1;
     }
     
     .signup-links {
         margin-top: 2rem;
         padding-top: 2rem;
-        border-top: 1px solid #e0e0e0;
+        border-top: 1px solid #e5e7eb;
     }
     
     .signup-links p {
         text-align: center;
-        color: #7f8c8d;
+        color: var(--text-secondary);
         margin-bottom: 1rem;
     }
     
