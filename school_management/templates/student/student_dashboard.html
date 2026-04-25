@@ -9,13 +9,6 @@
 
 {% block page_content %}
 <div class="container-fluid student-container-pad-top">
-    <div class="dashboard-wrapper">
-        <!-- Header -->
-        <div class="dashboard-header">
-            <div class="header-left">
-                {% if student.profile_picture %}
-                    <img src="{{ student.profile_picture.url }}" alt="{{ student.get_full_name }}" class="profile-picture">
-<div class="container-fluid student-container-pad-top">
     <div class="smart-dashboard-shell" id="studentSmartDashboard" data-section-url-template="{% url 'main:student_dashboard_section_api' '__SECTION__' %}">
         <section class="smart-hero">
             <div class="hero-left">
@@ -30,7 +23,7 @@
                 </div>
             </div>
             <div class="hero-right">
-                <span class="hero-pill">Grade {{ overview.overall_grade }}</span>
+                <span class="hero-pill">Grade {% if overview.has_assigned_grades %}{{ overview.overall_grade }}{% else %}Not Assigned{% endif %}</span>
                 <span class="hero-pill">{{ overview.attendance_percent }}% Attendance</span>
             </div>
         </section>

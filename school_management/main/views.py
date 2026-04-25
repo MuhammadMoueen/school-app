@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.core.cache import cache
 from django.template.loader import render_to_string
+from django.core.serializers.json import DjangoJSONEncoder
 from datetime import datetime, timedelta
 from decimal import Decimal
 import io
@@ -4567,8 +4568,22 @@ def _build_student_dashboard_payload(student):
     transcripts = list(
         Transcript.objects.filter(enrollment__student=student).select_related('enrollment__course')
     )
-    avg_percentage = round(sum(item.percentage for item in transcripts) / len(transcripts), 2) if transcripts else 0
-    overall_grade = _calculate_letter_grade(avg_percentage)
+    graded_transcripts = [
+        item for item in transcripts
+        if not (
+            Decimal(str(item.marks_obtained or 0)) == Decimal('0')
+            and Decimal(str(item.total_marks or 0)) == Decimal('100')
+            and (item.grade or '') == 'F'
+            and not (item.remarks or '').strip()
+        )
+    ]
+
+    has_assigned_grades = len(graded_transcripts) > 0
+    avg_percentage = round(
+        sum(item.percentage for item in graded_transcripts) / len(graded_transcripts),
+        2,
+    ) if has_assigned_grades else None
+    overall_grade = _calculate_letter_grade(avg_percentage) if has_assigned_grades else 'Not Assigned'
 
     total_attendance_records = present_total + absent_total + late_total + leave_total
     attendance_percent = round((present_total / total_attendance_records * 100), 2) if total_attendance_records else 0
@@ -4578,8 +4593,8 @@ def _build_student_dashboard_payload(student):
     performance_marks = [point['marks'] for point in performance_points]
 
     weakest_subject = None
-    if transcripts:
-        weakest = min(transcripts, key=lambda item: item.percentage)
+    if graded_transcripts:
+        weakest = min(graded_transcripts, key=lambda item: item.percentage)
         weakest_subject = weakest.enrollment.course.name
 
     insights = []
@@ -4617,6 +4632,7 @@ def _build_student_dashboard_payload(student):
         'attendance_percent': attendance_percent,
         'overall_grade': overall_grade,
         'overall_percentage': avg_percentage,
+        'has_assigned_grades': has_assigned_grades,
     }
 
     analytics = {
@@ -4685,10 +4701,13 @@ def student_dashboard(request):
     context.update({
         'initial_section': initial_section,
         'initial_section_html': initial_section_html,
-        'analytics_payload_json': json.dumps(context['analytics']),
+        'analytics_payload_json': json.dumps(context['analytics'], cls=DjangoJSONEncoder),
     })
 
-    return render(request, 'student/student_dashboard.html', context)
+    response = render(request, 'student/student_dashboard.html', context)
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    return response
 
 
 @login_required
@@ -4708,13 +4727,16 @@ def student_dashboard_section_api(request, section):
         'reports': 'Reports',
     }
 
-    return JsonResponse({
+    response = JsonResponse({
         'success': True,
         'section': section_key,
         'title': section_titles.get(section_key, 'Dashboard'),
         'html': html,
         'analytics': context['analytics'],
     })
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    return response
 
 
 @login_required

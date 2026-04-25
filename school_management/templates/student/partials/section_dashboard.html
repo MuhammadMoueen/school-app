@@ -40,7 +40,11 @@
             <div>
                 <p>Overall Grade</p>
                 <h3>{{ overview.overall_grade }}</h3>
+                {% if overview.has_assigned_grades %}
                 <small>{{ overview.overall_percentage }}%</small>
+                {% else %}
+                <small>Awaiting teacher grading</small>
+                {% endif %}
             </div>
         </article>
     </div>

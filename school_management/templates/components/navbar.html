@@ -1,0 +1,85 @@
+<div class="teacher-topbar">
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="topbar-left">
+        <h1>
+            {% if user.role == 'student' %}
+                Student Portal - {{ user.get_full_name|default:user.username }}
+            {% elif user.role == 'teacher' %}
+                Teacher Dashboard - {{ user.get_full_name|default:user.username }}
+            {% else %}
+                Dashboard - {{ user.get_full_name|default:user.username }}
+            {% endif %}
+        </h1>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <div class="topbar-actions">
+        {% if user.role == 'teacher' or user.role == 'student' %}
+        <div class="notification-section">
+            <div class="notification-icon" id="notificationIcon">
+                <i class="fas fa-bell"></i>
+                {% if unread_notification_count > 0 %}
+                    <span class="notification-badge">{{ unread_notification_count }}</span>
+                {% endif %}
+            </div>
+
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span><i class="fas fa-bell"></i> Notifications</span>
+                    <div class="notification-header-tools">
+                        <span class="notification-unread-count" id="notificationUnreadCount">{{ unread_notification_count|default:0 }} unread</span>
+                        <button type="button" class="notification-header-action" id="markAllNotificationsBtn">Mark All</button>
+                        {% if user.role == 'teacher' %}
+                        <a href="{% url 'main:teacher_admin_chat' %}" class="notification-header-action">Chat Admin</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="notification-list" id="notificationList">
+                    <div class="notification-empty">
+                        <i class="fas fa-inbox"></i>
+                        <p>Loading notifications...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="profile-section">
+            <button type="button" class="profile-trigger" id="profileToggleBtn" aria-expanded="false" aria-controls="profileDropdown">
+            {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-icon-circle" id="profileIcon">
+            {% else %}
+                <div class="profile-icon-circle" id="profileIcon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+            {% endif %}
+            </button>
+
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="profile-dropdown-header">
+                    <div class="profile-username">{{ user.username }}</div>
+                    <div class="profile-role">{{ user.get_role_display }}</div>
+                </div>
+                <a href="{% url 'main:home' %}" class="profile-dropdown-item">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="{% url 'main:dashboard' %}" class="profile-dropdown-item">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{% url 'main:edit_profile' %}" class="profile-dropdown-item">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </a>
+                <a href="{% url 'main:change_password' %}" class="profile-dropdown-item">
+                    <i class="fas fa-key"></i> Change Password
+                </a>
+                <a href="{% url 'main:logout' %}" class="profile-dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

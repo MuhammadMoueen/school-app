@@ -35,6 +35,7 @@
         this.currentSection = (this.config && this.config.initialSection) || 'dashboard';
         this.chartInstances = {};
         this.csrfToken = getCookie('csrftoken');
+        this.sectionCache = {};
     }
 
     StudentSmartDashboard.prototype.init = function () {
@@ -43,6 +44,10 @@
         this.bindNav();
         this.syncNavState(this.currentSection);
         this.renderCharts(this.currentSection, this.analytics);
+        this.sectionCache[this.currentSection] = {
+            html: this.contentContainer.innerHTML,
+            analytics: this.analytics || {}
+        };
 
         var self = this;
         window.addEventListener('popstate', function () {
@@ -82,19 +87,47 @@
         this.contentContainer.innerHTML = '<div class="smart-card loading-card"><i class="fas fa-spinner fa-spin"></i><p>Loading analytics section...</p></div>';
     };
 
+    StudentSmartDashboard.prototype.scrollToContentTop = function () {
+        var topbar = document.querySelector('.teacher-topbar');
+        var offset = topbar ? (topbar.offsetHeight + 16) : 0;
+        var top = this.contentContainer.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+    };
+
     StudentSmartDashboard.prototype.getSectionUrl = function (section) {
         return this.sectionUrlTemplate.replace('__SECTION__', section);
     };
 
     StudentSmartDashboard.prototype.loadSection = function (section, pushState) {
         var self = this;
+
+        this.scrollToContentTop();
+
+        if (this.sectionCache[section]) {
+            this.currentSection = section;
+            this.analytics = this.sectionCache[section].analytics || {};
+            this.contentContainer.innerHTML = this.sectionCache[section].html || '';
+            this.syncNavState(this.currentSection);
+            this.renderCharts(this.currentSection, this.analytics);
+
+            if (pushState) {
+                var cachedUrl = new URL(window.location.href);
+                cachedUrl.searchParams.set('section', this.currentSection);
+                window.history.pushState({ section: this.currentSection }, '', cachedUrl.toString());
+            }
+            return;
+        }
+
         var url = this.getSectionUrl(section);
+        var requestUrl = new URL(url, window.location.origin);
+        requestUrl.searchParams.set('_ts', Date.now().toString());
 
         this.setLoading();
         this.syncNavState(section);
 
-        fetch(url, {
+        fetch(requestUrl.toString(), {
             method: 'GET',
+            cache: 'no-store',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': this.csrfToken || ''
@@ -109,6 +142,10 @@
                 self.currentSection = data.section;
                 self.analytics = data.analytics || {};
                 self.contentContainer.innerHTML = data.html || '';
+                self.sectionCache[self.currentSection] = {
+                    html: self.contentContainer.innerHTML,
+                    analytics: self.analytics
+                };
                 self.syncNavState(self.currentSection);
                 self.renderCharts(self.currentSection, self.analytics);
 

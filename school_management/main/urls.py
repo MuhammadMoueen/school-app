@@ -6,6 +6,7 @@ app_name = 'main'
 urlpatterns = [
     # Public pages
     path('', views.home, name='home'),
+    path('home/', views.home, name='home_page'),
     path('login/', views.custom_login, name='login'),
     path('logout/', views.custom_logout, name='logout'),
     
