@@ -212,28 +212,30 @@ def _api_json_response(request, payload, status=200):
     return _apply_api_cors_headers(request, JsonResponse(payload, status=status))
 
 def home(request):
-    """Redirect public home route to frontend app."""
-    return _frontend_redirect('/')
+    """Render the Django home template."""
+    return render(request, 'index.html')
 
 
 def about(request):
-    """Redirect public about route to frontend app."""
-    return _frontend_redirect('/about')
+    """Render the Django about page."""
+    return render(request, 'about.html')
 
 
 def facilities(request):
-    """Redirect public facilities route to frontend app."""
-    return _frontend_redirect('/facilities')
+    return render(request, 'facilities.html')
+
+
+def services(request):
+    return render(request, 'services.html')
 
 
 def location(request):
-    """Redirect public location route to frontend app."""
-    return _frontend_redirect('/location')
+    return render(request, 'location.html')
 
 
 def contact(request):
-    """Redirect public contact route to frontend app."""
-    return _frontend_redirect('/contact')
+    """Render the Django contact page."""
+    return render(request, 'contact.html')
 
 
 @require_http_methods(['GET', 'OPTIONS'])
