@@ -212,29 +212,74 @@ def _api_json_response(request, payload, status=200):
     return _apply_api_cors_headers(request, JsonResponse(payload, status=status))
 
 def home(request):
-    """Render the Django home template."""
+    """
+    Render the home/landing page.
+    
+    This is the main entry point for public visitors.
+    Displays school information, features, and navigation.
+    
+    Returns: Rendered index.html template
+    """
     return render(request, 'index.html')
 
 
 def about(request):
-    """Render the Django about page."""
+    """
+    Render the about page.
+    
+    Displays school mission, vision, history, and key information.
+    Accessible to all visitors (authenticated and non-authenticated).
+    
+    Returns: Rendered about.html template
+    """
     return render(request, 'about.html')
 
 
 def facilities(request):
+    """
+    Render the facilities page.
+    
+    Showcases school infrastructure including classrooms, labs,
+    library, sports facilities, and security measures.
+    
+    Returns: Rendered facilities.html template
+    """
     return render(request, 'facilities.html')
 
 
 def services(request):
+    """
+    Render the services page.
+    
+    Lists academic services, learning programs, and offerings
+    provided by the school.
+    
+    Returns: Rendered services.html template
+    """
     return render(request, 'services.html')
 
 
 def location(request):
+    """
+    Render the location/contact page.
+    
+    Displays school location with map integration for directions
+    and campus access information.
+    
+    Returns: Rendered location.html template
+    """
     return render(request, 'location.html')
 
 
 def contact(request):
-    """Render the Django contact page."""
+    """
+    Render the contact page.
+    
+    Displays contact form for inquiries, admissions, and visitor requests.
+    Also shows contact details and office information.
+    
+    Returns: Rendered contact.html template
+    """
     return render(request, 'contact.html')
 
 
