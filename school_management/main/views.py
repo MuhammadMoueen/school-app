@@ -285,7 +285,19 @@ def contact(request):
 
 @require_http_methods(['GET', 'OPTIONS'])
 def api_session(request):
-    """Return authentication state for the Next.js public navbar profile icon."""
+    """
+    API endpoint to retrieve current user authentication status.
+    
+    This endpoint returns:
+    - Authentication status of current user
+    - Profile image URL if authenticated
+    - Links to dashboard and login pages
+    
+    Used by frontend navbar to display user-specific UI elements.
+    Supports CORS (OPTIONS method for preflight requests).
+    
+    Returns: JSON response with user session information
+    """
     if request.method == 'OPTIONS':
         return _api_options_response(request)
 
@@ -306,7 +318,21 @@ def api_session(request):
 
 @require_http_methods(['GET', 'OPTIONS'])
 def api_facilities(request):
-    """Return facilities listing used by the Next.js facilities page."""
+    """
+    API endpoint to retrieve school facilities information.
+    
+    Returns a list of facility categories including:
+    - Classrooms
+    - Labs
+    - Library
+    - Sports facilities
+    - Security infrastructure
+    
+    Each facility includes description and image URL.
+    Supports CORS (OPTIONS method for preflight requests).
+    
+    Returns: JSON response with facilities listing
+    """
     if request.method == 'OPTIONS':
         return _api_options_response(request)
 
@@ -344,7 +370,19 @@ def api_facilities(request):
 @csrf_exempt
 @require_http_methods(['POST', 'OPTIONS'])
 def api_contact(request):
-    """Receive contact messages from the Next.js contact form."""
+    """
+    API endpoint to receive contact form submissions from public pages.
+    
+    Expects POST request with JSON payload containing:
+    - name: Visitor's full name
+    - email: Visitor's email address
+    - message: Inquiry message
+    
+    Validates input and returns success/error status.
+    Supports CORS (OPTIONS method for preflight requests).
+    
+    Returns: JSON response with status message
+    """
     if request.method == 'OPTIONS':
         return _api_options_response(request)
 
