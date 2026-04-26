@@ -4,7 +4,7 @@ from . import views
 app_name = 'main'
 
 urlpatterns = [
-    # Public pages
+    # ===== PUBLIC PAGES (No authentication required) =====
     path('', views.home, name='home'),
     path('home/', views.home, name='home_page'),
     path('facilities/', views.facilities, name='facilities'),
@@ -13,18 +13,18 @@ urlpatterns = [
     path('location/', views.location, name='location'),
     path('contact/', views.contact, name='contact'),
 
-    # Public API endpoints for Next.js frontend
+    # ===== PUBLIC JSON API ENDPOINTS =====
+    # These endpoints provide data for the public frontend
     path('api/session/', views.api_session, name='api_session'),
     path('api/facilities/', views.api_facilities, name='api_facilities'),
     path('api/contact/', views.api_contact, name='api_contact'),
 
+    # ===== AUTHENTICATION =====
     path('login/', views.custom_login, name='login'),
     path('logout/', views.custom_logout, name='logout'),
     
-    # Dashboard
+    # ===== DASHBOARD & PROFILE =====
     path('dashboard/', views.dashboard, name='dashboard'),
-
-    # Profile Management
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('profile/change-password/', views.change_password, name='change_password'),
     
